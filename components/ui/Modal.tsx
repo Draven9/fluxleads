@@ -19,6 +19,10 @@ interface ModalProps {
   title: string;
   children: React.ReactNode;
   size?: 'sm' | 'md' | 'lg' | 'xl';
+  /** Optional extra classes for the dialog container */
+  className?: string;
+  /** Optional extra classes for the body wrapper (useful for scroll/height) */
+  bodyClassName?: string;
   /** Optional ID for aria-labelledby (auto-generated if not provided) */
   labelledById?: string;
   /** Optional ID for aria-describedby */
@@ -40,6 +44,8 @@ export const Modal: React.FC<ModalProps> = ({
   title, 
   children, 
   size = 'md',
+  className,
+  bodyClassName,
   labelledById,
   describedById,
   initialFocus,
@@ -85,13 +91,14 @@ export const Modal: React.FC<ModalProps> = ({
           className={cn(
             'bg-white dark:bg-dark-card',
             'border border-slate-200 dark:border-white/10',
-            'rounded-2xl shadow-2xl w-full',
+            'rounded-2xl shadow-2xl w-full flex flex-col',
             'animate-in zoom-in-95 duration-200',
-            sizeClasses[size]
+            sizeClasses[size],
+            className
           )}
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="p-5 border-b border-slate-200 dark:border-white/10 flex justify-between items-center">
+          <div className="p-5 border-b border-slate-200 dark:border-white/10 flex justify-between items-center shrink-0">
             <h2 
               id={titleId}
               className="text-lg font-bold text-slate-900 dark:text-white font-display"
@@ -107,7 +114,7 @@ export const Modal: React.FC<ModalProps> = ({
               <X size={20} aria-hidden="true" />
             </button>
           </div>
-          <div className="p-5">{children}</div>
+          <div className={cn('p-5', bodyClassName)}>{children}</div>
         </div>
       </div>
     </FocusTrap>

@@ -16,6 +16,7 @@ export const ActivitiesPage: React.FC = () => {
         setSearchTerm,
         filterType,
         setFilterType,
+        dateFilter,
         currentDate,
         setCurrentDate,
         isModalOpen,
@@ -66,11 +67,12 @@ export const ActivitiesPage: React.FC = () => {
     };
 
     return (
-        <div className="p-8 max-w-[1600px] mx-auto">
+        <div className="p-8 max-w-400 mx-auto">
             <ActivitiesHeader
                 viewMode={viewMode}
                 setViewMode={setViewMode}
                 onNewActivity={handleNewActivity}
+                dateFilter={dateFilter}
             />
 
             {viewMode === 'list' ? (

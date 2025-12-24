@@ -65,10 +65,11 @@ export async function updateSession(request: NextRequest) {
     // Se der erro, falhamos "aberto" (não bloqueia navegação) para evitar lockout.
     const pathname = request.nextUrl.pathname
     const isSetupRoute = pathname === '/setup' || pathname.startsWith('/setup/')
+    const isInstallRoute = pathname === '/install' || pathname.startsWith('/install/')
 
     try {
         const { data: initData, error: initError } = await supabase.rpc('is_instance_initialized')
-        if (!initError && initData === false && !isSetupRoute) {
+        if (!initError && initData === false && !isSetupRoute && !isInstallRoute) {
             const url = request.nextUrl.clone()
             url.pathname = '/setup'
             return NextResponse.redirect(url)
@@ -79,7 +80,7 @@ export async function updateSession(request: NextRequest) {
 
     // Protected routes - redirect to login if not authenticated
     const isAuthRoute = pathname.startsWith('/login') || pathname.startsWith('/auth')
-    const isPublicRoute = pathname === '/' || pathname.startsWith('/join') || isSetupRoute
+    const isPublicRoute = pathname === '/' || pathname.startsWith('/join') || isSetupRoute || isInstallRoute
 
     if (!user && !isAuthRoute && !isPublicRoute) {
         const url = request.nextUrl.clone()

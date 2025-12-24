@@ -88,7 +88,8 @@ export const ContactFormModalV2: React.FC<ContactFormModalProps> = ({
         <div className="grid grid-cols-2 gap-4">
           <InputField
             label="Telefone"
-            placeholder="(11) 99999-9999"
+            placeholder="+5511999999999"
+            hint="Formato E.164 (ex.: +5511999999999)"
             error={errors.phone}
             registration={register('phone')}
           />

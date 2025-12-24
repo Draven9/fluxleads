@@ -16,6 +16,7 @@ import {
 import { useCreateDeal } from '@/lib/query/hooks/useDealsQuery';
 import { useBoards } from '@/lib/query/hooks/useBoardsQuery';
 import { useRealtimeSync } from '@/lib/realtime/useRealtimeSync';
+import { normalizePhoneE164 } from '@/lib/phone';
 
 export const useContactsController = () => {
   // T017: Pagination state
@@ -274,6 +275,8 @@ export const useContactsController = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    const normalizedPhone = normalizePhoneE164(formData.phone);
+
     // Find or create company
     let companyId: string | undefined;
     const existingCompany = companies.find(
@@ -304,7 +307,7 @@ export const useContactsController = () => {
           updates: {
             name: formData.name,
             email: formData.email,
-            phone: formData.phone,
+            phone: normalizedPhone,
             role: formData.role,
             companyId: companyId,
           },
@@ -321,7 +324,7 @@ export const useContactsController = () => {
         {
           name: formData.name,
           email: formData.email,
-          phone: formData.phone,
+          phone: normalizedPhone,
           role: formData.role,
           companyId: companyId || '',
           status: 'ACTIVE',

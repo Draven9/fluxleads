@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useToast } from '@/context/ToastContext';
 import { useAuth } from '@/context/AuthContext';
 import { Activity } from '@/types';
@@ -12,6 +13,8 @@ import { useDeals } from '@/lib/query/hooks/useDealsQuery';
 import { useRealtimeSync } from '@/lib/realtime/useRealtimeSync';
 
 export const useActivitiesController = () => {
+  const searchParams = useSearchParams();
+
   // Auth for tenant organization_id
   const { profile, organizationId } = useAuth();
 
@@ -30,9 +33,24 @@ export const useActivitiesController = () => {
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<Activity['type'] | 'ALL'>('ALL');
+  const [dateFilter, setDateFilter] = useState<'ALL' | 'overdue' | 'today' | 'upcoming'>('ALL');
   const [currentDate, setCurrentDate] = useState(new Date());
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
+
+  // Permite deep-link do Inbox: /activities?filter=overdue|today|upcoming
+  useEffect(() => {
+    const filter = (searchParams.get('filter') || '').toLowerCase();
+
+    if (filter === 'overdue' || filter === 'today' || filter === 'upcoming') {
+      setDateFilter(filter);
+      setViewMode('list');
+      return;
+    }
+
+    // Qualquer outro valor (inclui vazio) cai no padrão.
+    setDateFilter('ALL');
+  }, [searchParams]);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -46,14 +64,33 @@ export const useActivitiesController = () => {
   const isLoading = activitiesLoading || dealsLoading;
 
   const filteredActivities = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
     return activities
       .filter(activity => {
         const matchesSearch = (activity.title || '').toLowerCase().includes(searchTerm.toLowerCase());
         const matchesType = filterType === 'ALL' || activity.type === filterType;
-        return matchesSearch && matchesType;
+
+        const date = new Date(activity.date);
+        const isPending = !activity.completed;
+
+        const matchesDateFilter =
+          dateFilter === 'ALL'
+            ? true
+            : dateFilter === 'overdue'
+              ? isPending && date < today
+              : dateFilter === 'today'
+                ? isPending && date >= today && date < tomorrow
+                : isPending && date >= tomorrow;
+
+        return matchesSearch && matchesType && matchesDateFilter;
       })
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  }, [activities, searchTerm, filterType]);
+  }, [activities, searchTerm, filterType, dateFilter]);
 
   const handleNewActivity = () => {
     setEditingActivity(null);
@@ -165,6 +202,8 @@ export const useActivitiesController = () => {
     setSearchTerm,
     filterType,
     setFilterType,
+    dateFilter,
+    setDateFilter,
     currentDate,
     setCurrentDate,
     isModalOpen,

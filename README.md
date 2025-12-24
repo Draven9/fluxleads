@@ -12,6 +12,18 @@ Use o arquivo `.env.example` como base:
 
 Por segurança, **não** comite `.env.local`.
 
+## Installer (ops)
+
+Para provisionar Vercel + Supabase via UI:
+
+- se `INSTALLER_ENABLED` nao existir, o instalador fica liberado ate a primeira instalacao
+- se quiser bloquear, defina `INSTALLER_ENABLED=false` (ou use `INSTALLER_TOKEN`)
+- acesse `/install` (ele redireciona para `/install/start`)
+- informe o Vercel PAT (o projeto e detectado automaticamente)
+- informe as credenciais do Supabase (incluindo DB URL)
+
+Ao finalizar, o instalador grava `INSTALLER_ENABLED=false` nas envs do projeto.
+
 ## AI test routes (dev-only)
 
 This project contains an internal route and page used for AI integration testing:

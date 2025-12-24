@@ -41,6 +41,8 @@ import { CallModal, CallLogData } from './CallModal';
 import { ScriptEditorModal, ScriptFormData } from './ScriptEditorModal';
 import { ScheduleModal, ScheduleData, ScheduleType } from './ScheduleModal';
 import { generateSalesScript } from '@/lib/ai/tasksClient';
+import { MessageComposerModal, type MessageChannel } from './MessageComposerModal';
+import { callAIProxy } from '@/lib/supabase/ai-proxy';
 import type { ScriptCategory } from '@/lib/supabase/quickScripts';
 
 interface FocusContextPanelProps {
@@ -141,20 +143,170 @@ export const FocusContextPanel: React.FC<FocusContextPanelProps> = ({
     // Schedule modal state
     const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
     const [scheduleType, setScheduleType] = useState<ScheduleType>('CALL');
+    const [schedulePrefill, setSchedulePrefill] = useState<{
+        title?: string;
+        description?: string;
+        date?: string;
+        time?: string;
+    } | null>(null);
+
+    // Message composer modal state (WhatsApp / Email)
+    const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
+    const [messageChannel, setMessageChannel] = useState<MessageChannel>('WHATSAPP');
+    const [messagePrefill, setMessagePrefill] = useState<{
+        subject?: string;
+        message?: string;
+    } | null>(null);
+
+    const openMessageComposer = (
+        channel: MessageChannel,
+        prefill?: { subject?: string; message?: string }
+    ) => {
+        setMessageChannel(channel);
+        setMessagePrefill(prefill ?? null);
+        setIsMessageModalOpen(true);
+    };
+
+    const normalizeReason = (raw?: string) => {
+        if (typeof raw !== 'string') return '';
+        return raw.replace(/\s*-\s*Sugerido por IA\s*$/i, '').trim();
+    };
+
+    const formatSlot = (d: Date) => {
+        const day = d.toLocaleDateString('pt-BR', { weekday: 'short' });
+        const time = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        return `${day} ${time}`;
+    };
+
+    const proposeTwoSlots = () => {
+        const a = new Date();
+        a.setDate(a.getDate() + 1);
+        a.setHours(10, 0, 0, 0);
+
+        const b = new Date();
+        b.setDate(b.getDate() + 2);
+        b.setHours(15, 0, 0, 0);
+
+        return { a, b };
+    };
+
+    const buildSuggestedWhatsAppMessage = (
+        actionType: string,
+        action: string,
+        reason?: string
+    ) => {
+        const firstName = contact?.name?.split(' ')[0] || '';
+        const greeting = firstName ? `Oi ${firstName}, tudo bem?` : 'Oi, tudo bem?';
+        const r = normalizeReason(reason);
+        const dealTitle = deal?.title?.trim();
+
+        const { a, b } = proposeTwoSlots();
+        const dealCtx = dealTitle ? ` sobre ${dealTitle}` : '';
+        const reasonSentence = r ? `\n\nPensei nisso porque ${r.charAt(0).toLowerCase()}${r.slice(1)}.` : '';
+
+        // Quando a “ação” é algo como “Agendar reunião”, a intenção real no WhatsApp é pedir disponibilidade.
+        if (actionType === 'MEETING') {
+            return (
+                `${greeting}` +
+                `\n\nQueria marcar um papo rápido (15 min)${dealCtx} pra alinharmos os próximos passos.` +
+                `${reasonSentence}` +
+                `\n\nVocê consegue ${formatSlot(a)} ou ${formatSlot(b)}? Se preferir, me diga um horário bom pra você.`
+            );
+        }
+
+        if (actionType === 'CALL') {
+            return (
+                `${greeting}` +
+                `\n\nPodemos fazer uma ligação rapidinha${dealCtx}?` +
+                `${reasonSentence}` +
+                `\n\nVocê prefere ${formatSlot(a)} ou ${formatSlot(b)}?`
+            );
+        }
+
+        if (actionType === 'TASK') {
+            return (
+                `${greeting}` +
+                `\n\nSó pra alinharmos${dealCtx}: ${action.trim()}.` +
+                `${reasonSentence}` +
+                `\n\nPode me confirmar quando conseguir?`
+            );
+        }
+
+        // Default (inclui quando a própria sugestão já é WHATSAPP/EMAIL, ou não veio estruturada)
+        const cleanAction = action?.trim();
+        const actionLine = cleanAction ? `\n\n${cleanAction}${dealTitle ? ` (${dealTitle})` : ''}.` : '';
+        return `${greeting}${actionLine}${reasonSentence}`;
+    };
+
+    const buildSuggestedEmailBody = (
+        actionType: string,
+        action: string,
+        reason?: string
+    ) => {
+        const firstName = contact?.name?.split(' ')[0] || '';
+        const greeting = firstName ? `Olá ${firstName},` : 'Olá,';
+        const r = normalizeReason(reason);
+        const dealTitle = deal?.title?.trim();
+        const { a, b } = proposeTwoSlots();
+        const reasonSentence = r ? `\n\nMotivo: ${r}.` : '';
+        const dealSentence = dealTitle ? `\n\nAssunto: ${dealTitle}.` : '';
+
+        if (actionType === 'MEETING') {
+            return (
+                `${greeting}` +
+                `\n\nQueria marcar uma conversa rápida (15 min) para alinharmos próximos passos.` +
+                `${dealSentence}` +
+                `${reasonSentence}` +
+                `\n\nVocê teria disponibilidade em ${formatSlot(a)} ou ${formatSlot(b)}?` +
+                `\n\nAbs,`
+            );
+        }
+
+        if (actionType === 'CALL') {
+            return (
+                `${greeting}` +
+                `\n\nPodemos falar rapidamente por telefone?` +
+                `${dealSentence}` +
+                `${reasonSentence}` +
+                `\n\nSugestões de horário: ${formatSlot(a)} ou ${formatSlot(b)}.` +
+                `\n\nAbs,`
+            );
+        }
+
+        if (actionType === 'TASK') {
+            return (
+                `${greeting}` +
+                `\n\n${action.trim()}.` +
+                `${dealSentence}` +
+                `${reasonSentence}` +
+                `\n\nAbs,`
+            );
+        }
+
+        return (
+            `${greeting}` +
+            `\n\n${action.trim()}.` +
+            `${dealSentence}` +
+            `${reasonSentence}` +
+            `\n\nAbs,`
+        );
+    };
 
     // Contact handlers
-    const handleWhatsApp = () => {
-        if (!contact?.phone) return;
-        const phone = contact.phone.replace(/\D/g, '');
-        window.open(`https://wa.me/${phone}`, '_blank');
+    const handleWhatsApp = (prefill?: { message?: string }) => {
+        openMessageComposer('WHATSAPP', { message: prefill?.message });
+    };
+
+    const handleEmail = (prefill?: { subject?: string; message?: string }) => {
+        openMessageComposer('EMAIL', {
+            subject: prefill?.subject,
+            message: prefill?.message,
+        });
     };
 
     // Handle call with modal
     const handleCall = (suggestedTitle?: string) => {
         if (!contact?.phone) return;
-
-        // Open phone dialer
-        window.open(`tel:${contact.phone}`, '_self');
 
         // Set suggested title and open call log modal
         setCallSuggestedTitle(suggestedTitle || 'Ligação');
@@ -416,8 +568,12 @@ export const FocusContextPanel: React.FC<FocusContextPanelProps> = ({
     ]);
 
     // Quick action handlers - open modal instead of creating directly
-    const handleQuickAction = (type: ScheduleType) => {
+    const handleQuickAction = (
+        type: ScheduleType,
+        prefill?: { title?: string; description?: string; date?: string; time?: string }
+    ) => {
         setScheduleType(type);
+        setSchedulePrefill(prefill ?? null);
         setIsScheduleModalOpen(true);
     };
 
@@ -434,18 +590,23 @@ export const FocusContextPanel: React.FC<FocusContextPanelProps> = ({
         });
     };
 
+    type NBAActionMode = 'configure' | 'execute';
+
     // Handle NBA action execution - accepts optional actionType to override
-    const handleNBAAction = (overrideActionType?: string) => {
+    const handleNBAAction = (overrideActionType?: string, mode: NBAActionMode = 'execute') => {
         const { action, reason, actionType: suggestedType } = nextBestAction;
         const actionType = overrideActionType || suggestedType;
 
         if (actionType === 'WHATSAPP') {
-            handleWhatsApp();
+            handleWhatsApp({ message: buildSuggestedWhatsAppMessage(suggestedType, action, reason) });
             return;
         }
 
-        if (actionType === 'EMAIL' && contact?.email) {
-            window.open(`mailto:${contact.email}?subject=${encodeURIComponent(action)}`);
+        if (actionType === 'EMAIL') {
+            handleEmail({
+                subject: action,
+                message: buildSuggestedEmailBody(suggestedType, action, reason),
+            });
             return;
         }
 
@@ -455,19 +616,34 @@ export const FocusContextPanel: React.FC<FocusContextPanelProps> = ({
             return;
         }
 
-        // For MEETING and TASK, create activity directly with AI-suggested data
-        const type = actionType === 'MEETING' ? 'MEETING' : 'TASK';
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        tomorrow.setHours(10, 0, 0, 0);
+        // Para MEETING/TASK:
+        // - mode=configure: abrir modal (ícones)
+        // - mode=execute: criar direto (botão grande)
+        if (actionType === 'MEETING' || actionType === 'TASK') {
+            const type: ScheduleType = actionType === 'MEETING' ? 'MEETING' : 'TASK';
 
-        onAddActivity({
-            type,
-            title: action,
-            description: `${reason} - Sugerido por IA`,
-            date: tomorrow.toISOString(),
-            completed: false
-        });
+            if (mode === 'configure') {
+                handleQuickAction(type, {
+                    title: action,
+                    description: `${reason} - Sugerido por IA`,
+                });
+                return;
+            }
+
+            // execute
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            tomorrow.setHours(10, 0, 0, 0);
+
+            onAddActivity({
+                type,
+                title: action,
+                description: `${reason} - Sugerido por IA`,
+                date: tomorrow.toISOString(),
+                completed: false
+            });
+            return;
+        }
     };
 
     // Copy script to clipboard
@@ -710,7 +886,17 @@ export const FocusContextPanel: React.FC<FocusContextPanelProps> = ({
                                     ].map(({ type, icon: Icon, label, color }) => (
                                         <button
                                             key={type}
-                                            onClick={() => handleNBAAction(type)}
+                                            onClick={() =>
+                                                handleNBAAction(
+                                                    type,
+                                                    type === 'MEETING' ||
+                                                        type === 'TASK' ||
+                                                        type === 'WHATSAPP' ||
+                                                        type === 'EMAIL'
+                                                        ? 'configure'
+                                                        : 'execute'
+                                                )
+                                            }
                                             className={`p-2 rounded-lg transition-all ${color} ${nextBestAction.actionType === type ? 'bg-white/10 ring-1 ring-current' : ''}`}
                                             title={label}
                                         >
@@ -722,7 +908,7 @@ export const FocusContextPanel: React.FC<FocusContextPanelProps> = ({
 
                             {/* Main Action Button */}
                             <button
-                                onClick={() => handleNBAAction()}
+                                onClick={() => handleNBAAction(undefined, 'execute')}
                                 className={`w-full py-2.5 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 ${nextBestAction.urgency === 'high'
                                     ? 'bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-500/20'
                                     : nextBestAction.urgency === 'medium'
@@ -1174,14 +1360,23 @@ export const FocusContextPanel: React.FC<FocusContextPanelProps> = ({
                                 {/* Quick Actions - Agendamento */}
                                 <div className="flex flex-wrap gap-2 mb-3">
                                     <button
-                                        onClick={handleWhatsApp}
+                                        onClick={() =>
+                                            handleWhatsApp({
+                                                message: buildSuggestedWhatsAppMessage('TASK', `Queria falar sobre ${deal.title}`),
+                                            })
+                                        }
                                         disabled={!contact?.phone}
                                         className="px-3 py-1.5 hover:bg-green-500/10 text-slate-500 hover:text-green-400 disabled:opacity-30 disabled:cursor-not-allowed text-xs font-medium rounded-md transition-colors flex items-center gap-2 group"
                                     >
                                         <MessageCircle size={14} className="group-hover:text-green-400 transition-colors" /> WhatsApp
                                     </button>
                                     <button
-                                        onClick={() => contact?.email && window.open(`mailto:${contact.email}`)}
+                                        onClick={() =>
+                                            handleEmail({
+                                                subject: `Sobre ${deal.title}`,
+                                                message: buildSuggestedEmailBody('TASK', `Queria falar sobre ${deal.title}`),
+                                            })
+                                        }
                                         disabled={!contact?.email}
                                         className="px-3 py-1.5 hover:bg-cyan-500/10 text-slate-500 hover:text-cyan-400 disabled:opacity-30 disabled:cursor-not-allowed text-xs font-medium rounded-md transition-colors flex items-center gap-2 group"
                                     >
@@ -1602,10 +1797,40 @@ export const FocusContextPanel: React.FC<FocusContextPanelProps> = ({
             {/* Schedule Modal */}
             <ScheduleModal
                 isOpen={isScheduleModalOpen}
-                onClose={() => setIsScheduleModalOpen(false)}
+                onClose={() => {
+                    setIsScheduleModalOpen(false);
+                    setSchedulePrefill(null);
+                }}
                 onSave={handleScheduleSave}
                 contactName={contact?.name || 'Contato'}
                 initialType={scheduleType}
+                initialTitle={schedulePrefill?.title}
+                initialDescription={schedulePrefill?.description}
+                initialDate={schedulePrefill?.date}
+                initialTime={schedulePrefill?.time}
+            />
+
+            <MessageComposerModal
+                isOpen={isMessageModalOpen}
+                onClose={() => {
+                    setIsMessageModalOpen(false);
+                    setMessagePrefill(null);
+                }}
+                channel={messageChannel}
+                contactName={contact?.name || 'Contato'}
+                contactEmail={contact?.email}
+                contactPhone={contact?.phone}
+                initialSubject={messagePrefill?.subject}
+                initialMessage={messagePrefill?.message}
+                aiContext={{
+                    cockpitSnapshot,
+                    nextBestAction: {
+                        action: nextBestAction.action,
+                        reason: nextBestAction.reason,
+                        actionType: nextBestAction.actionType,
+                        urgency: nextBestAction.urgency,
+                    },
+                }}
             />
         </>
     );

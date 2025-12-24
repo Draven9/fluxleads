@@ -9,6 +9,7 @@
  */
 import { z } from 'zod';
 import { ERROR_CODES, getErrorMessage } from './errorCodes';
+import { isE164, normalizePhoneE164 } from '@/lib/phone';
 
 // ============ MAX LENGTH CONSTANTS (T033) ============
 
@@ -46,7 +47,9 @@ export const phoneSchema = z
     z.string()
       .max(MAX_LENGTHS.PHONE, `Telefone deve ter no máximo ${MAX_LENGTHS.PHONE} caracteres`)
       .refine(val => val === '' || /^[\d\s\-\(\)\+]+$/.test(val), msg('PHONE_INVALID'))
-  );
+  )
+  .transform(val => normalizePhoneE164(val))
+  .refine(val => val === '' || isE164(val), msg('PHONE_INVALID'));
 
 export const requiredString = (field: string, maxLength: number = MAX_LENGTHS.NAME) =>
   z.string({ message: msg('FIELD_REQUIRED', { field }) })

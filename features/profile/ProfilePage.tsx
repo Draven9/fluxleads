@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { getErrorMessage } from '@/utils/errorUtils';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
+import { isE164, normalizePhoneE164 } from '@/lib/phone';
 import { Loader2, User, Mail, Shield, Calendar, Key, Check, Eye, EyeOff, Phone, Pencil, Save, Camera, X } from 'lucide-react';
 
 export const ProfilePage: React.FC = () => {
@@ -47,7 +48,7 @@ export const ProfilePage: React.FC = () => {
             setFirstName(profile.first_name || '');
             setLastName(profile.last_name || '');
             setNickname(profile.nickname || '');
-            setPhone(profile.phone || '');
+            setPhone(normalizePhoneE164(profile.phone || ''));
             setAvatarUrl(profile.avatar_url || null);
         }
     }, [profile]);
@@ -198,13 +199,22 @@ export const ProfilePage: React.FC = () => {
         setMessage(null);
 
         try {
+            const normalizedPhone = normalizePhoneE164(phone);
+            if (normalizedPhone && !isE164(normalizedPhone)) {
+                setMessage({
+                    type: 'error',
+                    text: 'Telefone inválido. Use o formato E.164 (ex.: +5511999999999).',
+                });
+                return;
+            }
+
             const { error } = await sb
                 .from('profiles')
                 .update({
                     first_name: firstName.trim() || null,
                     last_name: lastName.trim() || null,
                     nickname: nickname.trim() || null,
-                    phone: phone.trim() || null,
+                    phone: normalizedPhone || null,
                 })
                 .eq('id', profile?.id);
 
@@ -256,18 +266,6 @@ export const ProfilePage: React.FC = () => {
         }
     };
 
-    // Formata telefone enquanto digita
-    const formatPhone = (value: string) => {
-        const numbers = value.replace(/\D/g, '');
-        if (numbers.length <= 11) {
-            return numbers
-                .replace(/^(\d{2})(\d)/g, '($1) $2')
-                .replace(/(\d{5})(\d)/, '$1-$2')
-                .slice(0, 15);
-        }
-        return value.slice(0, 15);
-    };
-
     // Altera email
     const handleChangeEmail = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -312,7 +310,7 @@ export const ProfilePage: React.FC = () => {
             )}
 
             {/* Profile Card */}
-            <div className="bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 rounded-2xl p-8 mb-6">
+            <div className="bg-white dark:bg-white/3 border border-slate-200 dark:border-white/10 rounded-2xl p-8 mb-6">
                 <div className="flex items-start justify-between mb-6">
                     <div className="flex items-center gap-6">
                         {/* Avatar Grande com Upload */}
@@ -324,7 +322,7 @@ export const ProfilePage: React.FC = () => {
                                     className="w-20 h-20 rounded-2xl object-cover shadow-xl"
                                 />
                             ) : (
-                                <div className={`w-20 h-20 rounded-2xl bg-gradient-to-br ${gradient} flex items-center justify-center text-white font-bold text-2xl shadow-xl`}>
+                                <div className={`w-20 h-20 rounded-2xl bg-linear-to-br ${gradient} flex items-center justify-center text-white font-bold text-2xl shadow-xl`}>
                                     {getInitials()}
                                 </div>
                             )}
@@ -450,9 +448,9 @@ export const ProfilePage: React.FC = () => {
                                 <input
                                     type="tel"
                                     value={phone}
-                                    onChange={(e) => setPhone(formatPhone(e.target.value))}
+                                    onChange={(e) => setPhone(e.target.value)}
                                     className="w-full pl-11 pr-4 py-2.5 border-2 border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-primary-500 transition-all"
-                                    placeholder="(11) 99999-9999"
+                                    placeholder="+5511999999999"
                                 />
                             </div>
                         </div>
@@ -466,7 +464,7 @@ export const ProfilePage: React.FC = () => {
                                     setFirstName(profile?.first_name || '');
                                     setLastName(profile?.last_name || '');
                                     setNickname(profile?.nickname || '');
-                                    setPhone(profile?.phone || '');
+                                    setPhone(normalizePhoneE164(profile?.phone || ''));
                                     setMessage(null);
                                 }}
                                 className="flex-1 px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 rounded-xl transition-colors"
@@ -560,7 +558,7 @@ export const ProfilePage: React.FC = () => {
             </div>
 
             {/* Security Section */}
-            <div className="bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 rounded-2xl p-6">
+            <div className="bg-white dark:bg-white/3 border border-slate-200 dark:border-white/10 rounded-2xl p-6">
                 <div className="flex items-center justify-between mb-6">
                     <div>
                         <h3 className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">

@@ -5,21 +5,38 @@ interface ActivitiesHeaderProps {
   viewMode: 'list' | 'calendar';
   setViewMode: (mode: 'list' | 'calendar') => void;
   onNewActivity: () => void;
+  dateFilter?: 'ALL' | 'overdue' | 'today' | 'upcoming';
 }
 
 export const ActivitiesHeader: React.FC<ActivitiesHeaderProps> = ({
   viewMode,
   setViewMode,
   onNewActivity,
+  dateFilter = 'ALL',
 }) => {
-  console.log('Rendering ActivitiesHeader');
+  const filterLabel =
+    dateFilter === 'overdue'
+      ? 'Atrasados'
+      : dateFilter === 'today'
+        ? 'Hoje'
+        : dateFilter === 'upcoming'
+          ? 'Próximos'
+          : null;
+
   return (
     <div className="flex justify-between items-center mb-8">
       <div>
         <h1 className="text-2xl font-bold text-slate-900 dark:text-white font-display">
           Atividades
         </h1>
-        <p className="text-slate-500 dark:text-slate-400">Gerencie suas tarefas e compromissos</p>
+        <div className="mt-1 flex items-center gap-2">
+          <p className="text-slate-500 dark:text-slate-400">Gerencie suas tarefas e compromissos</p>
+          {filterLabel && (
+            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-primary-100 text-primary-700 dark:bg-primary-500/20 dark:text-primary-300">
+              Filtro: {filterLabel}
+            </span>
+          )}
+        </div>
       </div>
       <div className="flex items-center gap-3">
         <div className="flex bg-white dark:bg-dark-card p-1 rounded-lg border border-slate-200 dark:border-white/10">

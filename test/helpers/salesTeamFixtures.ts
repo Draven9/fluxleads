@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { getRunId } from './runId';
-import { assertNoSupabaseError, getSupabaseAdminClient, requireSupabaseData } from './supabaseAdmin';
+import { assertNoSupabaseError, getSupabaseAdminClient, requireSupabaseData, withSupabaseRetry } from './supabaseAdmin';
 
 export type SalesTestUser = {
   userId: string;
@@ -247,24 +247,28 @@ async function createActivity(params: {
 }): Promise<string> {
   const supabase = getSupabaseAdminClient();
 
-  const res = await supabase
-    .from('activities')
-    .insert({
-      organization_id: params.organizationId,
-      owner_id: params.ownerId,
-      deal_id: params.dealId,
-      title: params.title,
-      date: params.date,
-      completed: params.completed,
-      type: params.type ?? 'TASK',
-    })
-    .select('id')
-    .single();
-
-  const row = requireSupabaseData(res, 'insert activities');
-  return row.id;
-}
-
+  const res = await withSupabaseRetry(
+    () =>
+      supabase
+        .from('deals')
+        .insert({
+          organization_id: params.organizationId,
+          board_id: params.boardId,
+          stage_id: params.stageId,
+          owner_id: params.ownerId,
+          contact_id: params.contactId,
+          title: params.title,
+          value: params.value,
+          status: 'open',
+          priority: 'medium',
+          is_won: false,
+          is_lost: false,
+          updated_at: params.updatedAt ?? new Date().toISOString(),
+        })
+        .select('id')
+        .single(),
+    'insert deals'
+  );
 export async function createSalesTeamFixtures(): Promise<SalesTeamFixtureBundle> {
   const runId = getRunId('sales-team');
 
@@ -283,19 +287,23 @@ export async function createSalesTeamFixtures(): Promise<SalesTeamFixtureBundle>
       organizationCreated: false,
       boardIds: [],
       dealIds: [],
-      contactIds: [],
-      activityIds: [],
-      userIdsCreated: [],
-    },
-  };
-
-  try {
-    // Preferência: usar usuários já existentes (evita depender do Auth Admin).
-    const picked = await pickExistingSalesTeam({ minUsers, strict });
-    fx.organizationId = picked.organizationId;
-    fx.users = picked.users;
-
-    for (const user of fx.users) {
+    const res = await withSupabaseRetry(
+      () =>
+        supabase
+          .from('activities')
+          .insert({
+            organization_id: params.organizationId,
+            owner_id: params.ownerId,
+            deal_id: params.dealId,
+            title: params.title,
+            date: params.date,
+            completed: params.completed,
+            type: params.type ?? 'TASK',
+          })
+          .select('id')
+          .single(),
+      'insert activities'
+    );
       const { boardId } = await createBoard({
         organizationId: fx.organizationId,
         name: `AI Tools Test Board ${user.firstName} ${runId}`,

@@ -42,7 +42,7 @@ if (typeof window !== 'undefined') {
 export const fakeContact = () => ({
   name: faker.person.fullName(),
   email: faker.internet.email().toLowerCase(),
-  phone: faker.helpers.fromRegExp(/\([1-9]{2}\) 9[0-9]{4}-[0-9]{4}/),
+  phone: faker.helpers.fromRegExp(/\+55[1-9]{2}9[0-9]{8}/),
   role: faker.person.jobTitle(),
   companyName: faker.company.name(),
 });

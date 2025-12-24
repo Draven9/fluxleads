@@ -16,7 +16,9 @@ export default function ProtectedLayout({
     children: React.ReactNode
 }) {
     const pathname = usePathname()
-    const shouldUseAppShell = pathname !== '/setup'
+    const isSetupRoute = pathname === '/setup'
+    const isLabsRoute = pathname === '/labs' || pathname.startsWith('/labs/')
+    const shouldUseAppShell = !isSetupRoute && !isLabsRoute
 
     return (
         <QueryProvider>

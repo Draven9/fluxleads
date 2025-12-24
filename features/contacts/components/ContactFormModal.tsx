@@ -103,7 +103,7 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
               <input
                 type="text"
                 className="w-full bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-primary-500"
-                placeholder="(11) 99999-9999"
+                placeholder="+5511999999999"
                 value={formData.phone}
                 onChange={e => setFormData({ ...formData, phone: e.target.value })}
               />

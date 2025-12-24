@@ -9,6 +9,10 @@ interface ScheduleModalProps {
     onSave: (data: ScheduleData) => void;
     contactName?: string;
     initialType?: ScheduleType;
+    initialTitle?: string;
+    initialDescription?: string;
+    initialDate?: string; // YYYY-MM-DD
+    initialTime?: string; // HH:mm
 }
 
 export interface ScheduleData {
@@ -25,32 +29,58 @@ const typeConfig = {
     TASK: { label: 'Tarefa', icon: Clock, color: 'orange' },
 };
 
-export function ScheduleModal({ isOpen, onClose, onSave, contactName = 'Contato', initialType = 'CALL' }: ScheduleModalProps) {
+export function ScheduleModal({
+    isOpen,
+    onClose,
+    onSave,
+    contactName = 'Contato',
+    initialType = 'CALL',
+    initialTitle,
+    initialDescription,
+    initialDate,
+    initialTime,
+}: ScheduleModalProps) {
     const [type, setType] = useState<ScheduleType>(initialType);
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [date, setDate] = useState('');
     const [time, setTime] = useState('10:00');
     const [isSaving, setIsSaving] = useState(false);
+    const [titleTouched, setTitleTouched] = useState(false);
 
     // Reset form when modal opens
     useEffect(() => {
-        if (isOpen) {
-            setType(initialType);
-            setTitle(typeConfig[initialType].label + ' com ' + contactName);
-            setDescription('');
-            // Default to tomorrow
+        if (!isOpen) return;
+
+        setTitleTouched(false);
+        setType(initialType);
+
+        const defaultTitle = typeConfig[initialType].label + ' com ' + contactName;
+        setTitle(typeof initialTitle === 'string' && initialTitle.trim() ? initialTitle : defaultTitle);
+
+        setDescription(typeof initialDescription === 'string' ? initialDescription : '');
+
+        // Default to tomorrow (unless provided)
+        if (typeof initialDate === 'string' && initialDate) {
+            setDate(initialDate);
+        } else {
             const tomorrow = new Date();
             tomorrow.setDate(tomorrow.getDate() + 1);
             setDate(tomorrow.toISOString().split('T')[0]);
-            setTime('10:00');
         }
-    }, [isOpen, initialType, contactName]);
+
+        setTime(typeof initialTime === 'string' && initialTime ? initialTime : '10:00');
+    }, [isOpen, initialType, contactName, initialTitle, initialDescription, initialDate, initialTime]);
 
     // Update title when type changes
     useEffect(() => {
+        if (!isOpen) return;
+        if (titleTouched) return;
+        // Se abriu com um título sugerido (ex.: IA) e ainda está no tipo inicial, não sobrescrever.
+        if (typeof initialTitle === 'string' && initialTitle.trim() && type === initialType) return;
+
         setTitle(typeConfig[type].label + ' com ' + contactName);
-    }, [type, contactName]);
+    }, [isOpen, type, contactName, titleTouched, initialTitle, initialType]);
 
     const handleSave = async () => {
         if (!title.trim() || !date) return;
@@ -83,9 +113,9 @@ export function ScheduleModal({ isOpen, onClose, onSave, contactName = 'Contato'
             />
 
             {/* Modal */}
-            <div className="relative bg-slate-900 border border-slate-700 rounded-xl w-full max-w-md mx-4 shadow-2xl">
+            <div className="relative bg-slate-900 border border-slate-700 rounded-xl w-full max-w-xl mx-4 shadow-2xl max-h-[90vh] flex flex-col overflow-hidden">
                 {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b border-slate-800">
+                <div className="flex items-center justify-between p-4 border-b border-slate-800 shrink-0">
                     <h2 className="text-lg font-semibold text-white flex items-center gap-2">
                         <Calendar size={20} className="text-primary-400" />
                         Agendar Atividade
@@ -99,7 +129,7 @@ export function ScheduleModal({ isOpen, onClose, onSave, contactName = 'Contato'
                 </div>
 
                 {/* Content */}
-                <div className="p-4 space-y-4">
+                <div className="p-4 space-y-4 overflow-y-auto">
                     {/* Type selector */}
                     <div>
                         <label className="block text-xs font-medium text-slate-400 mb-2">Tipo</label>
@@ -136,7 +166,10 @@ export function ScheduleModal({ isOpen, onClose, onSave, contactName = 'Contato'
                         <input
                             type="text"
                             value={title}
-                            onChange={(e) => setTitle(e.target.value)}
+                            onChange={(e) => {
+                                setTitleTouched(true);
+                                setTitle(e.target.value);
+                            }}
                             className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-primary-500"
                             placeholder="Ex: Ligar para João"
                         />
@@ -193,15 +226,15 @@ export function ScheduleModal({ isOpen, onClose, onSave, contactName = 'Contato'
                         <textarea
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
-                            rows={2}
-                            className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-primary-500 resize-none"
+                            rows={4}
+                            className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-primary-500 resize-y min-h-[120px] max-h-[40vh]"
                             placeholder="Notas adicionais..."
                         />
                     </div>
                 </div>
 
                 {/* Footer */}
-                <div className="flex gap-3 p-4 border-t border-slate-800">
+                <div className="flex gap-3 p-4 border-t border-slate-800 shrink-0">
                     <button
                         onClick={onClose}
                         className="flex-1 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium rounded-lg transition-colors"

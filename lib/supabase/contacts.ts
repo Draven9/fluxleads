@@ -15,6 +15,7 @@
 import { supabase } from './client';
 import { Contact, CRMCompany, OrganizationId, PaginationState, PaginatedResponse, ContactsServerFilters } from '@/types';
 import { sanitizeUUID, sanitizeText, sanitizeNumber } from './utils';
+import { normalizePhoneE164 } from '@/lib/phone';
 
 // ============================================
 // CONTACTS SERVICE
@@ -103,7 +104,7 @@ const transformContact = (db: DbContact): Contact => ({
   organizationId: db.organization_id,
   name: db.name,
   email: db.email || '',
-  phone: db.phone || '',
+  phone: normalizePhoneE164(db.phone),
   role: db.role || '',
   clientCompanyId: db.client_company_id || undefined,
   companyId: db.client_company_id || '', // @deprecated - backwards compatibility
@@ -147,7 +148,10 @@ const transformContactToDb = (contact: Partial<Contact>): Partial<DbContact> => 
 
   if (contact.name !== undefined) db.name = contact.name;
   if (contact.email !== undefined) db.email = contact.email || null;
-  if (contact.phone !== undefined) db.phone = contact.phone || null;
+  if (contact.phone !== undefined) {
+    const e164 = normalizePhoneE164(contact.phone);
+    db.phone = e164 ? e164 : null;
+  }
   if (contact.role !== undefined) db.role = contact.role || null;
   // Support both new clientCompanyId and deprecated companyId
   if (contact.clientCompanyId !== undefined) db.client_company_id = contact.clientCompanyId || null;
@@ -357,10 +361,11 @@ export const contactsService = {
       if (!supabase) {
         return { data: null, error: new Error('Supabase não configurado') };
       }
+      const phoneE164 = normalizePhoneE164(contact.phone);
       const insertData = {
         name: contact.name,
         email: sanitizeText(contact.email),
-        phone: sanitizeText(contact.phone),
+        phone: sanitizeText(phoneE164),
         role: sanitizeText(contact.role),
         client_company_id: sanitizeUUID(contact.clientCompanyId || contact.companyId),
         avatar: sanitizeText(contact.avatar),

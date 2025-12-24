@@ -1,0 +1,6 @@
+-- NOOP
+--
+-- Esta migration foi descontinuada.
+-- Optamos por deixar os defaults do cockpit hardcoded no código (sem persistência em banco).
+--
+-- Mantida como NOOP para não causar drift em ambientes que ainda aplicam todas as migrations.

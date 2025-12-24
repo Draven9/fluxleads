@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Activity } from '@/types';
 import { AISuggestion } from '../hooks/useInboxController';
@@ -9,6 +9,7 @@ import {
   Sparkles,
   AlertTriangle,
   TrendingUp,
+  Check,
   ExternalLink,
   X,
   Clock,
@@ -34,6 +35,10 @@ interface InboxListViewProps {
   onDismissSuggestion: (id: string) => void;
   onSnoozeSuggestion: (id: string) => void;
   onSelectActivity: (id: string) => void;
+
+  // Presets de UI (ex.: vindo da Visão Geral)
+  suggestionsDefaultOpen?: boolean;
+  suggestionsDefaultShowAll?: boolean;
 }
 
 // Componente de Sugestão Simplificado (linha única)
@@ -60,13 +65,16 @@ const SuggestionRow: React.FC<{
   const dealId = suggestion.data.deal?.id;
   const contactId = suggestion.data.contact?.id;
 
+  const navigationTarget = dealId
+    ? { href: `/boards?deal=${dealId}`, label: 'Ver negócio' }
+    : contactId
+      ? { href: `/contacts?contactId=${contactId}`, label: 'Ver contato' }
+      : null;
+
   // Navigate to deal or contact
   const handleNavigate = () => {
-    if (dealId) {
-      router.push(`/pipeline?deal=${dealId}`);
-    } else if (contactId) {
-      router.push(`/contacts?contactId=${contactId}`);
-    }
+    if (!navigationTarget) return;
+    router.push(navigationTarget.href);
   };
 
   return (
@@ -76,7 +84,8 @@ const SuggestionRow: React.FC<{
       {/* Clickable area for navigation */}
       <button
         onClick={handleNavigate}
-        className="flex-1 min-w-0 text-left hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+        disabled={!navigationTarget}
+        className="flex-1 min-w-0 text-left hover:text-primary-600 dark:hover:text-primary-400 transition-colors disabled:opacity-60 disabled:hover:text-inherit"
       >
         <p className="text-sm text-slate-700 dark:text-slate-200 truncate group-hover:text-primary-600 dark:group-hover:text-primary-400">
           {suggestion.description}
@@ -91,6 +100,14 @@ const SuggestionRow: React.FC<{
 
       {/* Actions */}
       <div className="shrink-0 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <button
+          onClick={onAccept}
+          className="p-1.5 text-slate-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-500/10 rounded-md transition-colors"
+          aria-label="Aplicar sugestão"
+          title="Aplicar"
+        >
+          <Check size={14} aria-hidden="true" />
+        </button>
         <button
           onClick={onSnooze}
           className="p-1.5 text-slate-400 hover:text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-500/10 rounded-md transition-colors"
@@ -110,8 +127,9 @@ const SuggestionRow: React.FC<{
         <button
           onClick={handleNavigate}
           className="p-1.5 text-slate-400 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-500/10 rounded-md transition-colors"
-          aria-label="Ver negócio"
-          title="Ver negócio"
+          aria-label={navigationTarget?.label || 'Abrir'}
+          title={navigationTarget?.label || 'Abrir'}
+          disabled={!navigationTarget}
         >
           <ExternalLink size={14} aria-hidden="true" />
         </button>
@@ -128,9 +146,30 @@ const AISuggestionsCard: React.FC<{
   onAccept: (suggestion: AISuggestion) => void;
   onDismiss: (id: string) => void;
   onSnooze: (id: string) => void;
-}> = ({ suggestions, onAccept, onDismiss, onSnooze }) => {
-  const [isOpen, setIsOpen] = useState(true);
-  const [showAll, setShowAll] = useState(false);
+  defaultOpen?: boolean;
+  defaultShowAll?: boolean;
+}> = ({
+  suggestions,
+  onAccept,
+  onDismiss,
+  onSnooze,
+  defaultOpen,
+  defaultShowAll,
+}) => {
+  const [isOpen, setIsOpen] = useState(defaultOpen ?? true);
+  const [showAll, setShowAll] = useState(defaultShowAll ?? false);
+
+  useEffect(() => {
+    if (defaultOpen !== undefined) {
+      setIsOpen(defaultOpen);
+    }
+  }, [defaultOpen]);
+
+  useEffect(() => {
+    if (defaultShowAll !== undefined) {
+      setShowAll(defaultShowAll);
+    }
+  }, [defaultShowAll]);
 
   if (suggestions.length === 0) return null;
 
@@ -206,6 +245,8 @@ export const InboxListView: React.FC<InboxListViewProps> = ({
   onDismissSuggestion,
   onSnoozeSuggestion,
   onSelectActivity,
+  suggestionsDefaultOpen,
+  suggestionsDefaultShowAll,
 }) => {
   return (
     <div className="space-y-6">
@@ -215,6 +256,8 @@ export const InboxListView: React.FC<InboxListViewProps> = ({
         onAccept={onAcceptSuggestion}
         onDismiss={onDismissSuggestion}
         onSnooze={onSnoozeSuggestion}
+        defaultOpen={suggestionsDefaultOpen}
+        defaultShowAll={suggestionsDefaultShowAll}
       />
 
       {/* Activities */}
