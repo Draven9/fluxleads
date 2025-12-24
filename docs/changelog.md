@@ -2,6 +2,12 @@
 
 ## 24/12/2025
 
+- **Merge de branches e consolidação na `main`**:
+  - Merge de `chore/migrate-ai-actions-to-tasks`: introdução de endpoints em `/api/ai/tasks/*` (boards/deals/inbox) e migração parcial de chamadas para o novo client (`lib/ai/tasksClient.ts`), removendo rotas legacy.
+  - Merge de `feat/inbox-macro-overview`: evolução grande do Inbox com visão Overview, composer de mensagens, melhorias de UX e adições relacionadas a cockpit/installer.
+  - Compatibilidade: reintroduzido `/api/ai/actions` + `lib/supabase/ai-proxy.ts`/`lib/ai/actionsClient.ts` para manter features que ainda dependem do fluxo RPC antigo, enquanto o novo `/api/ai/tasks/*` coexiste.
+  - Correção pós-merge: `test/helpers/salesTeamFixtures.ts` reparado para manter `typecheck` e `vitest` passando.
+
 - **Atualização do AI SDK para versões estáveis (latest)**:
   - `ai`: `6.0.3` (antes: `^6.0.0-beta.157`)
   - `@ai-sdk/react`: `3.0.3` (antes: `^3.0.0-beta.160`)
