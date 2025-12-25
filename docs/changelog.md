@@ -21,6 +21,7 @@
     - UX: ao abrir o modal, a seleção é automaticamente reordenada para seguir a lista (evita “ordem antiga” persistida entre aberturas).
     - Feature: adicionado **Importar JSON (local)** no mesmo modal (upload/colar `journey.json`), com validação e instalação sequencial para preservar a ordem dos boards.
     - UX: modal de templates agora tem layout mais limpo (header simplificado, largura maior e scroll interno) para evitar UI “desconjuntada”.
+    - UX: export/import do template agora é “para leigos” por padrão (ações principais em destaque e detalhes técnicos/JSON escondidos atrás de “Mostrar detalhes técnicos”).
 
 - **Merge de branches e consolidação na `main`**:
   - Merge de `chore/migrate-ai-actions-to-tasks`: introdução de endpoints em `/api/ai/tasks/*` (boards/deals/inbox) e migração parcial de chamadas para o novo client (`lib/ai/tasksClient.ts`), removendo rotas legacy.

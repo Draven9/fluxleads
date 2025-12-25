@@ -168,6 +168,8 @@ export function ExportTemplateModal(props: {
   const [panel, setPanel] = useState<Panel>('export');
   const [mode, setMode] = useState<Mode>('journey');
   const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [showTechnicalDetails, setShowTechnicalDetails] = useState(false);
+  const [showPasteImport, setShowPasteImport] = useState(false);
 
   // Journey metadata
   const [schemaVersion, setSchemaVersion] = useState('1.0');
@@ -184,6 +186,8 @@ export function ExportTemplateModal(props: {
     setPanel('export');
     setMode('journey');
     setAdvancedOpen(false);
+    setShowTechnicalDetails(false);
+    setShowPasteImport(false);
   }, [isOpen]);
 
   useEffect(() => {
@@ -514,9 +518,9 @@ export function ExportTemplateModal(props: {
       {panel === 'import' && (
         <div className="rounded-xl border border-slate-200 dark:border-white/10 p-4 bg-slate-50/50 dark:bg-white/5 space-y-4">
           <div>
-            <div className="text-sm font-bold text-slate-900 dark:text-white">Importar `journey.json` (local)</div>
+            <div className="text-sm font-bold text-slate-900 dark:text-white">Importar template (arquivo JSON)</div>
             <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              Upload de um `journey.json` e instalação imediata dos boards (sem precisar do GitHub/registry).
+              Faça upload do arquivo exportado e clique em <b>Instalar</b>.
             </div>
           </div>
 
@@ -527,12 +531,22 @@ export function ExportTemplateModal(props: {
             className="block w-full text-sm text-slate-600 dark:text-slate-300"
           />
 
-          <textarea
-            value={importText}
-            onChange={e => parseImport(e.target.value)}
-            placeholder="Ou cole o conteúdo do journey.json aqui…"
-            className="w-full min-h-44 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-black/30 px-3 py-2 text-xs font-mono"
-          />
+          <button
+            type="button"
+            onClick={() => setShowPasteImport(v => !v)}
+            className="text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors w-fit"
+          >
+            {showPasteImport ? 'Ocultar opção de colar JSON' : 'Colar JSON manualmente (avançado)'}
+          </button>
+
+          {showPasteImport && (
+            <textarea
+              value={importText}
+              onChange={e => parseImport(e.target.value)}
+              placeholder="Cole o conteúdo do arquivo JSON aqui…"
+              className="w-full min-h-44 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-black/30 px-3 py-2 text-xs font-mono"
+            />
+          )}
 
           {importError && (
             <div className="text-sm text-red-600 dark:text-red-400">{importError}</div>
@@ -562,7 +576,9 @@ export function ExportTemplateModal(props: {
 
       {panel === 'export' && (
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="text-sm font-semibold text-slate-900 dark:text-white">Export</div>
+          <div className="text-sm font-semibold text-slate-900 dark:text-white">
+            Exportar template
+          </div>
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
@@ -592,41 +608,23 @@ export function ExportTemplateModal(props: {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="space-y-4">
           <div className="rounded-xl border border-slate-200 dark:border-white/10 p-4 bg-slate-50/50 dark:bg-white/5">
-            <div className="text-sm font-bold text-slate-900 dark:text-white">1) Baixar `journey.json`</div>
+            <div className="text-sm font-bold text-slate-900 dark:text-white">1) Baixar arquivo do template</div>
             <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              Formato compatível com o import da aba <b>Community</b>.
+              Esse arquivo é o que você vai guardar/publicar na comunidade.
             </div>
 
-            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">schemaVersion</label>
+            {mode === 'journey' && (
+              <div className="mt-4">
+                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">
+                  Nome (aparece na comunidade)
+                </label>
                 <input
-                  value={schemaVersion}
-                  onChange={e => setSchemaVersion(e.target.value)}
+                  value={journeyName}
+                  onChange={e => { setJourneyName(e.target.value); setJourneyNameDirty(true); }}
                   className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-2 text-sm"
                 />
               </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">slug prefix (opcional)</label>
-                <input
-                  value={slugPrefix}
-                  onChange={e => setSlugPrefix(e.target.value)}
-                  placeholder="ex: sales"
-                  className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-2 text-sm"
-                />
-              </div>
-
-              {mode === 'journey' && (
-                <div className="sm:col-span-2">
-                  <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">nome da jornada</label>
-                  <input
-                    value={journeyName}
-                    onChange={e => { setJourneyName(e.target.value); setJourneyNameDirty(true); }}
-                    className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-2 text-sm"
-                  />
-                </div>
-              )}
-            </div>
+            )}
 
             {mode === 'journey' && (
               <div className="mt-4">
@@ -681,61 +679,91 @@ export function ExportTemplateModal(props: {
                 onClick={handleDownloadJourney}
                 className="px-4 py-2 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-sm font-semibold flex items-center gap-2"
               >
-                <Download size={16} /> Baixar journey.json
+                <Download size={16} /> Baixar arquivo
               </button>
               <button
                 type="button"
                 onClick={handleCopyJourneyJson}
                 className="px-4 py-2 rounded-lg bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-sm font-semibold flex items-center gap-2"
               >
-                <Copy size={16} /> Copiar journey.json
+                <Copy size={16} /> Copiar arquivo (texto)
               </button>
             </div>
 
-            <div className="mt-3">
-              <div className="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-2">Preview (`journey.json`)</div>
-              <pre className="text-xs whitespace-pre-wrap rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-black/30 p-3 max-h-56 overflow-auto">
-                {journeyJsonText}
-              </pre>
-            </div>
+            <button
+              type="button"
+              onClick={() => setShowTechnicalDetails(v => !v)}
+              className="mt-3 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors"
+            >
+              {showTechnicalDetails ? 'Ocultar detalhes técnicos' : 'Mostrar detalhes técnicos'}
+            </button>
+
+            {showTechnicalDetails && (
+              <div className="mt-3 space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">schemaVersion</label>
+                    <input
+                      value={schemaVersion}
+                      onChange={e => setSchemaVersion(e.target.value)}
+                      className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-2 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">slug prefix (opcional)</label>
+                    <input
+                      value={slugPrefix}
+                      onChange={e => setSlugPrefix(e.target.value)}
+                      placeholder="ex: sales"
+                      className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-2 text-sm"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-2">Preview (JSON)</div>
+                  <pre className="text-xs whitespace-pre-wrap rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-black/30 p-3 max-h-56 overflow-auto">
+                    {journeyJsonText}
+                  </pre>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
         <div className="space-y-4">
           <div className="rounded-xl border border-slate-200 dark:border-white/10 p-4 bg-slate-50/50 dark:bg-white/5">
-            <div className="text-sm font-bold text-slate-900 dark:text-white">2) Snippet para `registry.json`</div>
+            <div className="text-sm font-bold text-slate-900 dark:text-white">2) Copiar registro da comunidade</div>
             <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              Cole isso na lista `templates` do seu repositório de comunidade.
+              Clique em <b>Copiar snippet</b> e cole no `registry.json` do repositório.
             </div>
 
-              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="mt-4 space-y-3">
               <div>
-                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">id</label>
-                  <input value={templateId} onChange={e => { setTemplateId(e.target.value); setTemplateMetaDirty(true); }} className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-2 text-sm" />
+                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Nome do template</label>
+                <input
+                  value={templateName}
+                  onChange={e => { setTemplateName(e.target.value); setTemplateMetaDirty(true); }}
+                  className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-2 text-sm"
+                />
               </div>
+
               <div>
-                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">path</label>
-                <input value={templatePath} onChange={e => { setTemplatePath(e.target.value); setTemplateMetaDirty(true); }} className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-2 text-sm" />
+                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Descrição</label>
+                <input
+                  value={templateDescription}
+                  onChange={e => { setTemplateDescription(e.target.value); setTemplateMetaDirty(true); }}
+                  className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-2 text-sm"
+                />
               </div>
-              <div className="sm:col-span-2">
-                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">name</label>
-                <input value={templateName} onChange={e => { setTemplateName(e.target.value); setTemplateMetaDirty(true); }} className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-2 text-sm" />
-              </div>
-              <div className="sm:col-span-2">
-                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">description</label>
-                <input value={templateDescription} onChange={e => { setTemplateDescription(e.target.value); setTemplateMetaDirty(true); }} className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-2 text-sm" />
-              </div>
+
               <div>
-                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">author</label>
-                <input value={templateAuthor} onChange={e => { setTemplateAuthor(e.target.value); setTemplateMetaDirty(true); }} className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-2 text-sm" />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">version</label>
-                <input value={templateVersion} onChange={e => { setTemplateVersion(e.target.value); setTemplateMetaDirty(true); }} className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-2 text-sm" />
-              </div>
-              <div className="sm:col-span-2">
-                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">tags (separadas por vírgula)</label>
-                <input value={templateTags} onChange={e => { setTemplateTags(e.target.value); setTemplateMetaDirty(true); }} className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-2 text-sm" />
+                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Tags (separadas por vírgula)</label>
+                <input
+                  value={templateTags}
+                  onChange={e => { setTemplateTags(e.target.value); setTemplateMetaDirty(true); }}
+                  className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-2 text-sm"
+                />
               </div>
             </div>
 
@@ -749,11 +777,48 @@ export function ExportTemplateModal(props: {
               </button>
             </div>
 
-            <div className="mt-3">
-              <pre className="text-xs whitespace-pre-wrap rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-black/30 p-3 max-h-48 overflow-auto">
-                {JSON.stringify(registrySnippet, null, 2)}
-              </pre>
-            </div>
+            {showTechnicalDetails && (
+              <div className="mt-3 space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">id</label>
+                    <input
+                      value={templateId}
+                      onChange={e => { setTemplateId(e.target.value); setTemplateMetaDirty(true); }}
+                      className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-2 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">path</label>
+                    <input
+                      value={templatePath}
+                      onChange={e => { setTemplatePath(e.target.value); setTemplateMetaDirty(true); }}
+                      className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-2 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">author</label>
+                    <input
+                      value={templateAuthor}
+                      onChange={e => { setTemplateAuthor(e.target.value); setTemplateMetaDirty(true); }}
+                      className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-2 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">version</label>
+                    <input
+                      value={templateVersion}
+                      onChange={e => { setTemplateVersion(e.target.value); setTemplateMetaDirty(true); }}
+                      className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-2 text-sm"
+                    />
+                  </div>
+                </div>
+
+                <pre className="text-xs whitespace-pre-wrap rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-black/30 p-3 max-h-48 overflow-auto">
+                  {JSON.stringify(registrySnippet, null, 2)}
+                </pre>
+              </div>
+            )}
           </div>
         </div>
       </div>
