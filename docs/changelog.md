@@ -5,6 +5,8 @@
 - **Jornada “Máquina de Vendas B2B (Completa)”**:
   - Adicionado o estágio/board **CS & Upsell** (4ª etapa), fechando o ciclo pós-onboarding dentro da jornada oficial.
   - Instalação da jornada oficial agora preenche `linkedLifecycleStage` **no nível do board** (além do `linkedLifecycleStage` já existente nas colunas/estágios), deixando os boards “interligados” pelo lifecycle no runtime.
+  - Instalação da jornada (oficial e community) agora também encadeia o fluxo via `nextBoardId` (SDR → Vendas → Onboarding → CS), permitindo **handoff automático** quando o deal atinge o estágio de sucesso.
+  - Correção de regra de “ganho/perda”: quando o board define `wonStageId`/`lostStageId`, o sistema **prioriza esses IDs** (fallback para `linkedLifecycleStage` apenas se não houver configuração) — evita disparos indevidos em boards como Onboarding.
 
 ## 24/12/2025
 

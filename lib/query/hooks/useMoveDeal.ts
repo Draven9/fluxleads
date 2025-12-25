@@ -64,15 +64,15 @@ export const useMoveDeal = () => {
         isWon = false;
         closedAt = new Date().toISOString();
       } else if (
-        (board.wonStageId && targetStageId === board.wonStageId) ||
-        targetStage?.linkedLifecycleStage === 'CUSTOMER'
+        // Prefer explicit won/lost stages when configured on the board.
+        // Fallback to lifecycle hints ONLY when the board doesn't define won/lost IDs.
+        (board.wonStageId ? targetStageId === board.wonStageId : targetStage?.linkedLifecycleStage === 'CUSTOMER')
       ) {
         isWon = true;
         isLost = false;
         closedAt = new Date().toISOString();
       } else if (
-        (board.lostStageId && targetStageId === board.lostStageId) ||
-        targetStage?.linkedLifecycleStage === 'OTHER'
+        (board.lostStageId ? targetStageId === board.lostStageId : targetStage?.linkedLifecycleStage === 'OTHER')
       ) {
         isLost = true;
         isWon = false;
@@ -210,8 +210,12 @@ export const useMoveDeal = () => {
 
       // Determine new status
       const targetStage = board.stages.find(s => s.id === targetStageId);
-      const isWon = explicitWin || targetStage?.linkedLifecycleStage === 'CUSTOMER' || targetStageId === board.wonStageId;
-      const isLost = explicitLost || targetStage?.linkedLifecycleStage === 'OTHER' || targetStageId === board.lostStageId;
+      const isWon =
+        explicitWin
+        || (board.wonStageId ? targetStageId === board.wonStageId : targetStage?.linkedLifecycleStage === 'CUSTOMER');
+      const isLost =
+        explicitLost
+        || (board.lostStageId ? targetStageId === board.lostStageId : targetStage?.linkedLifecycleStage === 'OTHER');
 
       // Optimistically update the cache
       queryClient.setQueriesData<Deal[] | DealView[]>(

@@ -505,6 +505,21 @@ export const useBoardsController = () => {
     }
   };
 
+  /**
+   * Async variant used for flows that must update boards after creation
+   * (ex.: installing an official Journey and linking boards via nextBoardId).
+   */
+  const updateBoardAsync = async (id: string, updates: Partial<Board>) => {
+    try {
+      await updateBoardMutation.mutateAsync({ id, updates });
+    } catch (error) {
+      const err = error as Error;
+      console.error('[updateBoardAsync] Error:', err);
+      addToast(err.message || 'Erro ao atualizar board', 'error');
+      throw err;
+    }
+  };
+
   const handleEditBoard = (board: Board) => {
     setEditingBoard(board);
     setIsCreateBoardModalOpen(true);
@@ -648,6 +663,7 @@ export const useBoardsController = () => {
     handleSelectBoard,
     handleCreateBoard,
     createBoardAsync,
+    updateBoardAsync,
     handleEditBoard,
     handleUpdateBoard,
     handleDeleteBoard,

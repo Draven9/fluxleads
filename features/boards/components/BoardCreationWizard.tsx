@@ -18,6 +18,13 @@ interface BoardCreationWizardProps {
   isOpen: boolean;
   onClose: () => void;
   onCreate: (board: Omit<Board, 'id' | 'createdAt'>, order?: number) => void;
+  /**
+   * Async create used for flows that must chain steps and then update boards
+   * (ex.: installing Journeys and linking boards via nextBoardId).
+   */
+  onCreateBoardAsync?: (board: Omit<Board, 'id' | 'createdAt'>, order?: number) => Promise<Board>;
+  /** Async update used to set nextBoardId after all boards are created. */
+  onUpdateBoardAsync?: (id: string, updates: Partial<Board>) => Promise<void>;
   onOpenCustomModal: () => void;
 }
 
@@ -56,6 +63,8 @@ export const BoardCreationWizard: React.FC<BoardCreationWizardProps> = ({
   isOpen,
   onClose,
   onCreate,
+  onCreateBoardAsync,
+  onUpdateBoardAsync,
   onOpenCustomModal,
 }) => {
   const router = useRouter();
@@ -175,6 +184,7 @@ export const BoardCreationWizard: React.FC<BoardCreationWizardProps> = ({
       const journey = await fetchTemplateJourney(templatePath);
 
       // Install all boards in the journey with sequential order
+      const createdBoards: Board[] = [];
       for (let i = 0; i < journey.boards.length; i++) {
         const boardDef = journey.boards[i];
         const boardStages: BoardStage[] = boardDef.columns.map(c => ({
@@ -184,19 +194,38 @@ export const BoardCreationWizard: React.FC<BoardCreationWizardProps> = ({
           linkedLifecycleStage: c.linkedLifecycleStage,
         }));
 
-        onCreate({
+        const guessed = guessWonLostStageIds(boardStages);
+        const inferredBoardLifecycleStage = boardDef.columns.find(c => c.linkedLifecycleStage)?.linkedLifecycleStage;
+
+        const payload: Omit<Board, 'id' | 'createdAt'> = {
           name: boardDef.name,
           description: `Parte da jornada: ${journey.boards.length > 1 ? 'Sim' : 'Não'}`,
-          // Journey templates can define lifecycle linkage at the *column* level; we keep the board-level linkage optional.
-          linkedLifecycleStage: undefined,
+          // Community journeys may not declare board-level linkage. We infer it from the first column that has linkage.
+          linkedLifecycleStage: inferredBoardLifecycleStage,
           template: 'CUSTOM',
           stages: boardStages,
           isDefault: false,
+          wonStageId: guessed.wonStageId || undefined,
+          lostStageId: guessed.lostStageId || undefined,
           // Strategy
           agentPersona: boardDef.strategy?.agentPersona,
           goal: boardDef.strategy?.goal,
           entryTrigger: boardDef.strategy?.entryTrigger,
-        }, i); // Pass index as relative order
+        };
+
+        if (onCreateBoardAsync) {
+          const created = await onCreateBoardAsync(payload, i);
+          createdBoards.push(created);
+        } else {
+          onCreate(payload, i); // Pass index as relative order
+        }
+      }
+
+      // Link boards sequentially (handoff) when async updater is available.
+      if (onUpdateBoardAsync && createdBoards.length > 1) {
+        for (let i = 0; i < createdBoards.length - 1; i += 1) {
+          await onUpdateBoardAsync(createdBoards[i].id, { nextBoardId: createdBoards[i + 1].id });
+        }
       }
 
       onClose();
@@ -225,6 +254,7 @@ export const BoardCreationWizard: React.FC<BoardCreationWizardProps> = ({
 
     // Install all boards in the journey with sequential order
     // Each board gets an incrementing order to maintain sequence
+    const createdBoards: Board[] = [];
     for (let i = 0; i < journey.boards.length; i++) {
       const boardDef = journey.boards[i];
       const boardStages: BoardStage[] = boardDef.columns.map(c => ({
@@ -234,19 +264,49 @@ export const BoardCreationWizard: React.FC<BoardCreationWizardProps> = ({
         linkedLifecycleStage: c.linkedLifecycleStage,
       }));
 
+      const templateBySlug: Record<string, BoardTemplateType> = {
+        sdr: 'PRE_SALES',
+        sales: 'SALES',
+        onboarding: 'ONBOARDING',
+        cs: 'CS',
+      };
+      const template = BOARD_TEMPLATES[templateBySlug[boardDef.slug] ?? 'CUSTOM'];
+      const guessed = guessWonLostStageIds(boardStages, {
+        wonLabel: template.defaultWonStageLabel,
+        lostLabel: template.defaultLostStageLabel,
+      });
+
       // Pass index as order - this will be added to the current max order in the service
-      onCreate({
+      const payload: Omit<Board, 'id' | 'createdAt'> = {
         name: boardDef.name,
         description: `Parte da jornada: ${journey.boards.length > 1 ? 'Sim' : 'Não'}`,
         linkedLifecycleStage: boardLifecycleBySlug[boardDef.slug],
         template: 'CUSTOM',
         stages: boardStages,
         isDefault: false,
+        wonStageId: guessed.wonStageId || undefined,
+        lostStageId: guessed.lostStageId || undefined,
         agentPersona: boardDef.strategy?.agentPersona,
         goal: boardDef.strategy?.goal,
         entryTrigger: boardDef.strategy?.entryTrigger,
-      }, i); // Pass index as relative order
+      };
+
+      if (onCreateBoardAsync) {
+        const created = await onCreateBoardAsync(payload, i);
+        createdBoards.push(created);
+      } else {
+        onCreate(payload, i); // Pass index as relative order
+      }
     }
+
+    // Link boards sequentially (handoff) for official journeys.
+    // This enables: SDR → Sales → Onboarding → CS, when deals reach "success" stages.
+    if (onUpdateBoardAsync && createdBoards.length > 1) {
+      for (let i = 0; i < createdBoards.length - 1; i += 1) {
+        await onUpdateBoardAsync(createdBoards[i].id, { nextBoardId: createdBoards[i + 1].id });
+      }
+    }
+
     onClose();
     handleReset();
   };
