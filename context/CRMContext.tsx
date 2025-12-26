@@ -167,6 +167,11 @@ interface CRMContextType {
   setAiApiKey: (key: string) => Promise<void>;
   aiModel: string;
   setAiModel: (model: string) => Promise<void>;
+  aiOrgEnabled: boolean;
+  setAiOrgEnabled: (enabled: boolean) => Promise<void>;
+  aiKeyConfigured: boolean;
+  aiFeatureFlags: Record<string, boolean>;
+  setAIFeatureFlag: (key: string, enabled: boolean) => Promise<void>;
   aiThinking: boolean;
   setAiThinking: (enabled: boolean) => Promise<void>;
   aiSearch: boolean;
@@ -270,6 +275,11 @@ const CRMInnerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     setAiApiKey,
     aiModel,
     setAiModel,
+    aiOrgEnabled,
+    setAiOrgEnabled,
+    aiKeyConfigured,
+    aiFeatureFlags,
+    setAIFeatureFlag,
     aiThinking,
     setAiThinking,
     aiSearch,
@@ -683,6 +693,11 @@ const CRMInnerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
       setAiApiKey,
       aiModel,
       setAiModel,
+      aiOrgEnabled,
+      setAiOrgEnabled,
+      aiKeyConfigured,
+      aiFeatureFlags,
+      setAIFeatureFlag,
       aiThinking,
       setAiThinking,
       aiSearch,
@@ -753,6 +768,11 @@ const CRMInnerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
       setAiApiKey,
       aiModel,
       setAiModel,
+      aiOrgEnabled,
+      setAiOrgEnabled,
+      aiKeyConfigured,
+      aiFeatureFlags,
+      setAIFeatureFlag,
       aiThinking,
       setAiThinking,
       aiSearch,

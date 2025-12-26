@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useCRM } from '@/context/CRMContext';
 import { Bot, Key, Cpu, CheckCircle, AlertCircle, Loader2, Save, Trash2, ChevronDown, ChevronUp, Shield } from 'lucide-react';
 import { useToast } from '@/context/ToastContext';
+import { useAuth } from '@/context/AuthContext';
 
 // Performance: keep provider/model catalog outside the component to avoid reallocations on every render.
 const AI_PROVIDERS = [
@@ -127,10 +128,14 @@ async function validateApiKey(provider: string, apiKey: string, model: string): 
 }
 
 export const AIConfigSection: React.FC = () => {
+    const { profile } = useAuth();
+    const isAdmin = profile?.role === 'admin';
+
     const {
         aiProvider, setAiProvider,
         aiApiKey, setAiApiKey,
         aiModel, setAiModel,
+        aiKeyConfigured,
         aiThinking, setAiThinking,
         aiSearch, setAiSearch,
         aiAnthropicCaching, setAiAnthropicCaching
@@ -145,7 +150,9 @@ export const AIConfigSection: React.FC = () => {
         aiApiKey ? 'valid' : 'idle'
     );
     const [validationError, setValidationError] = useState<string | null>(null);
-    const [lgpdExpanded, setLgpdExpanded] = useState(true); // Expandido por padrão
+    // UX: mostrar LGPD expandido apenas quando ainda NÃO há key salva (primeira configuração).
+    // Depois que a key existe, manter colapsado por padrão para não “inflar” a tela.
+    const [lgpdExpanded, setLgpdExpanded] = useState(!aiApiKey);
 
     // Sync local state when context changes (ex: carregamento inicial)
     useEffect(() => {
@@ -153,6 +160,8 @@ export const AIConfigSection: React.FC = () => {
         if (aiApiKey) {
             setValidationStatus('valid'); // Assume válida se já estava salva
         }
+        // Se já existe key salva, manter LGPD colapsado por padrão.
+        setLgpdExpanded(!aiApiKey);
     }, [aiApiKey]);
 
     // Reset validation apenas quando usuário EDITA a key (não no carregamento)
@@ -187,6 +196,8 @@ export const AIConfigSection: React.FC = () => {
             setValidationStatus('valid');
             try {
                 await setAiApiKey(localApiKey);
+                // UX: após salvar uma key válida, colapsar LGPD automaticamente.
+                setLgpdExpanded(false);
                 showToast('Chave de API validada e salva!', 'success');
             } catch (err) {
                 showToast(err instanceof Error ? err.message : 'Falha ao salvar chave de API', 'error');
@@ -269,21 +280,43 @@ export const AIConfigSection: React.FC = () => {
     };
 
     return (
-        <div id="ai-config" className="mt-8 border-t border-slate-200 dark:border-white/10 pt-8 scroll-mt-8">
-            <div className="flex items-center gap-3 mb-6">
-                <div className="p-2 bg-purple-100 dark:bg-purple-900/20 rounded-lg text-purple-600 dark:text-purple-400">
+        <div id="ai-config" className="mt-6 border-t border-slate-200 dark:border-white/10 pt-6 scroll-mt-8">
+            <div className="flex items-center gap-3 mb-4">
+                <div className="p-1.5 bg-purple-100 dark:bg-purple-900/20 rounded-lg text-purple-600 dark:text-purple-400">
                     <Bot size={24} />
                 </div>
                 <div>
-                    <h2 className="text-xl font-bold text-slate-900 dark:text-white font-display">Inteligência Artificial</h2>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">Configure qual cérebro vai alimentar seu CRM.</p>
+                    <h2 className="text-lg font-bold text-slate-900 dark:text-white font-display">Inteligência Artificial</h2>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Configure qual cérebro vai alimentar seu CRM.</p>
                 </div>
             </div>
 
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 rounded-xl p-6 shadow-sm space-y-6">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 rounded-xl p-4 shadow-sm space-y-4">
+
+                {/* Non-admin read-only summary */}
+                {!isAdmin && (
+                    <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-white/10 rounded-lg p-3">
+                        <div className="text-sm text-slate-700 dark:text-slate-200">
+                            <span className="font-semibold">Status:</span> Configurado pela organização
+                        </div>
+                        <div className="text-sm text-slate-700 dark:text-slate-200 mt-1">
+                            <span className="font-semibold">Provedor:</span> {aiProvider}
+                        </div>
+                        <div className="text-sm text-slate-700 dark:text-slate-200 mt-1">
+                            <span className="font-semibold">Modelo:</span> {aiModel}
+                        </div>
+                        <div className="text-sm text-slate-700 dark:text-slate-200 mt-1">
+                            <span className="font-semibold">Chave:</span> {aiKeyConfigured ? 'configurada' : 'não configurada'}
+                        </div>
+                    </div>
+                )}
+
+                {/* Admin-only config UI */}
+                {!isAdmin ? null : (
+                    <>
 
                 {/* Provider Selection */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                         <label htmlFor="ai-provider-select" className="text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
                             <Cpu size={14} /> Provedor de IA
@@ -293,7 +326,7 @@ export const AIConfigSection: React.FC = () => {
                                 id="ai-provider-select"
                                 value={aiProvider}
                                 onChange={handleProviderChange}
-                                className="w-full appearance-none bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-lg px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 outline-none transition-all"
+                                className="w-full appearance-none bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 outline-none transition-all"
                             >
                                 {AI_PROVIDERS.map(p => (
                                     <option key={p.id} value={p.id}>{p.name}</option>
@@ -332,7 +365,7 @@ export const AIConfigSection: React.FC = () => {
                                         showToast(err instanceof Error ? err.message : 'Falha ao atualizar modelo', 'error');
                                     }
                                 }}
-                                className="w-full appearance-none bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-lg px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 outline-none transition-all"
+                                className="w-full appearance-none bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 outline-none transition-all"
                             >
                                 {currentProvider?.models.map(m => (
                                     <option key={m.id} value={m.id}>
@@ -356,7 +389,7 @@ export const AIConfigSection: React.FC = () => {
                                         setCustomModelDirty(true);
                                     }}
                                     placeholder="Digite o ID do modelo (ex: gemini-1.5-pro-latest)"
-                                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-lg px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 outline-none transition-all"
+                                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 outline-none transition-all"
                                 />
                                 <p className="text-xs text-slate-500 mt-1">
                                     Consulte a documentação do provedor para obter o ID correto.
@@ -414,7 +447,7 @@ export const AIConfigSection: React.FC = () => {
 
                 {/* Google Thinking Config */}
                 {aiProvider === 'google' && (
-                    <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-500/20 rounded-lg p-4 animate-in fade-in slide-in-from-top-2">
+                    <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-500/20 rounded-lg p-3 animate-in fade-in slide-in-from-top-2">
                         <div className="flex items-center justify-between">
                             <div>
                                 <h3 className="font-medium text-blue-900 dark:text-blue-100 flex items-center gap-2">
@@ -440,7 +473,7 @@ export const AIConfigSection: React.FC = () => {
 
                 {/* Anthropic Prompt Caching Config */}
                 {aiProvider === 'anthropic' && (
-                    <div className="bg-orange-50 dark:bg-orange-900/10 border border-orange-100 dark:border-orange-500/20 rounded-lg p-4 animate-in fade-in slide-in-from-top-2">
+                    <div className="bg-orange-50 dark:bg-orange-900/10 border border-orange-100 dark:border-orange-500/20 rounded-lg p-3 animate-in fade-in slide-in-from-top-2">
                         <div className="flex items-center justify-between">
                             <div>
                                 <h3 className="font-medium text-orange-900 dark:text-orange-100 flex items-center gap-2">
@@ -466,7 +499,7 @@ export const AIConfigSection: React.FC = () => {
 
                 {/* Search Config (Google & Anthropic) */}
                 {(aiProvider === 'google' || aiProvider === 'anthropic') && (
-                    <div className="bg-green-50 dark:bg-green-900/10 border border-green-100 dark:border-green-500/20 rounded-lg p-4 animate-in fade-in slide-in-from-top-2">
+                    <div className="bg-green-50 dark:bg-green-900/10 border border-green-100 dark:border-green-500/20 rounded-lg p-3 animate-in fade-in slide-in-from-top-2">
                         <div className="flex items-center justify-between">
                             <div>
                                 <h3 className="font-medium text-green-900 dark:text-green-100 flex items-center gap-2">
@@ -502,7 +535,7 @@ export const AIConfigSection: React.FC = () => {
                                 value={localApiKey}
                                 onChange={(e) => handleKeyChange(e.target.value)}
                                 placeholder={`Cole sua chave ${aiProvider === 'google' ? 'AIza...' : 'sk-...'}`}
-                                className={`w-full bg-slate-50 dark:bg-slate-800 border rounded-lg px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 outline-none transition-all font-mono ${validationStatus === 'invalid'
+                                className={`w-full bg-slate-50 dark:bg-slate-800 border rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 outline-none transition-all font-mono ${validationStatus === 'invalid'
                                         ? 'border-red-300 dark:border-red-500/50'
                                         : validationStatus === 'valid'
                                             ? 'border-green-300 dark:border-green-500/50'
@@ -524,7 +557,7 @@ export const AIConfigSection: React.FC = () => {
                         <button
                             onClick={handleSaveApiKey}
                             disabled={isValidating || !localApiKey.trim() || (!hasUnsavedChanges && validationStatus === 'valid')}
-                            className={`px-4 py-2.5 rounded-lg text-sm font-medium flex items-center gap-2 transition-all ${isValidating || !localApiKey.trim() || (!hasUnsavedChanges && validationStatus === 'valid')
+                            className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all ${isValidating || !localApiKey.trim() || (!hasUnsavedChanges && validationStatus === 'valid')
                                     ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed'
                                     : 'bg-purple-600 hover:bg-purple-700 text-white shadow-lg shadow-purple-600/20'
                                 }`}
@@ -545,7 +578,7 @@ export const AIConfigSection: React.FC = () => {
                             <button
                                 onClick={handleRemoveApiKey}
                                 disabled={isValidating}
-                                className="px-3 py-2.5 rounded-lg text-sm font-medium flex items-center gap-1 transition-all text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 border border-red-200 dark:border-red-500/30"
+                                className="px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-1 transition-all text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 border border-red-200 dark:border-red-500/30"
                                 title="Remover chave"
                             >
                                 <Trash2 size={16} />
@@ -567,7 +600,7 @@ export const AIConfigSection: React.FC = () => {
                         <button
                             type="button"
                             onClick={() => setLgpdExpanded(!lgpdExpanded)}
-                            className="w-full flex items-center justify-between p-3 bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
+                            className="w-full flex items-center justify-between p-2.5 bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
                         >
                             <div className="flex items-center gap-2">
                                 <Shield size={16} className="text-amber-600 dark:text-amber-400" />
@@ -583,7 +616,7 @@ export const AIConfigSection: React.FC = () => {
                         </button>
 
                         {lgpdExpanded && (
-                            <div className="p-4 bg-amber-50/50 dark:bg-amber-900/10 space-y-3 animate-in slide-in-from-top-2 duration-200">
+                            <div className="p-3 bg-amber-50/50 dark:bg-amber-900/10 space-y-3 animate-in slide-in-from-top-2 duration-200">
                                 <div className="space-y-2 text-sm text-amber-900 dark:text-amber-100">
                                     <p className="font-medium">
                                         Ao salvar sua chave de API, você autoriza:
@@ -616,7 +649,7 @@ export const AIConfigSection: React.FC = () => {
                 </div>
 
                 {/* Status Banner - use localApiKey para refletir estado atual após salvar */}
-                <div className={`rounded-lg p-4 flex items-start gap-3 ${validationStatus === 'valid' && localApiKey
+                <div className={`rounded-lg p-3 flex items-start gap-3 ${validationStatus === 'valid' && localApiKey
                         ? 'bg-green-50 dark:bg-green-900/10 text-green-800 dark:text-green-200'
                         : validationStatus === 'invalid'
                             ? 'bg-red-50 dark:bg-red-900/10 text-red-800 dark:text-red-200'
@@ -645,6 +678,8 @@ export const AIConfigSection: React.FC = () => {
                     </div>
                 </div>
 
+                    </>
+                )}
             </div>
         </div>
     );

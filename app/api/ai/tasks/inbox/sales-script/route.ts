@@ -2,6 +2,9 @@ import { generateText } from 'ai';
 import { z } from 'zod';
 import { requireAITaskContext, AITaskHttpError } from '@/lib/ai/tasks/server';
 import { GenerateSalesScriptInputSchema } from '@/lib/ai/tasks/schemas';
+import { getResolvedPrompt } from '@/lib/ai/prompts/server';
+import { renderPromptTemplate } from '@/lib/ai/prompts/render';
+import { isAIFeatureEnabled } from '@/lib/ai/features/server';
 
 export const maxDuration = 60;
 
@@ -14,17 +17,27 @@ function json(body: unknown, status = 200): Response {
 
 export async function POST(req: Request) {
   try {
-    const { model } = await requireAITaskContext(req);
+    const { model, supabase, organizationId } = await requireAITaskContext(req);
+    const enabled = await isAIFeatureEnabled(supabase as any, organizationId, 'ai_sales_script');
+    if (!enabled) {
+      return json({ error: { code: 'AI_FEATURE_DISABLED', message: 'Função de IA desativada: Script de vendas.' } }, 403);
+    }
 
     const body = await req.json().catch(() => null);
     const { deal, scriptType, context } = GenerateSalesScriptInputSchema.parse(body);
 
+    const resolved = await getResolvedPrompt(supabase, organizationId, 'task_inbox_sales_script');
+    const template = resolved?.content || '';
+    const prompt = renderPromptTemplate(template, {
+      scriptType: scriptType || 'geral',
+      dealTitle: deal?.title || '',
+      context: context || '',
+    });
+
     const result = await generateText({
       model,
       maxRetries: 3,
-      prompt: `Gere script de vendas (${scriptType || 'geral'}).
-Deal: ${deal?.title}. Contexto: ${context || ''}.
-Seja natural, 4 parágrafos max. Português do Brasil.`,
+      prompt,
     });
 
     return json({ script: result.text, scriptType, generatedFor: deal?.title });

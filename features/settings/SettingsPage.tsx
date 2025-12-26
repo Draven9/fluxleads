@@ -9,12 +9,13 @@ import { WebhooksSection } from './components/WebhooksSection';
 import { AIConfigSection } from './components/AIConfigSection';
 import { DataStorageSettings } from './components/DataStorageSettings';
 import { ProductsCatalogManager } from './components/ProductsCatalogManager';
+import { AICenterSettings } from './AICenterSettings';
 
 import { UsersPage } from './UsersPage';
 import { useAuth } from '@/context/AuthContext';
-import { Settings as SettingsIcon, Users, Database } from 'lucide-react';
+import { Settings as SettingsIcon, Users, Database, Sparkles } from 'lucide-react';
 
-type SettingsTab = 'general' | 'data' | 'users';
+type SettingsTab = 'general' | 'ai' | 'data' | 'users';
 
 interface GeneralSettingsProps {
   hash?: string;
@@ -118,7 +119,9 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ tab: initialTab }) => {
 
   // Determine tab from pathname if available
   useEffect(() => {
-    if (pathname?.includes('/settings/data')) {
+    if (pathname?.includes('/settings/ai')) {
+      setActiveTab('ai');
+    } else if (pathname?.includes('/settings/data')) {
       setActiveTab('data');
     } else if (pathname?.includes('/settings/users')) {
       setActiveTab('users');
@@ -129,12 +132,15 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ tab: initialTab }) => {
 
   const tabs = [
     { id: 'general' as SettingsTab, name: 'Geral', icon: SettingsIcon },
+    { id: 'ai' as SettingsTab, name: 'Central de I.A', icon: Sparkles },
     { id: 'data' as SettingsTab, name: 'Dados', icon: Database },
     ...(profile?.role === 'admin' ? [{ id: 'users' as SettingsTab, name: 'Equipe', icon: Users }] : []),
   ];
 
   const renderContent = () => {
     switch (activeTab) {
+      case 'ai':
+        return <AICenterSettings />;
       case 'data':
         return <DataStorageSettings />;
       case 'users':

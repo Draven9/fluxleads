@@ -2,6 +2,9 @@ import { generateObject } from 'ai';
 import { z } from 'zod';
 import { requireAITaskContext, AITaskHttpError } from '@/lib/ai/tasks/server';
 import { AnalyzeLeadInputSchema, AnalyzeLeadOutputSchema } from '@/lib/ai/tasks/schemas';
+import { getResolvedPrompt } from '@/lib/ai/prompts/server';
+import { renderPromptTemplate } from '@/lib/ai/prompts/render';
+import { isAIFeatureEnabled } from '@/lib/ai/features/server';
 
 export const maxDuration = 60;
 
@@ -14,7 +17,11 @@ function json(body: unknown, status = 200): Response {
 
 export async function POST(req: Request) {
   try {
-    const { model } = await requireAITaskContext(req);
+    const { model, supabase, organizationId } = await requireAITaskContext(req);
+    const enabled = await isAIFeatureEnabled(supabase as any, organizationId, 'ai_deal_analyze');
+    if (!enabled) {
+      return json({ error: { code: 'AI_FEATURE_DISABLED', message: 'Função de IA desativada: Análise de deal.' } }, 403);
+    }
 
     const body = await req.json().catch(() => null);
     const { deal, stageLabel } = AnalyzeLeadInputSchema.parse(body);
@@ -22,23 +29,19 @@ export async function POST(req: Request) {
     const value = deal?.value ?? 0;
     const formattedValue = typeof value === 'number' ? value.toLocaleString('pt-BR') : String(value);
 
+    const resolved = await getResolvedPrompt(supabase, organizationId, 'task_deals_analyze');
+    const prompt = renderPromptTemplate(resolved?.content || '', {
+      dealTitle: deal?.title || '',
+      dealValue: formattedValue,
+      stageLabel: stageLabel || deal?.status || '',
+      probability: deal?.probability || 50,
+    });
+
     const result = await generateObject({
       model,
       maxRetries: 3,
       schema: AnalyzeLeadOutputSchema,
-      prompt: `Você é um coach de vendas analisando um deal de CRM. Seja DIRETO e ACIONÁVEL.
-DEAL:
-- Título: ${deal?.title}
-- Valor: R$ ${formattedValue}
-- Estágio: ${stageLabel || deal?.status}
-- Probabilidade: ${deal?.probability || 50}%
-RETORNE:
-1. action: Verbo no infinitivo + complemento curto (máx 50 chars).
-2. reason: Por que fazer isso AGORA (máx 80 chars).
-3. actionType: CALL, MEETING, EMAIL, TASK ou WHATSAPP
-4. urgency: low, medium, high
-5. probabilityScore: 0-100
-Seja conciso. Português do Brasil.`,
+      prompt,
     });
 
     return json(result.object);

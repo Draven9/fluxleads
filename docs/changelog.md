@@ -5,10 +5,20 @@
 - **Settings (IA)**:
   - UI de configuração de IA mais compacta (redução de paddings/margens para não “inflar” a tela).
   - Bloco de **Consentimento LGPD** agora inicia **colapsado quando já existe API key** salva e **colapsa automaticamente após salvar** uma key válida.
+  - Toggle **“IA ativa na organização”** (admin): permite desligar/ligar IA para toda a equipe; endpoints `/api/ai/*` respeitam e bloqueiam chamadas quando desligado.
+  - Segurança: `GET /api/settings/ai` não retorna mais as **API keys** para membros (não-admin); apenas flags “tem key configurada”.
+  - Flags por função: admin pode habilitar/desabilitar funções específicas de IA (script, briefing, análise, e-mail, objeções, boards, chat do agente).
 
 - **Central de I.A (Configurações)**:
   - Nova aba/rota `/settings/ai` para concentrar tudo relacionado a IA (configuração + prompts).
   - Ajustados links internos para apontar para `/settings/ai#ai-config`.
+  - Toggle “IA ativa na organização” movido para o topo da Central (sempre visível); admin-only.
+- **Central de I.A (Prompts)**:
+  - UI redesenhada para ficar mais “produto”: busca, filtro por categoria, lista compacta e detalhes sob demanda.
+  - Refinamento adicional: ações mais discretas (ícones), “Reset” só aparece quando há override e detalhes mostram variáveis como chips.
+  - Ajuste final: lista estilo “tabela” com colunas alinhadas e ações **somente com ícones** (Reset aparece só no hover).
+  - Refinamento visual: padrão “iOS Settings” (segmented control, lista agrupada com cells, ações como glyphs sem caixas).
+  - Atalho “Funções de IA” na área de Prompts para rolar direto até os toggles por função.
 - **CRUD inicial de Prompts (por organização)**:
   - Migration `supabase/migrations/20251225000000_ai_prompts.sql` cria `ai_prompt_templates` com versionamento simples (1 ativo por `key`).
   - APIs `app/api/settings/ai-prompts` (listar overrides ativos + salvar nova versão) e `app/api/settings/ai-prompts/[key]` (listar versões + reset).

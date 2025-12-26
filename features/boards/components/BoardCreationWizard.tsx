@@ -1318,7 +1318,7 @@ export const BoardCreationWizard: React.FC<BoardCreationWizardProps> = ({
                       <button
                         onClick={() => {
                           onClose();
-                          router.push('/settings#ai-config');
+                          router.push('/settings/ai#ai-config');
                         }}
                         className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-white/10 hover:bg-slate-50 dark:hover:bg-white/15 text-slate-800 dark:text-white font-semibold rounded-lg border border-slate-200 dark:border-white/10 transition-colors"
                         type="button"

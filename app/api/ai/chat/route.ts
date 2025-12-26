@@ -6,6 +6,7 @@ import { createCRMAgent } from '@/lib/ai/crmAgent';
 import { createClient } from '@/lib/supabase/server';
 import type { CRMCallOptions } from '@/types/ai';
 import { isAllowedOrigin } from '@/lib/security/sameOrigin';
+import { isAIFeatureEnabled } from '@/lib/ai/features/server';
 
 export const maxDuration = 60;
 
@@ -125,9 +126,25 @@ export async function POST(req: Request) {
     // 3. Get AI settings (org-wide: organization_settings é a fonte de verdade)
     const { data: orgSettings } = await supabase
         .from('organization_settings')
-        .select('ai_provider, ai_model, ai_google_key, ai_openai_key, ai_anthropic_key')
+        .select('ai_enabled, ai_provider, ai_model, ai_google_key, ai_openai_key, ai_anthropic_key')
         .eq('organization_id', organizationId)
         .maybeSingle();
+
+    const aiEnabled = typeof (orgSettings as any)?.ai_enabled === 'boolean' ? (orgSettings as any).ai_enabled : true;
+    if (!aiEnabled) {
+        return new Response(
+            'IA desativada pela organização. Um admin pode ativar em Configurações → Central de I.A.',
+            { status: 403 }
+        );
+    }
+
+    const chatEnabled = await isAIFeatureEnabled(supabase as any, organizationId, 'ai_chat_agent');
+    if (!chatEnabled) {
+        return new Response(
+            'Função de IA desativada: Chat do agente (Pilot).',
+            { status: 403 }
+        );
+    }
 
     const provider = (orgSettings?.ai_provider ?? 'google') as AIProvider;
     const modelId: string | null = orgSettings?.ai_model ?? null;

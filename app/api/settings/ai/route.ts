@@ -15,6 +15,7 @@ type Provider = 'google' | 'openai' | 'anthropic';
 
 const UpdateOrgAISettingsSchema = z
   .object({
+    aiEnabled: z.boolean().optional(),
     aiProvider: z.enum(['google', 'openai', 'anthropic']).optional(),
     aiModel: z.string().min(1).max(200).optional(),
     aiGoogleKey: z.string().optional(),
@@ -46,7 +47,7 @@ export async function GET() {
 
   const { data: orgSettings, error: orgError } = await supabase
     .from('organization_settings')
-    .select('ai_provider, ai_model, ai_google_key, ai_openai_key, ai_anthropic_key')
+    .select('ai_enabled, ai_provider, ai_model, ai_google_key, ai_openai_key, ai_anthropic_key')
     .eq('organization_id', profile.organization_id)
     .maybeSingle();
 
@@ -54,12 +55,33 @@ export async function GET() {
     return json({ error: orgError.message }, 500);
   }
 
+  const aiEnabled = typeof orgSettings?.ai_enabled === 'boolean' ? orgSettings.ai_enabled : true;
+
+  // Security: members should NOT receive raw API keys.
+  if (profile.role !== 'admin') {
+    return json({
+      aiEnabled,
+      aiProvider: (orgSettings?.ai_provider || 'google') as Provider,
+      aiModel: orgSettings?.ai_model || 'gemini-2.5-flash',
+      aiGoogleKey: '',
+      aiOpenaiKey: '',
+      aiAnthropicKey: '',
+      aiHasGoogleKey: Boolean(orgSettings?.ai_google_key),
+      aiHasOpenaiKey: Boolean(orgSettings?.ai_openai_key),
+      aiHasAnthropicKey: Boolean(orgSettings?.ai_anthropic_key),
+    });
+  }
+
   return json({
+    aiEnabled,
     aiProvider: (orgSettings?.ai_provider || 'google') as Provider,
     aiModel: orgSettings?.ai_model || 'gemini-2.5-flash',
     aiGoogleKey: orgSettings?.ai_google_key || '',
     aiOpenaiKey: orgSettings?.ai_openai_key || '',
     aiAnthropicKey: orgSettings?.ai_anthropic_key || '',
+    aiHasGoogleKey: Boolean(orgSettings?.ai_google_key),
+    aiHasOpenaiKey: Boolean(orgSettings?.ai_openai_key),
+    aiHasAnthropicKey: Boolean(orgSettings?.ai_anthropic_key),
   });
 }
 
@@ -113,6 +135,7 @@ export async function POST(req: Request) {
     updated_at: new Date().toISOString(),
   };
 
+  if (updates.aiEnabled !== undefined) dbUpdates.ai_enabled = updates.aiEnabled;
   if (updates.aiProvider !== undefined) dbUpdates.ai_provider = updates.aiProvider;
   if (updates.aiModel !== undefined) dbUpdates.ai_model = updates.aiModel;
 

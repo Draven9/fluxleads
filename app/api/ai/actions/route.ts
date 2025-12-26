@@ -17,6 +17,9 @@ import { getModel, type AIProvider } from '@/services/ai/config';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { isAllowedOrigin } from '@/lib/security/sameOrigin';
+import { getResolvedPrompt } from '@/lib/ai/prompts/server';
+import { renderPromptTemplate } from '@/lib/ai/prompts/render';
+import { isAIFeatureEnabled } from '@/lib/ai/features/server';
 
 export const maxDuration = 60;
 
@@ -164,9 +167,43 @@ export async function POST(req: Request) {
 
   const { data: orgSettings, error: orgError } = await supabase
     .from('organization_settings')
-    .select('ai_provider, ai_model, ai_google_key, ai_openai_key, ai_anthropic_key')
+    .select('ai_enabled, ai_provider, ai_model, ai_google_key, ai_openai_key, ai_anthropic_key')
     .eq('organization_id', profile.organization_id)
     .single();
+
+  const aiEnabled = typeof (orgSettings as any)?.ai_enabled === 'boolean' ? (orgSettings as any).ai_enabled : true;
+  if (!aiEnabled) {
+    return json<AIActionResponse>(
+      { error: 'IA desativada pela organização. Um admin pode ativar em Configurações → Central de I.A.' },
+      403
+    );
+  }
+
+  // Feature flag per action (default: enabled)
+  const featureKeyByAction: Partial<Record<AIAction, string>> = {
+    analyzeLead: 'ai_deal_analyze',
+    generateEmailDraft: 'ai_email_draft',
+    generateObjectionResponse: 'ai_objection_responses',
+    generateDailyBriefing: 'ai_daily_briefing',
+    generateSalesScript: 'ai_sales_script',
+    generateBoardStructure: 'ai_board_generate_structure',
+    generateBoardStrategy: 'ai_board_generate_strategy',
+    refineBoardWithAI: 'ai_board_refine',
+    chatWithBoardAgent: 'ai_chat_agent',
+    chatWithCRM: 'ai_chat_agent',
+    rewriteMessageDraft: 'ai_email_draft',
+  };
+
+  const featureKey = featureKeyByAction[action];
+  if (featureKey) {
+    const enabled = await isAIFeatureEnabled(supabase as any, profile.organization_id as any, featureKey);
+    if (!enabled) {
+      return json<AIActionResponse>(
+        { error: `Função de IA desativada para esta ação (${action}).` },
+        403
+      );
+    }
+  }
 
   // Frontend expects "AI consent required" as a *payload* error.
   const provider: AIProvider = (orgSettings?.ai_provider ?? 'google') as AIProvider;
@@ -188,37 +225,34 @@ export async function POST(req: Request) {
     switch (action) {
       case 'analyzeLead': {
         const { deal, stageLabel } = data as any;
+        const resolved = await getResolvedPrompt(supabase as any, profile.organization_id as any, 'task_deals_analyze');
+        const prompt = renderPromptTemplate(resolved?.content || '', {
+          dealTitle: deal?.title || '',
+          dealValue: deal?.value?.toLocaleString?.('pt-BR') ?? deal?.value ?? 0,
+          stageLabel: stageLabel || deal?.status || '',
+          probability: deal?.probability || 50,
+        });
         const result = await generateObject({
           model,
           maxRetries: 3,
           schema: AnalyzeLeadSchema,
-          prompt: `Você é um coach de vendas analisando um deal de CRM. Seja DIRETO e ACIONÁVEL.
-DEAL:
-- Título: ${deal?.title}
-- Valor: R$ ${deal?.value?.toLocaleString?.('pt-BR') ?? deal?.value ?? 0}
-- Estágio: ${stageLabel || deal?.status}
-- Probabilidade: ${deal?.probability || 50}%
-RETORNE:
-1. action: Verbo no infinitivo + complemento curto (máx 50 chars).
-2. reason: Por que fazer isso AGORA (máx 80 chars).
-3. actionType: CALL, MEETING, EMAIL, TASK ou WHATSAPP
-4. urgency: low, medium, high
-5. probabilityScore: 0-100
-Seja conciso. Português do Brasil.`,
+          prompt,
         });
         return json<AIActionResponse>({ result: result.object });
       }
 
       case 'generateEmailDraft': {
         const { deal } = data as any;
+        const resolved = await getResolvedPrompt(supabase as any, profile.organization_id as any, 'task_deals_email_draft');
+        const prompt = renderPromptTemplate(resolved?.content || '', {
+          contactName: deal?.contactName || 'Cliente',
+          companyName: deal?.companyName || 'Empresa',
+          dealTitle: deal?.title || '',
+        });
         const result = await generateText({
           model,
           maxRetries: 3,
-          prompt: `Gere um rascunho de email profissional para:
-- Contato: ${deal?.contactName || 'Cliente'}
-- Empresa: ${deal?.companyName || 'Empresa'}
-- Deal: ${deal?.title}
-Escreva um email conciso e eficaz em português do Brasil.`,
+          prompt,
         });
         return json<AIActionResponse>({ result: result.text });
       }
@@ -305,13 +339,16 @@ Responda em português do Brasil.`,
                 { id: 'OTHER', name: 'Outros' },
               ];
 
+        const resolved = await getResolvedPrompt(supabase as any, profile.organization_id as any, 'task_boards_generate_structure');
+        const prompt = renderPromptTemplate(resolved?.content || '', {
+          description,
+          lifecycleJson: JSON.stringify(lifecycleList),
+        });
         const result = await generateObject({
           model,
           maxRetries: 3,
           schema: BoardStructureSchema,
-          prompt: `Crie uma estrutura de board Kanban para: ${description}.
-LIFECYCLES: ${JSON.stringify(lifecycleList)}
-Crie 4-7 estágios com cores Tailwind. Português do Brasil.`,
+          prompt,
         });
 
         return json<AIActionResponse>({ result: result.object });
@@ -319,12 +356,15 @@ Crie 4-7 estágios com cores Tailwind. Português do Brasil.`,
 
       case 'generateBoardStrategy': {
         const { boardData } = data as any;
+        const resolved = await getResolvedPrompt(supabase as any, profile.organization_id as any, 'task_boards_generate_strategy');
+        const prompt = renderPromptTemplate(resolved?.content || '', {
+          boardName: boardData?.boardName || '',
+        });
         const result = await generateObject({
           model,
           maxRetries: 3,
           schema: BoardStrategySchema,
-          prompt: `Defina estratégia para board: ${boardData?.boardName}.
-Meta, KPI, Persona. Português do Brasil.`,
+          prompt,
         });
         return json<AIActionResponse>({ result: result.object });
       }
@@ -335,26 +375,33 @@ Meta, KPI, Persona. Português do Brasil.`,
         const boardContext = currentBoard
           ? `\nBoard atual (JSON):\n${JSON.stringify(currentBoard)}`
           : '';
+        const resolved = await getResolvedPrompt(supabase as any, profile.organization_id as any, 'task_boards_refine');
+        const prompt = renderPromptTemplate(resolved?.content || '', {
+          userInstruction,
+          boardContext,
+          historyContext,
+        });
         const result = await generateObject({
           model,
           maxRetries: 3,
           schema: RefineBoardSchema,
-          prompt: `Ajuste o board com base na instrução: "${userInstruction}".
-${boardContext}
-${historyContext}
-Se for conversa, retorne board: null.`,
+          prompt,
         });
         return json<AIActionResponse>({ result: result.object });
       }
 
       case 'generateObjectionResponse': {
         const { deal, objection } = data as any;
+        const resolved = await getResolvedPrompt(supabase as any, profile.organization_id as any, 'task_deals_objection_responses');
+        const prompt = renderPromptTemplate(resolved?.content || '', {
+          objection,
+          dealTitle: deal?.title || '',
+        });
         const result = await generateObject({
           model,
           maxRetries: 3,
           schema: ObjectionResponseSchema,
-          prompt: `Objeção: "${objection}" no deal "${deal?.title}".
-Gere 3 respostas práticas (Empática, Valor, Pergunta).`,
+          prompt,
         });
         return json<AIActionResponse>({ result: result.object });
       }
@@ -395,10 +442,14 @@ Responda em português.`,
       }
 
       case 'generateDailyBriefing': {
+        const resolved = await getResolvedPrompt(supabase as any, profile.organization_id as any, 'task_inbox_daily_briefing');
+        const prompt = renderPromptTemplate(resolved?.content || '', {
+          dataJson: JSON.stringify(data),
+        });
         const result = await generateText({
           model,
           maxRetries: 3,
-          prompt: `Briefing diário. Dados: ${JSON.stringify(data)}. Resuma prioridades.`,
+          prompt,
         });
         return json<AIActionResponse>({ result: result.text });
       }
@@ -415,12 +466,16 @@ Responda em português.`,
 
       case 'generateSalesScript': {
         const { deal, scriptType, context } = data as any;
+        const resolved = await getResolvedPrompt(supabase as any, profile.organization_id as any, 'task_inbox_sales_script');
+        const prompt = renderPromptTemplate(resolved?.content || '', {
+          scriptType: scriptType || 'geral',
+          dealTitle: deal?.title || '',
+          context: context || '',
+        });
         const result = await generateText({
           model,
           maxRetries: 3,
-          prompt: `Gere script de vendas (${scriptType}).
-Deal: ${deal?.title}. Contexto: ${context || ''}.
-Seja natural, 4 parágrafos max.`,
+          prompt,
         });
         return json<AIActionResponse>({ result: { script: result.text, scriptType, generatedFor: deal?.title } });
       }

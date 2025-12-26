@@ -2,6 +2,9 @@ import { generateText } from 'ai';
 import { z } from 'zod';
 import { requireAITaskContext, AITaskHttpError } from '@/lib/ai/tasks/server';
 import { GenerateDailyBriefingInputSchema } from '@/lib/ai/tasks/schemas';
+import { getResolvedPrompt } from '@/lib/ai/prompts/server';
+import { renderPromptTemplate } from '@/lib/ai/prompts/render';
+import { isAIFeatureEnabled } from '@/lib/ai/features/server';
 
 export const maxDuration = 60;
 
@@ -14,15 +17,24 @@ function json(body: unknown, status = 200): Response {
 
 export async function POST(req: Request) {
   try {
-    const { model } = await requireAITaskContext(req);
+    const { model, supabase, organizationId } = await requireAITaskContext(req);
+    const enabled = await isAIFeatureEnabled(supabase as any, organizationId, 'ai_daily_briefing');
+    if (!enabled) {
+      return json({ error: { code: 'AI_FEATURE_DISABLED', message: 'Função de IA desativada: Briefing diário.' } }, 403);
+    }
 
     const body = await req.json().catch(() => null);
     const { radarData } = GenerateDailyBriefingInputSchema.parse(body);
 
+    const resolved = await getResolvedPrompt(supabase, organizationId, 'task_inbox_daily_briefing');
+    const prompt = renderPromptTemplate(resolved?.content || '', {
+      dataJson: JSON.stringify({ radarData }),
+    });
+
     const result = await generateText({
       model,
       maxRetries: 3,
-      prompt: `Briefing diário. Dados: ${JSON.stringify({ radarData })}. Resuma prioridades em português do Brasil.`,
+      prompt,
     });
 
     return json({ text: result.text });

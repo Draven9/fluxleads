@@ -66,9 +66,14 @@ export async function requireAITaskContext(req: Request): Promise<AITaskContext>
 
   const { data: orgSettings, error: orgError } = await supabase
     .from('organization_settings')
-    .select('ai_provider, ai_model, ai_google_key, ai_openai_key, ai_anthropic_key')
+    .select('ai_enabled, ai_provider, ai_model, ai_google_key, ai_openai_key, ai_anthropic_key')
     .eq('organization_id', organizationId)
     .single();
+
+  const aiEnabled = typeof orgSettings?.ai_enabled === 'boolean' ? orgSettings.ai_enabled : true;
+  if (!aiEnabled) {
+    throw new AITaskHttpError(403, 'AI_DISABLED', 'IA desativada pela organização. Um admin pode ativar em Configurações → Central de I.A.');
+  }
 
   const provider: AIProvider = (orgSettings?.ai_provider ?? 'google') as AIProvider;
 

@@ -29,17 +29,17 @@ export interface UseAIEnabledResult {
 
 export function useAIEnabled(): UseAIEnabledResult {
   const router = useRouter();
-  const { aiApiKey, aiProvider } = useCRM();
+  const { aiProvider, aiOrgEnabled, aiKeyConfigured } = useCRM();
 
-  const isAIEnabled = Boolean(aiApiKey && aiApiKey.trim());
+  const isAIEnabled = Boolean(aiOrgEnabled && aiKeyConfigured);
 
   const goToSettings = useCallback(() => {
-    router.push('/settings#ai');
+    router.push('/settings/ai#ai-config');
   }, [router]);
 
   return {
     isAIEnabled,
-    apiKey: aiApiKey || null,
+    apiKey: null,
     provider: aiProvider || 'google',
     goToSettings,
   };
