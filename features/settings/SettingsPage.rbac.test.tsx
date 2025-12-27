@@ -61,6 +61,14 @@ vi.mock('./components/WebhooksSection', () => ({
   ),
 }))
 
+vi.mock('./components/McpSection', () => ({
+  McpSection: () => (
+    <div>
+      <h3>MCP</h3>
+    </div>
+  ),
+}))
+
 import SettingsPage from './SettingsPage'
 import { useAuth } from '@/context/AuthContext'
 
@@ -113,9 +121,21 @@ describe('SettingsPage RBAC', () => {
     expect(integrationsTab).toBeInTheDocument()
     fireEvent.click(integrationsTab)
 
-    expect(
-      await screen.findByRole('heading', { name: /^API \(Integrações\)$/i })
-    ).toBeInTheDocument()
+    // Sub-tabs dentro de Integrações
+    const apiSubTab = await screen.findByRole('button', { name: /^API$/i })
+    const webhooksSubTab = await screen.findByRole('button', { name: /^Webhooks$/i })
+    const mcpSubTab = await screen.findByRole('button', { name: /^MCP$/i })
+    expect(apiSubTab).toBeInTheDocument()
+    expect(webhooksSubTab).toBeInTheDocument()
+    expect(mcpSubTab).toBeInTheDocument()
+
+    // Default é API
+    expect(await screen.findByRole('heading', { name: /^API \(Integrações\)$/i })).toBeInTheDocument()
+
+    fireEvent.click(webhooksSubTab)
     expect(await screen.findByRole('heading', { name: /^Webhooks$/i })).toBeInTheDocument()
+
+    fireEvent.click(mcpSubTab)
+    expect(await screen.findByRole('heading', { name: /^MCP$/i })).toBeInTheDocument()
   })
 })

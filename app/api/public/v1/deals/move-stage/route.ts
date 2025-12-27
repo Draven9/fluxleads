@@ -18,6 +18,9 @@ const MoveStageSchema = z.object({
   // Target stage
   to_stage_id: z.string().uuid().optional(),
   to_stage_label: z.string().min(1).optional(),
+
+  // Optional explicit close flag (independent of stage)
+  mark: z.enum(['won', 'lost']).optional(),
 }).strict()
   .refine((v) => !!(v.to_stage_id || v.to_stage_label), { message: 'to_stage_id or to_stage_label is required' })
   .refine((v) => {
@@ -39,13 +42,14 @@ export async function POST(request: Request) {
     to_stage_id: parsed.data.to_stage_id ?? null,
     to_stage_label: parsed.data.to_stage_label ?? null,
   };
+  const mark = parsed.data.mark ?? null;
 
   if (parsed.data.deal_id) {
     const dealId = parsed.data.deal_id;
     if (!isValidUUID(dealId)) {
       return NextResponse.json({ error: 'Invalid deal id', code: 'VALIDATION_ERROR' }, { status: 422 });
     }
-    const res = await moveStageByDealId({ organizationId: auth.organizationId, dealId, target });
+    const res = await moveStageByDealId({ organizationId: auth.organizationId, dealId, target, mark });
     return NextResponse.json(res.body, { status: res.status });
   }
 
@@ -55,6 +59,7 @@ export async function POST(request: Request) {
     phone: parsed.data.phone ?? null,
     email: parsed.data.email ?? null,
     target,
+    mark,
   });
   return NextResponse.json(res.body, { status: res.status });
 }

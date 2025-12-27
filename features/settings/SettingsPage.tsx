@@ -5,6 +5,7 @@ import { TagsManager } from './components/TagsManager';
 import { CustomFieldsManager } from './components/CustomFieldsManager';
 import { ApiKeysSection } from './components/ApiKeysSection';
 import { WebhooksSection } from './components/WebhooksSection';
+import { McpSection } from './components/McpSection';
 import { DataStorageSettings } from './components/DataStorageSettings';
 import { ProductsCatalogManager } from './components/ProductsCatalogManager';
 import { AICenterSettings } from './AICenterSettings';
@@ -103,10 +104,52 @@ const ProductsSettings: React.FC = () => {
 };
 
 const IntegrationsSettings: React.FC = () => {
+  type IntegrationsSubTab = 'api' | 'webhooks' | 'mcp';
+  const [subTab, setSubTab] = useState<IntegrationsSubTab>('api');
+
+  useEffect(() => {
+    const h = typeof window !== 'undefined' ? (window.location.hash || '').replace('#', '') : '';
+    if (h === 'webhooks' || h === 'api' || h === 'mcp') setSubTab(h as IntegrationsSubTab);
+  }, []);
+
+  const setSubTabAndHash = (t: IntegrationsSubTab) => {
+    setSubTab(t);
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.hash = `#${t}`;
+      window.history.replaceState({}, '', url.toString());
+    }
+  };
+
   return (
     <div className="pb-10">
-      <ApiKeysSection />
-      <WebhooksSection />
+      <div className="flex items-center gap-2 mb-6">
+        {([
+          { id: 'webhooks' as const, label: 'Webhooks' },
+          { id: 'api' as const, label: 'API' },
+          { id: 'mcp' as const, label: 'MCP' },
+        ] as const).map((t) => {
+          const active = subTab === t.id;
+          return (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setSubTabAndHash(t.id)}
+              className={`px-3 py-2 rounded-xl text-sm font-semibold border transition-colors ${
+                active
+                  ? 'border-primary-500/50 bg-primary-500/10 text-primary-700 dark:text-primary-300'
+                  : 'border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10'
+              }`}
+            >
+              {t.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {subTab === 'api' && <ApiKeysSection />}
+      {subTab === 'webhooks' && <WebhooksSection />}
+      {subTab === 'mcp' && <McpSection />}
     </div>
   );
 };

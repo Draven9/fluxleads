@@ -11,6 +11,7 @@ const MoveStageByIdentitySchema = z.object({
   email: z.string().optional(),
   to_stage_id: z.string().uuid().optional(),
   to_stage_label: z.string().min(1).optional(),
+  mark: z.enum(['won', 'lost']).optional(),
 }).strict().refine((v) => !!(v.phone || v.email), { message: 'phone or email is required' })
   .refine((v) => !!(v.to_stage_id || v.to_stage_label), { message: 'to_stage_id or to_stage_label is required' });
 
@@ -30,6 +31,7 @@ export async function POST(request: Request) {
     phone: parsed.data.phone ?? null,
     email: parsed.data.email ?? null,
     target: { to_stage_id: parsed.data.to_stage_id ?? null, to_stage_label: parsed.data.to_stage_label ?? null },
+    mark: parsed.data.mark ?? null,
   });
   // Compatibility alias (old name) — keep working.
   return NextResponse.json(res.body, { status: res.status });

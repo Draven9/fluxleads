@@ -49,6 +49,7 @@ export async function moveStageByDealId(opts: {
   organizationId: string;
   dealId: string;
   target: { to_stage_id?: string | null; to_stage_label?: string | null };
+  mark?: 'won' | 'lost' | null;
 }) {
   const sb = createStaticAdminClient();
   const dealId = sanitizeUUID(opts.dealId);
@@ -65,6 +66,16 @@ export async function moveStageByDealId(opts: {
   if (!deal) return { ok: false as const, status: 404, body: { error: 'Deal not found', code: 'NOT_FOUND' } };
 
   const boardId = (deal as any).board_id as string;
+  const { data: boardCfg, error: boardCfgError } = await sb
+    .from('boards')
+    .select('won_stage_id,lost_stage_id')
+    .eq('organization_id', opts.organizationId)
+    .is('deleted_at', null)
+    .eq('id', boardId)
+    .maybeSingle();
+  if (boardCfgError) return { ok: false as const, status: 500, body: { error: boardCfgError.message, code: 'DB_ERROR' } };
+  const wonStageId = sanitizeUUID((boardCfg as any)?.won_stage_id) || null;
+  const lostStageId = sanitizeUUID((boardCfg as any)?.lost_stage_id) || null;
   const stageId = await resolveStageIdForBoard({
     organizationId: opts.organizationId,
     boardId,
@@ -84,9 +95,21 @@ export async function moveStageByDealId(opts: {
   }
 
   const now = new Date().toISOString();
+  const updates: any = { stage_id: stageId, last_stage_change_date: now, updated_at: now };
+  if (opts.mark === 'won' || (wonStageId && stageId === wonStageId)) {
+    updates.is_won = true;
+    updates.is_lost = false;
+    updates.closed_at = now;
+    updates.loss_reason = null;
+  }
+  if (opts.mark === 'lost' || (lostStageId && stageId === lostStageId)) {
+    updates.is_lost = true;
+    updates.is_won = false;
+    updates.closed_at = now;
+  }
   const { data, error } = await sb
     .from('deals')
-    .update({ stage_id: stageId, last_stage_change_date: now, updated_at: now })
+    .update(updates)
     .eq('organization_id', opts.organizationId)
     .eq('id', dealId)
     .select('id,title,value,board_id,stage_id,contact_id,client_company_id,is_won,is_lost,loss_reason,closed_at,created_at,updated_at')
@@ -102,6 +125,7 @@ export async function moveStageByIdentity(opts: {
   phone?: string | null;
   email?: string | null;
   target: { to_stage_id?: string | null; to_stage_label?: string | null };
+  mark?: 'won' | 'lost' | null;
 }) {
   const boardId = await resolveBoardId({
     organizationId: opts.organizationId,
@@ -114,6 +138,16 @@ export async function moveStageByIdentity(opts: {
   if (!phone && !email) return { ok: false as const, status: 422, body: { error: 'Invalid phone/email', code: 'VALIDATION_ERROR' } };
 
   const sb = createStaticAdminClient();
+  const { data: boardCfg, error: boardCfgError } = await sb
+    .from('boards')
+    .select('won_stage_id,lost_stage_id')
+    .eq('organization_id', opts.organizationId)
+    .is('deleted_at', null)
+    .eq('id', boardId)
+    .maybeSingle();
+  if (boardCfgError) return { ok: false as const, status: 500, body: { error: boardCfgError.message, code: 'DB_ERROR' } };
+  const wonStageId = sanitizeUUID((boardCfg as any)?.won_stage_id) || null;
+  const lostStageId = sanitizeUUID((boardCfg as any)?.lost_stage_id) || null;
 
   let contactsQuery = sb
     .from('contacts')
@@ -165,9 +199,21 @@ export async function moveStageByIdentity(opts: {
   }
 
   const now = new Date().toISOString();
+  const updates: any = { stage_id: stageId, last_stage_change_date: now, updated_at: now };
+  if (opts.mark === 'won' || (wonStageId && stageId === wonStageId)) {
+    updates.is_won = true;
+    updates.is_lost = false;
+    updates.closed_at = now;
+    updates.loss_reason = null;
+  }
+  if (opts.mark === 'lost' || (lostStageId && stageId === lostStageId)) {
+    updates.is_lost = true;
+    updates.is_won = false;
+    updates.closed_at = now;
+  }
   const { data: updated, error: updateError } = await sb
     .from('deals')
-    .update({ stage_id: stageId, last_stage_change_date: now, updated_at: now })
+    .update(updates)
     .eq('organization_id', opts.organizationId)
     .eq('id', dealId)
     .select('id,title,value,board_id,stage_id,contact_id,client_company_id,is_won,is_lost,loss_reason,closed_at,created_at,updated_at')

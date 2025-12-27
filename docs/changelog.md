@@ -49,6 +49,7 @@
     - Toggle por ícone padronizado: **ativo verde** / **desativado vermelho**.
     - Fix: editor de prompt dentro de “Funções de IA” agora carrega o **template padrão do catálogo** quando não existe override ativo (antes podia abrir vazio).
   - **Integrações → Webhooks**: corrigido exemplo de `curl` (remoção de caracteres `+` no output).
+  - **Integrações (UX)**: adicionadas sub-abas dentro de **Integrações**: **Webhooks**, **API**, **MCP**.
   - **Integrações → Webhooks (UX)**:
     - Adicionados botões para **Editar / Ativar-Desativar / Excluir** as configurações de webhook (entrada e follow-up).
     - Exposição do **secret** para admin via “Copiar secret” (evita depender apenas do modal de “criado com sucesso”).
@@ -79,6 +80,7 @@
   - Swagger UI em `GET /api/public/v1/docs` (renderiza o OpenAPI do CRM), com CSS refinado para um visual mais clean e legível.
   - DX: `move-stage` agora aceita `to_stage_label` (além de `to_stage_id`) e resolve a etapa automaticamente dentro do board do deal.
   - DX: endpoint “sem UUID” para automações agora é `POST /api/public/v1/deals/move-stage` (board + phone/email + `to_stage_label`). (Mantido também `POST /api/public/v1/deals/move-stage-by-identity` por compatibilidade.)
+  - Fix: mover para etapa **Ganho/Perdido** via API agora marca o deal como **ganho/perdido de verdade** (`is_won`/`is_lost` + `closed_at`) quando a etapa destino for a etapa final configurada do board.
   - UX: seletor de etapas no assistente mostra apenas o **nome da etapa** (sem sufixo de UUID).
   - UX: em **Chaves existentes**, agora é possível **excluir** chaves **revogadas** (com confirmação).
   - UX (produto): o assistente agora usa dados do próprio app (boards/deals/stages) para montar o cURL **com valores reais** (wizard dinâmico), e a **API key virou independente do wizard** (colar/validar chave é opcional e fica só em memória).

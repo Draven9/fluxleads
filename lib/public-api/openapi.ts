@@ -544,13 +544,30 @@ export function getPublicApiOpenApiDocument(): OpenApiDocument {
               'application/json': {
                 schema: {
                   oneOf: [
-                    { type: 'object', additionalProperties: false, properties: { to_stage_id: { type: 'string', description: 'UUID do estágio de destino' } }, required: ['to_stage_id'] },
-                    { type: 'object', additionalProperties: false, properties: { to_stage_label: { type: 'string', description: 'Label exato do estágio de destino (case-insensitive) dentro do board do deal' } }, required: ['to_stage_label'] },
+                    {
+                      type: 'object',
+                      additionalProperties: false,
+                      properties: {
+                        to_stage_id: { type: 'string', description: 'UUID do estágio de destino' },
+                        mark: { type: 'string', enum: ['won', 'lost'], description: 'Opcional: marca o deal como ganho/perdido independentemente da etapa' },
+                      },
+                      required: ['to_stage_id'],
+                    },
+                    {
+                      type: 'object',
+                      additionalProperties: false,
+                      properties: {
+                        to_stage_label: { type: 'string', description: 'Label do estágio de destino (case-insensitive) dentro do board do deal' },
+                        mark: { type: 'string', enum: ['won', 'lost'], description: 'Opcional: marca o deal como ganho/perdido independentemente da etapa' },
+                      },
+                      required: ['to_stage_label'],
+                    },
                   ],
                 },
                 examples: {
                   byId: { value: { to_stage_id: '00000000-0000-0000-0000-000000000000' } },
                   byLabel: { value: { to_stage_label: 'Em conversa' } },
+                  won: { value: { to_stage_label: 'Ganho', mark: 'won' } },
                 },
               },
             },
@@ -578,12 +595,14 @@ export function getPublicApiOpenApiDocument(): OpenApiDocument {
                     email: { type: 'string', description: 'Email (lowercase recomendado)' },
                     to_stage_label: { type: 'string', description: 'Label do estágio de destino (case-insensitive) dentro do board' },
                     to_stage_id: { type: 'string', description: 'UUID do estágio de destino (alternativa ao label)' },
+                    mark: { type: 'string', enum: ['won', 'lost'], description: 'Opcional: marca o deal como ganho/perdido independentemente da etapa' },
                   },
                   required: ['board_key_or_id'],
                 },
                 examples: {
                   phone: { value: { board_key_or_id: 'sales', phone: '+5511999999999', to_stage_label: 'Em conversa' } },
                   email: { value: { board_key_or_id: 'sales', email: 'ana@acme.com', to_stage_label: 'Proposta' } },
+                  won: { value: { board_key_or_id: 'sales', phone: '+5511999999999', to_stage_label: 'Ganho', mark: 'won' } },
                 },
               },
             },
@@ -614,6 +633,7 @@ export function getPublicApiOpenApiDocument(): OpenApiDocument {
                         deal_id: { type: 'string', description: 'UUID do deal' },
                         to_stage_label: { type: 'string' },
                         to_stage_id: { type: 'string' },
+                        mark: { type: 'string', enum: ['won', 'lost'], description: 'Opcional: marca o deal como ganho/perdido independentemente da etapa' },
                       },
                       required: ['deal_id'],
                     },
@@ -626,6 +646,7 @@ export function getPublicApiOpenApiDocument(): OpenApiDocument {
                         email: { type: 'string', description: 'Email (lowercase recomendado)' },
                         to_stage_label: { type: 'string' },
                         to_stage_id: { type: 'string' },
+                        mark: { type: 'string', enum: ['won', 'lost'], description: 'Opcional: marca o deal como ganho/perdido independentemente da etapa' },
                       },
                       required: ['board_key_or_id'],
                     },
@@ -634,6 +655,7 @@ export function getPublicApiOpenApiDocument(): OpenApiDocument {
                 examples: {
                   byDealId: { value: { deal_id: '00000000-0000-0000-0000-000000000000', to_stage_label: 'Em conversa' } },
                   byPhone: { value: { board_key_or_id: 'sales', phone: '+5511999999999', to_stage_label: 'Em conversa' } },
+                  won: { value: { board_key_or_id: 'sales', phone: '+5511999999999', to_stage_label: 'Ganho', mark: 'won' } },
                 },
               },
             },
