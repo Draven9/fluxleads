@@ -539,7 +539,7 @@ export const InboxFocusView: React.FC<InboxFocusViewProps> = ({
                 stiffness: 300,
                 damping: 30
               }}
-              className="fixed inset-0 z-[9999] bg-black/50 backdrop-blur-sm"
+              className="fixed inset-0 md:left-[var(--app-sidebar-width,0px)] z-[9999] bg-black/50 backdrop-blur-sm"
             >
               <FocusContextPanel
                 className="h-full w-full"
@@ -568,7 +568,7 @@ export const InboxFocusView: React.FC<InboxFocusViewProps> = ({
                 stiffness: 300,
                 damping: 30
               }}
-              className="fixed inset-0 z-[9999] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
+              className="fixed inset-0 md:left-[var(--app-sidebar-width,0px)] z-[9999] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
               role="dialog"
               aria-modal="true"
               aria-label="Vincular contexto"

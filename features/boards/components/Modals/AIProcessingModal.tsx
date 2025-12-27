@@ -75,7 +75,7 @@ export const AIProcessingModal: React.FC<AIProcessingModalProps> = ({ isOpen, cu
     const activeIndex = getCurrentStepIndex();
 
     return (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center">
+        <div className="fixed inset-0 md:left-[var(--app-sidebar-width,0px)] z-[9999] flex items-center justify-center">
             {/* Glassmorphism Background */}
             <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-xl transition-opacity duration-500" />
 

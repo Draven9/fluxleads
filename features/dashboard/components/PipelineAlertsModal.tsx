@@ -113,7 +113,7 @@ export const PipelineAlertsModal: React.FC<PipelineAlertsModalProps> = ({
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center"
+      className="fixed inset-0 md:left-[var(--app-sidebar-width,0px)] z-[9999] flex items-center justify-center"
       onClick={(e) => e.target === e.currentTarget && onClose()}
       onKeyDown={(e) => e.key === 'Escape' && onClose()}
     >

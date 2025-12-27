@@ -20,6 +20,10 @@
   - **Integrações → Webhooks (UX)**:
     - Adicionados botões para **Editar / Ativar-Desativar / Excluir** as configurações de webhook (entrada e follow-up).
     - Exposição do **secret** para admin via “Copiar secret” (evita depender apenas do modal de “criado com sucesso”).
+  - **Docs (Webhooks)**:
+    - Adicionado guia de uso em `docs/webhooks.md` (configuração, payloads, exemplos e troubleshooting).
+  - **Integrações → Webhooks (UX)**:
+    - Adicionado botão **“Como usar”** com guia rápido inline (passo-a-passo + exemplos de payload/cURL) diretamente na tela de Integrações.
 - **Debug Mode (UX)**:
   - Debug agora é **reativo** (sem refresh): toggle dispara evento (`DEBUG_MODE_EVENT`) e `DebugFillButton` usa `useDebugMode`.
   - Fix: geração de telefone fake agora é determinística (sem `fromRegExp`, evitando `\\` no número).
@@ -42,7 +46,7 @@
 - **Deals (UX)**:
   - `DealDetailModal` agora é **responsivo em telas menores**: a sidebar de detalhes passa a ficar **empilhada acima** do conteúdo (em vez de colunas lado a lado), evitando sensação de “sobreposição”/corte.
   - Detalhe técnico: body do modal usa `flex-col md:flex-row` + `min-h-0`; sidebar esquerda ganhou `max-h-[38vh]` no mobile e borda `border-b` (no desktop mantém `md:border-r`).
-  - Detalhe técnico (layout shell): o overlay do modal/cockpit agora **não cobre a sidebar no desktop** — em `md+` ele é deslocado por `md:left-64` (ou `md:left-20` quando a sidebar está colapsada), fazendo o conteúdo **redimensionar** em vez de “ficar por cima”.
+  - Detalhe técnico (layout shell / auditoria de modais): overlays agora **não cobrem a sidebar no desktop** — em `md+` o backdrop usa `md:left-[var(--app-sidebar-width,0px)]` e o app shell publica a largura via `--app-sidebar-width` (0 fora do shell; `5rem/16rem` dentro), fazendo os modais **redimensionarem** em vez de “ficar por cima”.
 
 ## 26/12/2025
 

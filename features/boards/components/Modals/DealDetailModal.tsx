@@ -75,7 +75,6 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({ dealId, isOpen
     activeBoard,
     boards,
     lifecycleStages,
-    sidebarCollapsed,
   } = useCRM();
   const { profile } = useAuth();
   const { addToast } = useToast();
@@ -379,8 +378,8 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({ dealId, isOpen
       <div
         // Backdrop + positioning wrapper. Clicking outside the panel should close the modal.
         // No desktop, este modal não deve cobrir a sidebar de navegação.
-        // Em md+ deslocamos o overlay pela largura da sidebar (w-64 expandida, w-20 colapsada).
-        className={`fixed inset-y-0 right-0 left-0 ${sidebarCollapsed ? 'md:left-20' : 'md:left-64'} z-[9999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4`}
+        // Em md+ deslocamos o overlay pela largura da sidebar via `--app-sidebar-width`.
+        className="fixed inset-0 md:left-[var(--app-sidebar-width,0px)] z-[9999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4"
         role="dialog"
         aria-modal="true"
         aria-labelledby={headingId}

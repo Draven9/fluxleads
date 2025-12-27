@@ -110,6 +110,10 @@ Importante: aqui “Proxy” é uma feature do Next. Não confundir com as rotas
 
 - Consulte `docs/security/RBAC.md` (papéis **admin** e **vendedor** e o que cada um pode/não pode fazer).
 
+## Integrações (Webhooks)
+
+- Guia de uso (configuração, payloads, exemplos e troubleshooting): `docs/webhooks.md`
+
 ## Documentação de código (JSDoc)
 
 Este repo mantém docstrings em **pt-BR** no padrão **JSDoc** para itens públicos/exportados.

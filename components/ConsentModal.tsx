@@ -107,7 +107,7 @@ export const ConsentModal: React.FC<ConsentModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+      className="fixed inset-0 md:left-[var(--app-sidebar-width,0px)] z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm"
       onClick={(e) => {
         // Close only when clicking the backdrop (outside the panel).
         if (e.target === e.currentTarget) onClose?.();

@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Webhook, ArrowRight, Copy, Check, Link as LinkIcon, Pencil, Power, Trash2, KeyRound } from 'lucide-react';
+import { Webhook, ArrowRight, Copy, Check, Link as LinkIcon, Pencil, Power, Trash2, KeyRound, HelpCircle } from 'lucide-react';
 import { SettingsSection } from './SettingsSection';
 import { Modal } from '@/components/ui/Modal';
 import ConfirmModal from '@/components/ConfirmModal';
@@ -92,6 +92,9 @@ export const WebhooksSection: React.FC = () => {
   const [isFollowUpOpen, setIsFollowUpOpen] = useState(false);
   const [followUpUrl, setFollowUpUrl] = useState('');
 
+  // Help / documentation (in-product)
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
+
   // Confirm modals
   const [confirmDeleteInboundOpen, setConfirmDeleteInboundOpen] = useState(false);
   const [confirmDeleteOutboundOpen, setConfirmDeleteOutboundOpen] = useState(false);
@@ -161,6 +164,26 @@ export const WebhooksSection: React.FC = () => {
     await navigator.clipboard.writeText(text);
     setCopiedKey(key);
     setTimeout(() => setCopiedKey(null), 1200);
+  }
+
+  function CodeBlock({ label, text, copyKey }: { label: string; text: string; copyKey: string }) {
+    return (
+      <div className="space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <div className="text-xs font-bold text-slate-600 dark:text-slate-300">{label}</div>
+          <button
+            onClick={() => copy(text, copyKey)}
+            className="inline-flex items-center gap-2 px-2 py-1 rounded-md bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10 text-xs font-semibold text-slate-700 dark:text-slate-200"
+          >
+            {copiedKey === copyKey ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3" />}
+            Copiar
+          </button>
+        </div>
+        <pre className="whitespace-pre-wrap text-xs p-3 rounded-lg bg-slate-900 text-slate-100 border border-slate-800">
+          {text}
+        </pre>
+      </div>
+    );
   }
 
   async function handleActivateInbound() {
@@ -406,6 +429,19 @@ export const WebhooksSection: React.FC = () => {
         Ative automações sem técnico: escolha onde os leads entram e (opcionalmente) conecte um endpoint
         para follow-up quando um lead mudar de etapa.
       </p>
+
+      <div className="mb-5 flex items-center justify-between gap-3">
+        <div className="text-xs text-slate-500 dark:text-slate-400">
+          Dica: se você está integrando com Hotmart/n8n/Make, use o guia rápido.
+        </div>
+        <button
+          onClick={() => setIsHelpOpen(true)}
+          className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-bold bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-white hover:bg-slate-50 dark:hover:bg-white/10 transition-colors"
+        >
+          <HelpCircle className="h-4 w-4" />
+          Como usar
+        </button>
+      </div>
 
       {!canUse ? (
         <div className="p-4 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-sm text-slate-600 dark:text-slate-300">
@@ -801,6 +837,129 @@ export const WebhooksSection: React.FC = () => {
         cancelText="Cancelar"
         variant="danger"
       />
+
+      <Modal
+        isOpen={isHelpOpen}
+        onClose={() => setIsHelpOpen(false)}
+        title="Como usar Webhooks (guia rápido)"
+        size="xl"
+        bodyClassName="max-h-[70vh] overflow-auto"
+      >
+        <div className="space-y-6">
+          <div className="p-4 rounded-xl bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10">
+            <div className="text-sm font-bold text-slate-900 dark:text-white">Resumo</div>
+            <ul className="mt-2 text-sm text-slate-600 dark:text-slate-300 space-y-1">
+              <li>
+                <b>Inbound</b>: você envia um <code>POST</code> para a URL do CRM + header <code>X-Webhook-Secret</code> e o CRM cria contato + negócio.
+              </li>
+              <li>
+                <b>Outbound</b>: quando o negócio muda de etapa, o CRM envia um <code>POST</code> para sua URL (n8n/Make/etc) com o mesmo header <code>X-Webhook-Secret</code>.
+              </li>
+            </ul>
+          </div>
+
+          <div className="space-y-3">
+            <div className="text-sm font-extrabold text-slate-900 dark:text-white">1) Entrada de Leads (Inbound)</div>
+            <ol className="list-decimal pl-5 text-sm text-slate-600 dark:text-slate-300 space-y-1">
+              <li>Clique em <b>Ativar entrada de leads</b> e escolha o <b>Board</b> e o <b>Estágio</b> de entrada.</li>
+              <li>Copie a <b>URL</b> e o <b>Secret</b> e cole no seu provedor (Hotmart/n8n/Make/form).</li>
+              <li>No provedor, envie o JSON (abaixo) e sempre que possível envie um <code>external_event_id</code> para idempotência.</li>
+            </ol>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className="p-4 rounded-xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 space-y-2">
+                <div className="text-xs font-bold text-slate-600 dark:text-slate-300">Headers obrigatórios</div>
+                <div className="text-sm text-slate-700 dark:text-slate-200">
+                  <code>Content-Type: application/json</code>
+                  <br />
+                  <code>X-Webhook-Secret: {'<secret>'}</code>
+                </div>
+              </div>
+              <div className="p-4 rounded-xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 space-y-2">
+                <div className="text-xs font-bold text-slate-600 dark:text-slate-300">Payload (exemplo)</div>
+                <div className="text-sm text-slate-700 dark:text-slate-200">
+                  <code>{`{ "external_event_id": "...", "name": "...", "email": "...", "phone": "...", "source": "hotmart" }`}</code>
+                </div>
+              </div>
+            </div>
+
+            {(() => {
+              const inboundUrl = activeInbound ? buildWebhookUrl(activeInbound.id) : `https://SEU-PROJETO.supabase.co/functions/v1/webhook-in/<source_id>`;
+              const inboundSecret = activeInbound ? activeInbound.secret : '<secret>';
+              const curl = buildCurlExample(inboundUrl, inboundSecret);
+              return <CodeBlock label="Teste rápido (cURL)" text={curl} copyKey="helpCurlInbound" />;
+            })()}
+          </div>
+
+          <div className="space-y-3">
+            <div className="text-sm font-extrabold text-slate-900 dark:text-white">2) Follow-up (Outbound)</div>
+            <ol className="list-decimal pl-5 text-sm text-slate-600 dark:text-slate-300 space-y-1">
+              <li>Clique em <b>Conectar follow-up</b> e cole a URL do seu endpoint (n8n/Make/etc).</li>
+              <li>O CRM dispara quando um negócio <b>muda de etapa</b> (stage change).</li>
+              <li>No seu endpoint, valide o header <code>X-Webhook-Secret</code>.</li>
+            </ol>
+
+            {endpoint?.url ? (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div className="p-4 rounded-xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 space-y-2">
+                  <div className="text-xs font-bold text-slate-600 dark:text-slate-300">Sua URL (destino)</div>
+                  <div className="text-sm text-slate-700 dark:text-slate-200 font-mono break-all">{endpoint.url}</div>
+                </div>
+                <div className="p-4 rounded-xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 space-y-2">
+                  <div className="text-xs font-bold text-slate-600 dark:text-slate-300">Secret (header)</div>
+                  <div className="text-sm text-slate-700 dark:text-slate-200 font-mono break-all">{endpoint.secret}</div>
+                </div>
+              </div>
+            ) : null}
+
+            <CodeBlock
+              label="Payload enviado (exemplo)"
+              copyKey="helpOutboundPayload"
+              text={`{
+  "event_type": "deal.stage_changed",
+  "occurred_at": "2025-12-26T00:00:00.000Z",
+  "deal": {
+    "id": "...",
+    "title": "...",
+    "value": 0,
+    "board_id": "...",
+    "board_name": "...",
+    "from_stage_id": "...",
+    "from_stage_label": "...",
+    "to_stage_id": "...",
+    "to_stage_label": "...",
+    "contact_id": "..."
+  },
+  "contact": { "name": "...", "phone": "...", "email": "..." }
+}`}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <div className="text-sm font-extrabold text-slate-900 dark:text-white">3) Troubleshooting (onde ver se chegou)</div>
+            <ul className="text-sm text-slate-600 dark:text-slate-300 space-y-1">
+              <li>
+                <b>Inbound</b>: tabela <code>webhook_events_in</code> (eventos recebidos e status).
+              </li>
+              <li>
+                <b>Outbound</b>: tabelas <code>webhook_events_out</code> (eventos gerados) e <code>webhook_deliveries</code> (tentativas de entrega).
+              </li>
+              <li>
+                Se você estiver em n8n/Make, também olhe o histórico do workflow para ver o request e a validação do secret.
+              </li>
+            </ul>
+          </div>
+
+          <div className="pt-2 flex items-center justify-end">
+            <button
+              onClick={() => setIsHelpOpen(false)}
+              className="px-4 py-2 rounded-lg text-sm font-bold bg-primary-600 text-white hover:bg-primary-700 transition-colors"
+            >
+              Entendi
+            </button>
+          </div>
+        </div>
+      </Modal>
     </SettingsSection>
   );
 };

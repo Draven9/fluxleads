@@ -40,7 +40,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
             clickOutsideDeactivates={true}
         >
             <div
-                className="fixed inset-0 z-[100] flex items-center justify-center"
+                className="fixed inset-0 md:left-[var(--app-sidebar-width,0px)] z-[9999] flex items-center justify-center"
                 role="presentation"
             >
                 <div

@@ -26,7 +26,6 @@ export default function DealCockpitFocusClient({ dealId }: { dealId: string }) {
     updateDeal,
     addActivity,
     updateActivity,
-    sidebarCollapsed,
   } = useCRM();
 
   const dealsById = useMemo(() => new Map(deals.map((d) => [d.id, d])), [deals]);
@@ -75,7 +74,7 @@ export default function DealCockpitFocusClient({ dealId }: { dealId: string }) {
 
   return (
     <div
-      className={`fixed inset-y-0 right-0 left-0 ${sidebarCollapsed ? 'md:left-20' : 'md:left-64'} z-[9999] bg-black/50 backdrop-blur-sm`}
+      className="fixed inset-0 md:left-[var(--app-sidebar-width,0px)] z-[9999] bg-black/50 backdrop-blur-sm"
     >
       <FocusContextPanel
         className="h-full w-full"

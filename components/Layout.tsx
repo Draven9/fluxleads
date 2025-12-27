@@ -144,6 +144,21 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     setDebugEnabled(isDebugMode());
   }, []);
 
+  // Expose sidebar width as a global CSS var so modals/overlays can "shrink" on desktop
+  // instead of covering the navigation sidebar (works even for portals).
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    document.documentElement.style.setProperty('--app-sidebar-width', sidebarCollapsed ? '5rem' : '16rem');
+  }, [sidebarCollapsed]);
+
+  // Cleanup on unmount (e.g. leaving the app shell).
+  useEffect(() => {
+    return () => {
+      if (typeof document === 'undefined') return;
+      document.documentElement.style.setProperty('--app-sidebar-width', '0px');
+    };
+  }, []);
+
   // Track the last clicked menu item to maintain highlight during Suspense transitions
   const [clickedPath, setClickedPath] = useState<string | undefined>(undefined);
 
@@ -404,7 +419,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
           <main
             id="main-content"
-            className="flex-1 overflow-auto p-6 relative z-10 scroll-smooth"
+            className="flex-1 overflow-auto p-6 relative scroll-smooth"
             tabIndex={-1}
           >
             {children}

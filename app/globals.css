@@ -46,6 +46,9 @@ svg.lucide {
  * These work with both light and dark modes
  * ======================================== */
 :root {
+  /* App Shell: sidebar width (used by modals/overlays to avoid covering navigation on desktop) */
+  --app-sidebar-width: 0px;
+
   /* Light Mode - Soft Cream (OKLCH) */
   --color-bg: oklch(97% 0.005 90);
   --color-surface: oklch(99% 0.002 90);

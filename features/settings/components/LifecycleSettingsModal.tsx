@@ -73,7 +73,7 @@ export const LifecycleSettingsModal: React.FC<LifecycleSettingsModalProps> = ({ 
     return (
         <FocusTrap active={isOpen} onEscape={onClose}>
             <div
-                className="fixed inset-0 z-[60] flex items-center justify-center"
+                className="fixed inset-0 md:left-[var(--app-sidebar-width,0px)] z-[9999] flex items-center justify-center"
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby={headingId}
