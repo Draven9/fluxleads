@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { isAllowedOrigin } from '@/lib/security/sameOrigin';
-import { createSupabaseProject, listAllSupabaseOrganizationProjects } from '@/lib/installer/edgeFunctions';
+import { createSupabaseProject, listAllSupabaseOrganizationProjects, listSupabaseProjects } from '@/lib/installer/edgeFunctions';
 
 function json<T>(body: T, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -70,6 +70,23 @@ export async function POST(req: Request) {
             reusedExisting: true,
           });
         }
+
+
+      // Fallback: if org-projects endpoint is unavailable (or search misses), try global projects list.
+      const allProjects = await listSupabaseProjects({ accessToken: parsed.data.accessToken.trim() });
+      if (allProjects.ok) {
+        const desired = parsed.data.name.trim().toLowerCase();
+        const match = allProjects.projects.find((p) => p.name.toLowerCase().trim() === desired);
+        if (match?.ref) {
+          return json({
+            ok: true,
+            projectRef: match.ref,
+            projectName: match.name,
+            supabaseUrl: `https://${match.ref}.supabase.co`,
+            reusedExisting: true,
+          });
+        }
+      }
       }
     }
 

@@ -2,6 +2,10 @@
 
 ## 28/12/2025
 
+- **Installer — create-project idempotente**:
+  - Se o Supabase responder "already exists", reutilizamos o projeto existente (fallback: lista global de projetos) para não travar em refresh/retry
+
+
 - **Installer — Redeploy virou obrigatório**:
   - Agora, se a Vercel falhar ao redeployar, o instalador **não finaliza** (evita deploy sem `NEXT_PUBLIC_SUPABASE_*` e login quebrado)
   - Preferimos redeploy de **Production** (evita redeploy acidental de Preview)
