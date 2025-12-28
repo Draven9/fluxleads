@@ -275,7 +275,9 @@ export async function triggerProjectRedeploy(
     );
     latest = data.deployments?.find((d) => d.target === 'production') ?? data.deployments?.[0];
   }
-  const deploymentId = latest?.uid ?? latest?.id;
+  // Vercel v13 endpoints generally expect the canonical `id` (e.g. "dpl_...").
+  // Some responses also include `uid`; prefer `id` when present.
+  const deploymentId = latest?.id ?? latest?.uid;
   if (!deploymentId) {
     throw new Error('No deployments found for this project.');
   }

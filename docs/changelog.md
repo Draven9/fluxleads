@@ -5,6 +5,7 @@
 - **Installer — Redeploy virou obrigatório**:
   - Agora, se a Vercel falhar ao redeployar, o instalador **não finaliza** (evita deploy sem `NEXT_PUBLIC_SUPABASE_*` e login quebrado)
   - Preferimos redeploy de **Production** (evita redeploy acidental de Preview)
+  - Preferir deployment `id` (canônico) ao invés de `uid` quando ambos existirem (evita 404/NOT_FOUND em alguns projetos)
   - Mensagem de erro aponta o caminho de **Redeploy manual** na Vercel
 
 
