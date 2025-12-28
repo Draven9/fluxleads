@@ -40,6 +40,14 @@ const RunSchema = z
       email: z.string().email(),
       password: z.string().min(6),
     }),
+    // Health check result to skip unnecessary steps
+    healthCheck: z.object({
+      skipWaitProject: z.boolean().default(false),
+      skipWaitStorage: z.boolean().default(false),
+      skipMigrations: z.boolean().default(false),
+      skipBootstrap: z.boolean().default(false),
+      estimatedSeconds: z.number().default(120),
+    }).optional(),
   })
   .strict();
 
@@ -117,7 +125,18 @@ export async function POST(req: Request) {
     return new Response(JSON.stringify({ error: 'Invalid installer token' }), { status: 403 });
   }
 
-  const { vercel, supabase, admin } = parsed.data;
+  const { vercel, supabase, admin, healthCheck } = parsed.data;
+  
+  // Determine which steps to skip based on health check
+  const skippedSteps: string[] = [];
+  if (healthCheck?.skipWaitProject) skippedSteps.push('wait_project');
+  if (healthCheck?.skipWaitStorage) skippedSteps.push('wait_storage');
+  if (healthCheck?.skipMigrations) skippedSteps.push('migrations');
+  if (healthCheck?.skipBootstrap) skippedSteps.push('bootstrap');
+  
+  if (skippedSteps.length > 0) {
+    console.log('[run-stream] Skipping steps based on health check:', skippedSteps);
+  }
   const envTargets = vercel.targets;
   
   // Extrai primeiro nome para personalização
@@ -221,31 +240,39 @@ export async function POST(req: Request) {
 
       await sendPhase('coordinates', 20);
 
-      // Phase 2: Signal (wait for project ready)
-      await sendPhase('signal', 25);
+      // Phase 2: Signal (wait for project ready) - skippable
+      if (!skippedSteps.includes('wait_project')) {
+        await sendPhase('signal', 25);
 
-      if (resolvedAccessToken && resolvedProjectRef) {
-        const ready = await waitForSupabaseProjectReady({
-          accessToken: resolvedAccessToken,
-          projectRef: resolvedProjectRef,
-          timeoutMs: 210_000,
-          pollMs: 4_000,
-        });
-        if (!ready.ok) {
-          await sendEvent({ type: 'error', error: 'Destino não respondeu a tempo.' });
-          await writer.close();
-          return;
+        if (resolvedAccessToken && resolvedProjectRef) {
+          const ready = await waitForSupabaseProjectReady({
+            accessToken: resolvedAccessToken,
+            projectRef: resolvedProjectRef,
+            timeoutMs: 210_000,
+            pollMs: 4_000,
+          });
+          if (!ready.ok) {
+            await sendEvent({ type: 'error', error: 'Destino não respondeu a tempo.' });
+            await writer.close();
+            return;
+          }
         }
+
+        await sendPhase('signal', 35);
+      } else {
+        console.log('[run-stream] Skipping wait_project - project already ready');
       }
 
-      await sendPhase('signal', 35);
+      // Phase 3: Station (migrations) - skippable
+      if (!skippedSteps.includes('migrations')) {
+        await sendPhase('station', 40);
 
-      // Phase 3: Station (migrations)
-      await sendPhase('station', 40);
+        await runSchemaMigration(resolvedDbUrl);
 
-      await runSchemaMigration(resolvedDbUrl);
-
-      await sendPhase('station', 55);
+        await sendPhase('station', 55);
+      } else {
+        console.log('[run-stream] Skipping migrations - schema already applied');
+      }
 
       // Phase 4: Comms (edge functions)
       await sendPhase('comms', 60);
@@ -275,24 +302,28 @@ export async function POST(req: Request) {
 
       await sendPhase('comms', 75);
 
-      // Phase 5: Contact (bootstrap)
-      await sendPhase('contact', 80);
+      // Phase 5: Contact (bootstrap) - skippable
+      if (!skippedSteps.includes('bootstrap')) {
+        await sendPhase('contact', 80);
 
-      const bootstrap = await bootstrapInstance({
-        supabaseUrl: supabase.url,
-        serviceRoleKey: resolvedServiceRoleKey,
-        companyName: admin.companyName,
-        email: admin.email,
-        password: admin.password,
-      });
+        const bootstrap = await bootstrapInstance({
+          supabaseUrl: supabase.url,
+          serviceRoleKey: resolvedServiceRoleKey,
+          companyName: admin.companyName,
+          email: admin.email,
+          password: admin.password,
+        });
 
-      if (!bootstrap.ok) {
-        await sendEvent({ type: 'error', error: 'Falha ao estabelecer primeiro contato.' });
-        await writer.close();
-        return;
+        if (!bootstrap.ok) {
+          await sendEvent({ type: 'error', error: 'Falha ao estabelecer primeiro contato.' });
+          await writer.close();
+          return;
+        }
+
+        await sendPhase('contact', 90);
+      } else {
+        console.log('[run-stream] Skipping bootstrap - admin already exists');
       }
-
-      await sendPhase('contact', 90);
 
       // Phase 6: Landing (redeploy)
       await sendPhase('landing', 92);

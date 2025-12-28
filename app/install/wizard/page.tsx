@@ -545,12 +545,67 @@ export default function InstallWizardPage() {
     setResult(null);
     setShowInstallOverlay(true);
     setCinePhase('preparing');
-    setCineMessage('Preparando sistemas');
-    setCineSubtitle('Verificando conexões...');
+    setCineMessage('Analisando destino');
+    setCineSubtitle('Verificando estado do projeto...');
     setCineProgress(0);
     
+    // 🧠 Health Check Inteligente - detecta o que pode ser pulado
+    let healthCheck: { 
+      skipWaitProject?: boolean; 
+      skipWaitStorage?: boolean; 
+      skipMigrations?: boolean; 
+      skipBootstrap?: boolean;
+      estimatedSeconds?: number;
+    } | undefined;
+    
+    try {
+      const healthRes = await fetch('/api/installer/health-check', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          supabase: {
+            url: supabaseUrl.trim(),
+            accessToken: supabaseAccessToken.trim(),
+            projectRef: supabaseProjectRef.trim() || undefined,
+            dbUrl: supabaseDbUrl.trim() || undefined,
+          },
+        }),
+      });
+      
+      if (healthRes.ok) {
+        const healthData = await healthRes.json();
+        if (healthData.ok) {
+          healthCheck = {
+            skipWaitProject: healthData.skipWaitProject,
+            skipWaitStorage: healthData.skipWaitStorage,
+            skipMigrations: healthData.skipMigrations,
+            skipBootstrap: healthData.skipBootstrap,
+            estimatedSeconds: healthData.estimatedSeconds,
+          };
+          console.log('[wizard] Health check result:', healthCheck);
+          
+          // Mensagem personalizada baseada no que foi detectado
+          const skippedCount = [
+            healthCheck.skipWaitProject,
+            healthCheck.skipWaitStorage,
+            healthCheck.skipMigrations,
+            healthCheck.skipBootstrap,
+          ].filter(Boolean).length;
+          
+          if (skippedCount >= 3) {
+            setCineSubtitle('Projeto detectado! Instalação rápida...');
+          } else if (skippedCount >= 1) {
+            setCineSubtitle('Otimizando rota de instalação...');
+          }
+        }
+      }
+    } catch (healthErr) {
+      console.warn('[wizard] Health check failed, proceeding with full install:', healthErr);
+    }
+    
+    await new Promise((r) => setTimeout(r, 800));
+    
     // Contagem regressiva épica
-    await new Promise((r) => setTimeout(r, 1000));
     setCineMessage('3');
     setCineSubtitle('Motores acionados');
     await new Promise((r) => setTimeout(r, 1000));
@@ -583,6 +638,7 @@ export default function InstallWizardPage() {
             deployEdgeFunctions: supabaseDeployEdgeFunctions,
           },
           admin: { companyName: userName.trim(), email: adminEmail.trim(), password: adminPassword },
+          healthCheck, // Passa o resultado do health check para pular etapas
         }),
       });
       

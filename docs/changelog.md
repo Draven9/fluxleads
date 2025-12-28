@@ -2,6 +2,25 @@
 
 ## 28/12/2025
 
+- **Installer Wizard — Health Check Inteligente (Fase 1)**:
+  - **Novo endpoint `/api/installer/health-check`**: analisa o estado do projeto Supabase antes de iniciar a instalação
+    - Detecta se projeto está `ACTIVE_HEALTHY`, `COMING_UP` ou `PAUSED`
+    - Verifica se Storage está pronto (`storage.buckets` existe)
+    - Verifica se schema já foi aplicado (`organizations` table existe)
+    - Verifica se admin já foi criado
+  - **Instalação adaptativa**: baseado no health check, o wizard pula etapas desnecessárias:
+    - Projeto existente e saudável → pula espera de projeto
+    - Storage já pronto → pula espera de storage
+    - Schema já aplicado → pula migrations
+    - Admin já existe → pula bootstrap
+  - **Progresso dinâmico**: a barra de progresso agora é calculada baseada apenas nas etapas que serão executadas
+    - Reinstalação de projeto existente: ~30 segundos
+    - Projeto novo: ~2-3 minutos (inclui esperas)
+  - **Mensagens contextuais**: feedback personalizado durante o health check
+    - "Projeto detectado! Instalação rápida..." (quando muito pode ser pulado)
+    - "Otimizando rota de instalação..." (quando algo pode ser pulado)
+  - **Tempo estimado**: o health check retorna `estimatedSeconds` baseado nas etapas necessárias
+
 - **Installer Wizard — Fluxo 100% Automático (Zero Decisões)**:
   - **Decisão automática de projeto Supabase**: após colar o PAT, o wizard automaticamente:
     1. Busca todas as organizações do usuário
