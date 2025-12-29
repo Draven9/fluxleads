@@ -115,6 +115,30 @@ export default function InstallStartPage() {
         const res = await fetch('/api/installer/meta');
         const data = await res.json();
         if (!cancelled) setMeta(data);
+
+        // Se o instalador estiver desabilitado, tenta auto-unlock (experiência mágica)
+        if (!cancelled && data && data.enabled === false) {
+          const savedToken = localStorage.getItem(STORAGE_TOKEN);
+          const savedProject = localStorage.getItem(STORAGE_PROJECT);
+          if (savedToken && savedProject) {
+            try {
+              const p = JSON.parse(savedProject) as { id: string; teamId?: string };
+              console.warn('[start] Installer disabled. Attempting auto-unlock...');
+              await fetch('/api/installer/unlock', {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({
+                  vercel: { token: savedToken.trim(), projectId: p.id, teamId: p.teamId },
+                }),
+              });
+              const res2 = await fetch('/api/installer/meta');
+              const data2 = await res2.json();
+              if (!cancelled) setMeta(data2);
+            } catch (unlockErr) {
+              console.error('[start] Auto-unlock failed:', unlockErr);
+            }
+          }
+        }
       } catch (err) {
         if (!cancelled) setMetaError(err instanceof Error ? err.message : 'Erro ao carregar');
       }

@@ -2,6 +2,14 @@
 
 ## 28/12/2025
 
+- **Installer Wizard — Auto-unlock (experiência mágica sem toggle manual)**:
+  - **Problema**: com `INSTALLER_ENABLED=false`, endpoints do instalador retornam `403 Installer disabled` e quebram o fluxo.
+  - **Solução**: novo endpoint `/api/installer/unlock` (não bloqueado por `INSTALLER_ENABLED`) que usa o token da Vercel para:
+    - setar `INSTALLER_ENABLED=true` via `upsertProjectEnvs`
+    - disparar redeploy e aguardar deployment `READY`
+  - **UX**: `/install/start` e `/install/wizard` tentam auto-unlock ao detectar `meta.enabled=false` e recarregam a meta.
+  - **Segurança**: continua protegido por `sameOrigin` + necessidade de token Vercel válido.
+
 - **Installer Wizard — Retry automático em queda de stream (SSE)**:
   - **Problema**: `net::ERR_NETWORK_CHANGED` / “network error” pode abortar o streaming do `/api/installer/run-stream` mesmo com a instalação em andamento.
   - **Solução**: retry automático **1x** ao detectar erros transitórios durante `reader.read()`; mantém o “save game” e tenta retomar sem perder progresso.

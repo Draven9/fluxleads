@@ -298,6 +298,31 @@ export default function InstallWizardPage() {
         const res = await fetch('/api/installer/meta');
         const data = await res.json();
         if (!cancelled) setMeta(data);
+
+        // Se o instalador estiver desabilitado, tenta "auto-unlock" usando o token da Vercel já salvo
+        if (!cancelled && data && data.enabled === false) {
+          const savedToken = localStorage.getItem(STORAGE_TOKEN);
+          const savedProject = localStorage.getItem(STORAGE_PROJECT);
+          if (savedToken && savedProject) {
+            try {
+              const p = JSON.parse(savedProject) as { id: string; teamId?: string };
+              console.warn('[wizard] Installer disabled. Attempting auto-unlock...');
+              await fetch('/api/installer/unlock', {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({
+                  vercel: { token: savedToken.trim(), projectId: p.id, teamId: p.teamId },
+                }),
+              });
+              // Recarrega meta após unlock
+              const res2 = await fetch('/api/installer/meta');
+              const data2 = await res2.json();
+              if (!cancelled) setMeta(data2);
+            } catch (unlockErr) {
+              console.error('[wizard] Auto-unlock failed:', unlockErr);
+            }
+          }
+        }
       } catch (err) {
         if (!cancelled) setMetaError(err instanceof Error ? err.message : 'Erro ao carregar');
       }
@@ -339,9 +364,19 @@ export default function InstallWizardPage() {
       // Verifica se há instalação em andamento que pode ser resumida
       const savedInstallState = loadInstallState();
       if (savedInstallState && canResumeInstallation(savedInstallState)) {
-        setInstallState(savedInstallState);
+        // Se o estado está "resumível" mas não tem progresso real, evita ferrar a UX com modal 0%
+        const summary = getProgressSummary(savedInstallState);
+        const hasRealProgress =
+          Boolean(summary.currentStepName) || (typeof summary.percentage === 'number' && summary.percentage > 0);
+
+        if (!hasRealProgress) {
+          console.warn('[wizard] Ignoring empty resumable installState (0%). Clearing.');
+          clearInstallState();
+        } else {
+          setInstallState(savedInstallState);
         setShowResumeModal(true);
-        console.log('[wizard] Found resumable installation:', getProgressSummary(savedInstallState));
+        console.log('[wizard] Found resumable installation:', summary);
+        }
       }
       
       setIsHydrated(true);
