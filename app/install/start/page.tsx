@@ -66,6 +66,8 @@ export default function InstallStartPage() {
   
   const [meta, setMeta] = useState<InstallerMeta | null>(null);
   const [metaError, setMetaError] = useState<string | null>(null);
+  const [unlockingInstaller, setUnlockingInstaller] = useState(false);
+  const [unlockError, setUnlockError] = useState<string | null>(null);
   const [screen, setScreen] = useState<Screen>('identity');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -112,7 +114,7 @@ export default function InstallStartPage() {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch('/api/installer/meta');
+        const res = await fetch(`/api/installer/meta?t=${Date.now()}`, { cache: 'no-store' });
         const data = await res.json();
         if (!cancelled) setMeta(data);
 
@@ -124,18 +126,25 @@ export default function InstallStartPage() {
             try {
               const p = JSON.parse(savedProject) as { id: string; teamId?: string };
               console.warn('[start] Installer disabled. Attempting auto-unlock...');
-              await fetch('/api/installer/unlock', {
+              if (!cancelled) { setUnlockingInstaller(true); setUnlockError(null); }
+              const unlockRes = await fetch('/api/installer/unlock', {
                 method: 'POST',
                 headers: { 'content-type': 'application/json' },
                 body: JSON.stringify({
                   vercel: { token: savedToken.trim(), projectId: p.id, teamId: p.teamId },
                 }),
               });
-              const res2 = await fetch('/api/installer/meta');
+              const unlockData = await unlockRes.json().catch(() => null);
+              if (!unlockRes.ok) throw new Error(unlockData?.error || 'Falha ao destravar instalador');
+
+              const res2 = await fetch(`/api/installer/meta?t=${Date.now()}`, { cache: 'no-store' });
               const data2 = await res2.json();
               if (!cancelled) setMeta(data2);
             } catch (unlockErr) {
               console.error('[start] Auto-unlock failed:', unlockErr);
+              if (!cancelled) setUnlockError(unlockErr instanceof Error ? unlockErr.message : 'Falha ao destravar instalador');
+            } finally {
+              if (!cancelled) setUnlockingInstaller(false);
             }
           }
         }
@@ -351,6 +360,25 @@ export default function InstallStartPage() {
     );
   }
   
+  if (unlockingInstaller) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center px-4">
+        <div className="text-center max-w-md w-full">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 mb-6">
+            <Loader2 className="w-8 h-8 text-amber-400 animate-spin" />
+          </div>
+          <h1 className="text-2xl font-bold text-white mb-2">Destravando instalador…</h1>
+          <p className="text-slate-400">Ajustando variáveis e preparando o redeploy na Vercel.</p>
+          {unlockError && (
+            <div className="mt-4 rounded-xl bg-red-500/10 border border-red-500/20 p-4 text-red-400 text-sm">
+              {unlockError}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   if (metaError || (meta && !meta.enabled)) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center px-4">
