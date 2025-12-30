@@ -50,6 +50,20 @@ const STORAGE_USER_NAME = 'crm_install_user_name';
 const STORAGE_USER_EMAIL = 'crm_install_user_email';
 const STORAGE_USER_PASS_HASH = 'crm_install_user_pass_hash';
 const STORAGE_SUPABASE_TOKEN = 'crm_install_supabase_token';
+const STORAGE_VERCEL_DEPLOYMENT_ID = 'crm_install_vercel_deployment_id';
+
+const STEP_LABELS: Record<string, string> = {
+  resolve_keys: 'Conectando ao Supabase',
+  setup_envs: 'Configurando variáveis na Vercel',
+  wait_project: 'Aguardando Supabase ficar ativo',
+  wait_storage: 'Aguardando Storage do Supabase',
+  migrations: 'Aplicando estrutura do banco (migrations)',
+  edge_secrets: 'Configurando funções (segredos)',
+  edge_deploy: 'Publicando funções (edge)',
+  bootstrap: 'Criando usuário administrador',
+  redeploy: 'Iniciando redeploy na Vercel',
+  wait_vercel_deploy: 'Aguardando redeploy na Vercel (etapa final)',
+};
 
 async function hashPassword(password: string): Promise<string> {
   const encoder = new TextEncoder();
@@ -257,6 +271,9 @@ export default function InstallWizardPage() {
   const [cineMessage, setCineMessage] = useState('Preparando a decolagem…');
   const [cineSubtitle, setCineSubtitle] = useState('');
   const [cineProgress, setCineProgress] = useState(0);
+  const [cineStepLabel, setCineStepLabel] = useState<string>('');
+  const [vercelDeploymentId, setVercelDeploymentId] = useState<string | null>(null);
+  const [finalizing, setFinalizing] = useState(false);
   
   // Estado persistente para instalação resumível
   const [installState, setInstallState] = useState<InstallState | null>(null);
@@ -1057,9 +1074,22 @@ export default function InstallWizardPage() {
                 const updated = updateStepStatus(current, stepId, 'running');
                 commitInstallState(updated);
               }
+              // UI: mostra etapa (mais prescritivo que só %)
+              const explicitStepId = typeof event.stepId === 'string' ? event.stepId : null;
+              if (explicitStepId) {
+                setCineStepLabel(STEP_LABELS[explicitStepId] || explicitStepId);
+              } else {
+                setCineStepLabel('');
+              }
               setCineMessage(event.title || 'Processando...');
               setCineSubtitle(event.subtitle || '');
               setCineProgress(event.progress || 0);
+            } else if (event.type === 'vercel_deploy') {
+              const id = typeof event.deploymentId === 'string' ? event.deploymentId : null;
+              if (id) {
+                setVercelDeploymentId(id);
+                localStorage.setItem(STORAGE_VERCEL_DEPLOYMENT_ID, id);
+              }
             } else if (event.type === 'step_complete') {
               const stepId = String(event.stepId || '');
               const current = installStateRef.current;
@@ -1086,6 +1116,7 @@ export default function InstallWizardPage() {
               // 🎮 Limpa o save game - instalação completa!
               clearInstallState();
               commitInstallState(null);
+              localStorage.removeItem(STORAGE_VERCEL_DEPLOYMENT_ID);
             } else if (event.type === 'error') {
               throw new Error(event.error || 'Erro durante a instalação');
             }
@@ -1108,6 +1139,66 @@ export default function InstallWizardPage() {
       }
     } finally {
       setInstalling(false);
+    }
+  };
+
+  const isRedeployStillRunningError = (msg: string) => {
+    const m = String(msg || '').toLowerCase();
+    return m.includes('redeploy disparado') && m.includes('ainda não finalizou');
+  };
+
+  const finalizeRedeploy = async () => {
+    if (!project) return;
+    const deploymentId =
+      vercelDeploymentId ||
+      (typeof window !== 'undefined' ? localStorage.getItem(STORAGE_VERCEL_DEPLOYMENT_ID) : null);
+    if (!deploymentId) return;
+
+    setFinalizing(true);
+    setRunError(null);
+    setCinePhase('running');
+    setCineMessage('Etapa final');
+    setCineStepLabel('Aguardando redeploy na Vercel (etapa final)');
+    setCineSubtitle('Verificando status do deploy…');
+    setCineProgress(Math.max(0, Math.min(99, cineProgress || 0)));
+
+    try {
+      const res = await fetch('/api/installer/finalize', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          installerToken: installerToken.trim() || undefined,
+          vercel: {
+            token: vercelToken.trim(),
+            projectId: project.id,
+            teamId: project.teamId,
+            targets: ['production', 'preview'],
+            deploymentId,
+          },
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data?.error || 'O redeploy ainda está finalizando. Aguarde e tente novamente.');
+      }
+
+      setCineProgress(100);
+      setCineMessage(`Missão cumprida, ${firstName}!`);
+      setCineSubtitle('Aterrissagem confirmada');
+      await new Promise((r) => setTimeout(r, 600));
+      setCinePhase('success');
+      setCineSubtitle('Bem-vindo ao novo mundo.');
+      clearInstallState();
+      commitInstallState(null);
+      localStorage.removeItem(STORAGE_VERCEL_DEPLOYMENT_ID);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Erro';
+      setRunError(msg);
+      setCinePhase('error');
+      setCineMessage('Quase lá…');
+      setCineSubtitle(msg);
+    } finally {
+      setFinalizing(false);
     }
   };
 
@@ -1682,7 +1773,9 @@ export default function InstallWizardPage() {
                       transition={{ duration: 0.5, ease: 'easeOut' }}
                     />
                   </div>
-                  <p className="text-xs text-slate-500 mt-2">{cineProgress}%</p>
+                  <p className="text-xs text-slate-500 mt-2">
+                    {cineProgress}%{cineStepLabel ? ` • ${cineStepLabel}` : ''}
+                  </p>
                 </div>
               )}
               
@@ -1735,6 +1828,16 @@ export default function InstallWizardPage() {
                     >
                       Voltar
                     </button>
+                    {isRedeployStillRunningError(runError || '') && (vercelDeploymentId || (typeof window !== 'undefined' && localStorage.getItem(STORAGE_VERCEL_DEPLOYMENT_ID))) ? (
+                      <button
+                        onClick={() => void finalizeRedeploy()}
+                        disabled={finalizing}
+                        className="px-8 py-4 rounded-2xl bg-amber-500 hover:bg-amber-400 text-white font-semibold transition-all flex items-center gap-2 disabled:opacity-50"
+                      >
+                        {finalizing ? <Loader2 className="w-5 h-5 animate-spin" /> : <RefreshCw className="w-5 h-5" />}
+                        Verificar de novo (Vercel)
+                      </button>
+                    ) : (
                     <button 
                       onClick={() => {
                         setShowInstallOverlay(false);
@@ -1749,6 +1852,7 @@ export default function InstallWizardPage() {
                       <RefreshCw className="w-5 h-5" />
                       Tentar novamente
                     </button>
+                    )}
                   </div>
                 </motion.div>
               )}

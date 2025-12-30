@@ -9,6 +9,13 @@
   - **UX**: durante a pausa de projeto, a UI mostra que pode levar até ~3 minutos e exibe telemetria (tempo/tentativas/status).
   - **Arquivo**: `app/install/wizard/page.tsx`
 
+- **Installer Wizard — Etapa atual visível + retry guiado no “aguardando redeploy”**:
+  - **Problema**: alguns usuários viam o wizard “parado” em percentuais como 26% sem entender o que estava acontecendo (principalmente no `wait_vercel_deploy`).
+  - **Solução**: eventos do stream agora incluem `stepId`, e a UI exibe **a etapa atual** junto do percentual.
+  - **Retry**: quando o redeploy já foi disparado mas ainda não ficou `READY`, a tela de erro oferece **“Verificar de novo (Vercel)”** sem refazer a instalação inteira.
+  - **Endpoint**: `/api/installer/finalize` (aguarda READY e então desabilita `INSTALLER_ENABLED`).
+  - **Arquivos**: `app/api/installer/run-stream/route.ts`, `app/api/installer/finalize/route.ts`, `app/install/wizard/page.tsx`
+
 ## 29/12/2025
 
 - **Installer — Bloqueio de acesso após instalação completa**:
