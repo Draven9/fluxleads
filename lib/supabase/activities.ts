@@ -15,6 +15,7 @@
 import { supabase } from './client';
 import { Activity } from '@/types';
 import { sanitizeUUID } from './utils';
+import { sortActivitiesSmart } from '@/lib/utils/activitySort';
 
 // ============================================
 // HELPERS REMOVED
@@ -125,10 +126,13 @@ export const activitiesService = {
           *,
           deals:deal_id (title)
         `)
-        .order('date', { ascending: false });
+        .order('date', { ascending: false }); // Ordenação básica do banco
 
       if (error) return { data: null, error };
-      return { data: (data || []).map(a => transformActivity(a as DbActivityWithDeal)), error: null };
+      
+      // Transforma e aplica ordenação inteligente
+      const activities = (data || []).map(a => transformActivity(a as DbActivityWithDeal));
+      return { data: sortActivitiesSmart(activities), error: null };
     } catch (e) {
       return { data: null, error: e as Error };
     }
