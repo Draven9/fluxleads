@@ -8,7 +8,7 @@
  * 
  * @example
  * ```tsx
- * import { cn } from '@/utils/cn';
+ * import { cn } from '@/lib/utils/cn';
  * 
  * // Combina classes com merge inteligente
  * cn('px-4 py-2', 'px-6'); // => 'py-2 px-6' (px-4 removido)

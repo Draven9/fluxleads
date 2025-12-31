@@ -16,7 +16,7 @@
 import { supabase } from './client';
 import { Board, BoardStage, BoardGoal, AgentPersona, OrganizationId } from '@/types';
 import { sanitizeUUID, requireUUID } from './utils';
-import { slugify } from '@/utils/slugify';
+import { slugify } from '@/lib/utils/slugify';
 
 function isMissingColumnInSchemaCache(error: unknown, table: string, column: string): boolean {
   const message = String((error as any)?.message ?? '');

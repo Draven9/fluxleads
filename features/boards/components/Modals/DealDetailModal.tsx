@@ -37,7 +37,7 @@ import {
 } from 'lucide-react';
 import { StageProgressBar } from '../StageProgressBar';
 import { ActivityRow } from '@/features/activities/components/ActivityRow';
-import { formatPriorityPtBr } from '@/utils/priority';
+import { formatPriorityPtBr } from '@/lib/utils/priority';
 
 interface DealDetailModalProps {
   dealId: string | null;

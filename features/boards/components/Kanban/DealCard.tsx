@@ -3,7 +3,7 @@ import Image from 'next/image';
 import { DealView } from '@/types';
 import { Building2, Hourglass, Trophy, XCircle } from 'lucide-react';
 import { ActivityStatusIcon } from './ActivityStatusIcon';
-import { priorityAriaLabelPtBr } from '@/utils/priority';
+import { priorityAriaLabelPtBr } from '@/lib/utils/priority';
 
 interface DealCardProps {
   deal: DealView;

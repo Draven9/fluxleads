@@ -7,7 +7,7 @@ import { useCRM } from '@/context/CRMContext';
 import { useToast } from '@/context/ToastContext';
 import { Modal } from '@/components/ui/Modal';
 import { MODAL_FOOTER_CLASS } from '@/components/ui/modalStyles';
-import { slugify } from '@/utils/slugify';
+import { slugify } from '@/lib/utils/slugify';
 
 interface CreateBoardModalProps {
   isOpen: boolean;
