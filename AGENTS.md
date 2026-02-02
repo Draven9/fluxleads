@@ -1,4 +1,4 @@
-# AGENTS.md — NossoCRM
+# AGENTS.md — Flux Leads
 
 ## Commands
 - **Dev**: `npm run dev`

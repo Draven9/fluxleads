@@ -232,180 +232,187 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
       {/* Sidebar - Collapsible */}
       {isDesktop ? (
-      <aside
-        className={`hidden md:flex flex-col z-20 glass border-r border-[var(--color-border-subtle)] transition-all duration-300 ease-in-out ${sidebarCollapsed ? 'w-20 items-center' : 'w-64'
-          }`}
-        aria-label="Menu principal"
-      >
-        <div className={`h-16 flex items-center border-b border-[var(--color-border-subtle)] transition-all duration-300 px-5 ${sidebarCollapsed ? 'justify-center px-0' : 'justify-between'}`}>
-          <div className={`flex items-center transition-all duration-300 ${sidebarCollapsed ? 'gap-0 justify-center' : 'gap-3'}`}>
-            <div className="w-9 h-9 bg-gradient-to-br from-primary-500 to-primary-700 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-primary-500/20 shrink-0" aria-hidden="true">
-              N
-            </div>
-            <span className={`text-xl font-bold font-display tracking-tight text-slate-900 dark:text-white whitespace-nowrap overflow-hidden transition-all duration-300 ${sidebarCollapsed ? 'w-0 opacity-0' : 'w-auto opacity-100'}`}>
-              NossoCRM
-            </span>
-          </div>
-
-          {/* Header Toggle Button - Only visible when expanded */}
-          {!sidebarCollapsed && (
-            <button
-              onClick={() => setSidebarCollapsed(true)}
-              className="text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors p-1 rounded-md hover:bg-slate-100 dark:hover:bg-white/5"
-              title="Recolher Menu"
-            >
-              <PanelLeftClose size={20} />
-            </button>
-          )}
-        </div>
-
-        <nav className={`flex-1 p-4 space-y-2 flex flex-col ${sidebarCollapsed ? 'items-center px-2' : ''}`} aria-label="Navegação do sistema">
-          {[
-            { to: '/inbox', icon: Inbox, label: 'Inbox', prefetch: 'inbox' as const },
-            { to: '/dashboard', icon: LayoutDashboard, label: 'Visão Geral', prefetch: 'dashboard' as const },
-            { to: '/boards', icon: KanbanSquare, label: 'Boards', prefetch: 'boards' as const },
-            { to: '/contacts', icon: Users, label: 'Contatos', prefetch: 'contacts' as const },
-            { to: '/activities', icon: CheckSquare, label: 'Atividades', prefetch: 'activities' as const },
-            { to: '/reports', icon: BarChart3, label: 'Relatórios', prefetch: 'reports' as const },
-            { to: '/settings', icon: Settings, label: 'Configurações', prefetch: 'settings' as const },
-          ].map((item) => {
-            if (sidebarCollapsed) {
-              return (
-                <Link
-                  key={item.to}
-                  href={item.to}
-                  onMouseEnter={() => prefetchRoute(item.prefetch)}
-                  onClick={() => setClickedPath(item.to)}
-                  className={(() => {
-                    const isActive = pathname === item.to || (item.to === '/boards' && pathname === '/pipeline');
-                    const wasJustClicked = clickedPath === item.to;
-                    // If user clicked on a DIFFERENT item, immediately deactivate this one
-                    const anotherItemWasClicked = clickedPath && clickedPath !== item.to;
-                    const isActuallyActive = anotherItemWasClicked ? false : (isActive || wasJustClicked);
-                    return `w-10 h-10 rounded-lg flex items-center justify-center ${isActuallyActive
-                      ? 'bg-primary-500/10 text-primary-600 dark:text-primary-400 border border-primary-200 dark:border-primary-900/50'
-                      : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white'
-                      }`;
-                  })()}
-                  title={item.label}
-                >
-                  <item.icon size={20} />
-                </Link>
-              );
-            }
-
-            return (
-              <NavItem
-                key={item.to}
-                to={item.to}
-                icon={item.icon}
-                label={item.label}
-                prefetch={item.prefetch}
-                clickedPath={clickedPath}
-                onItemClick={setClickedPath}
-              />
-            );
-          })}
-        </nav>
-
-        {/* Sidebar Toggle Button (Footer) - Only visible when collapsed */}
-        {sidebarCollapsed && (
-          <div className="px-4 pb-2 flex justify-center">
-            <button
-              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              className="flex items-center justify-center w-10 h-10 p-2 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-all"
-              title="Expandir Menu"
-            >
-              <PanelLeftOpen size={20} />
-            </button>
-          </div>
-        )}
-
-        <div className={`p-4 border-t border-[var(--color-border-subtle)] ${sidebarCollapsed ? 'flex justify-center' : ''}`}>
-          <div className="relative">
-            {/* User Card - Clickable */}
-            <button
-              onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-              className={`flex items-center gap-3 rounded-xl bg-slate-50/50 dark:bg-white/5 border border-slate-100 dark:border-white/5 hover:bg-slate-100 dark:hover:bg-white/10 transition-all group focus-visible-ring ${sidebarCollapsed ? 'p-0 w-10 h-10 justify-center' : 'w-full p-3'
-                }`}
-            >
-              {profile?.avatar_url ? (
+        <aside
+          className={`hidden md:flex flex-col z-20 glass border-r border-[var(--color-border-subtle)] transition-all duration-300 ease-in-out ${sidebarCollapsed ? 'w-20 items-center' : 'w-64'
+            }`}
+          aria-label="Menu principal"
+        >
+          <div className={`h-16 flex items-center border-b border-[var(--color-border-subtle)] transition-all duration-300 px-5 ${sidebarCollapsed ? 'justify-center px-0' : 'justify-between'}`}>
+            <div className={`flex items-center transition-all duration-300 ${sidebarCollapsed ? 'gap-0 justify-center' : 'gap-3'}`}>
+              <div className={`transition-all duration-300 ${sidebarCollapsed ? 'w-full flex justify-center' : 'w-auto'}`}>
                 <Image
-                  src={profile.avatar_url}
-                  alt=""
-                  width={40}
-                  height={40}
-                  className="w-10 h-10 rounded-full object-cover ring-2 ring-white dark:ring-slate-800 shadow-lg"
+                  src="/icons/logo-icon.png"
+                  alt="Flux Leads"
+                  width={36}
+                  height={36}
+                  className={`object-contain transition-all duration-300 ${sidebarCollapsed ? 'w-10 h-10' : 'w-9 h-9'}`}
                   unoptimized
                 />
-              ) : (
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center text-white font-bold text-sm ring-2 ring-white dark:ring-slate-800 shadow-lg shrink-0" aria-hidden="true">
-                  {profile?.first_name && profile?.last_name
-                    ? `${profile.first_name[0]}${profile.last_name[0]}`.toUpperCase()
-                    : profile?.nickname?.substring(0, 2).toUpperCase() || userInitials}
-                </div>
-              )}
+              </div>
+              <span className={`text-xl font-bold font-display tracking-tight text-slate-900 dark:text-white whitespace-nowrap overflow-hidden transition-all duration-300 ${sidebarCollapsed ? 'w-0 opacity-0 hidden' : 'w-auto opacity-100'}`}>
+                Flux Leads
+              </span>
+            </div>
 
-              {!sidebarCollapsed && (
-                <>
-                  <div className="flex-1 min-w-0 text-left">
-                    <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
-                      {profile?.nickname || profile?.first_name || profile?.email?.split('@')[0] || 'Usuário'}
-                    </p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                      {profile?.email || ''}
-                    </p>
-                  </div>
-                  <svg
-                    className={`w-4 h-4 text-slate-400 transition-transform ${isUserMenuOpen ? 'rotate-180' : ''}`}
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    aria-hidden="true"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                  </svg>
-                </>
-              )}
-            </button>
-
-            {/* Dropdown Menu */}
-            {isUserMenuOpen && (
-              <>
-                <div
-                  className="fixed inset-0 z-40"
-                  onClick={() => setIsUserMenuOpen(false)}
-                  aria-hidden="true"
-                />
-                <div
-                  className={`absolute bottom-full mb-2 z-50 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden animate-in slide-in-from-bottom-2 fade-in duration-150 ${sidebarCollapsed ? 'left-0 w-48' : 'left-0 right-0'}`}
-                >
-                  <div className="p-1">
-                    <Link
-                      href="/profile"
-                      onClick={() => setIsUserMenuOpen(false)}
-                      className="flex items-center gap-3 px-3 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-lg transition-colors focus-visible-ring"
-                    >
-                      <User className="w-4 h-4 text-slate-400" />
-                      Editar Perfil
-                    </Link>
-                    <button
-                      onClick={() => {
-                        setIsUserMenuOpen(false);
-                        signOut();
-                      }}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors focus-visible-ring"
-                    >
-                      <LogOut className="w-4 h-4" />
-                      Sair da conta
-                    </button>
-                  </div>
-                </div>
-              </>
+            {/* Header Toggle Button - Only visible when expanded */}
+            {!sidebarCollapsed && (
+              <button
+                onClick={() => setSidebarCollapsed(true)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors p-1 rounded-md hover:bg-slate-100 dark:hover:bg-white/5"
+                title="Recolher Menu"
+              >
+                <PanelLeftClose size={20} />
+              </button>
             )}
           </div>
-        </div>
-      </aside>
+
+          <nav className={`flex-1 p-4 space-y-2 flex flex-col ${sidebarCollapsed ? 'items-center px-2' : ''}`} aria-label="Navegação do sistema">
+            {[
+              { to: '/inbox', icon: Inbox, label: 'Inbox', prefetch: 'inbox' as const },
+              { to: '/dashboard', icon: LayoutDashboard, label: 'Visão Geral', prefetch: 'dashboard' as const },
+              { to: '/boards', icon: KanbanSquare, label: 'Boards', prefetch: 'boards' as const },
+              { to: '/contacts', icon: Users, label: 'Contatos', prefetch: 'contacts' as const },
+              { to: '/activities', icon: CheckSquare, label: 'Atividades', prefetch: 'activities' as const },
+              { to: '/reports', icon: BarChart3, label: 'Relatórios', prefetch: 'reports' as const },
+              { to: '/settings', icon: Settings, label: 'Configurações', prefetch: 'settings' as const },
+            ].map((item) => {
+              if (sidebarCollapsed) {
+                return (
+                  <Link
+                    key={item.to}
+                    href={item.to}
+                    onMouseEnter={() => prefetchRoute(item.prefetch)}
+                    onClick={() => setClickedPath(item.to)}
+                    className={(() => {
+                      const isActive = pathname === item.to || (item.to === '/boards' && pathname === '/pipeline');
+                      const wasJustClicked = clickedPath === item.to;
+                      // If user clicked on a DIFFERENT item, immediately deactivate this one
+                      const anotherItemWasClicked = clickedPath && clickedPath !== item.to;
+                      const isActuallyActive = anotherItemWasClicked ? false : (isActive || wasJustClicked);
+                      return `w-10 h-10 rounded-lg flex items-center justify-center ${isActuallyActive
+                        ? 'bg-primary-500/10 text-primary-600 dark:text-primary-400 border border-primary-200 dark:border-primary-900/50'
+                        : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white'
+                        }`;
+                    })()}
+                    title={item.label}
+                  >
+                    <item.icon size={20} />
+                  </Link>
+                );
+              }
+
+              return (
+                <NavItem
+                  key={item.to}
+                  to={item.to}
+                  icon={item.icon}
+                  label={item.label}
+                  prefetch={item.prefetch}
+                  clickedPath={clickedPath}
+                  onItemClick={setClickedPath}
+                />
+              );
+            })}
+          </nav>
+
+          {/* Sidebar Toggle Button (Footer) - Only visible when collapsed */}
+          {sidebarCollapsed && (
+            <div className="px-4 pb-2 flex justify-center">
+              <button
+                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                className="flex items-center justify-center w-10 h-10 p-2 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-all"
+                title="Expandir Menu"
+              >
+                <PanelLeftOpen size={20} />
+              </button>
+            </div>
+          )}
+
+          <div className={`p-4 border-t border-[var(--color-border-subtle)] ${sidebarCollapsed ? 'flex justify-center' : ''}`}>
+            <div className="relative">
+              {/* User Card - Clickable */}
+              <button
+                onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                className={`flex items-center gap-3 rounded-xl bg-slate-50/50 dark:bg-white/5 border border-slate-100 dark:border-white/5 hover:bg-slate-100 dark:hover:bg-white/10 transition-all group focus-visible-ring ${sidebarCollapsed ? 'p-0 w-10 h-10 justify-center' : 'w-full p-3'
+                  }`}
+              >
+                {profile?.avatar_url ? (
+                  <Image
+                    src={profile.avatar_url}
+                    alt=""
+                    width={40}
+                    height={40}
+                    className="w-10 h-10 rounded-full object-cover ring-2 ring-white dark:ring-slate-800 shadow-lg"
+                    unoptimized
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center text-white font-bold text-sm ring-2 ring-white dark:ring-slate-800 shadow-lg shrink-0" aria-hidden="true">
+                    {profile?.first_name && profile?.last_name
+                      ? `${profile.first_name[0]}${profile.last_name[0]}`.toUpperCase()
+                      : profile?.nickname?.substring(0, 2).toUpperCase() || userInitials}
+                  </div>
+                )}
+
+                {!sidebarCollapsed && (
+                  <>
+                    <div className="flex-1 min-w-0 text-left">
+                      <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
+                        {profile?.nickname || profile?.first_name || profile?.email?.split('@')[0] || 'Usuário'}
+                      </p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                        {profile?.email || ''}
+                      </p>
+                    </div>
+                    <svg
+                      className={`w-4 h-4 text-slate-400 transition-transform ${isUserMenuOpen ? 'rotate-180' : ''}`}
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      aria-hidden="true"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                    </svg>
+                  </>
+                )}
+              </button>
+
+              {/* Dropdown Menu */}
+              {isUserMenuOpen && (
+                <>
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setIsUserMenuOpen(false)}
+                    aria-hidden="true"
+                  />
+                  <div
+                    className={`absolute bottom-full mb-2 z-50 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden animate-in slide-in-from-bottom-2 fade-in duration-150 ${sidebarCollapsed ? 'left-0 w-48' : 'left-0 right-0'}`}
+                  >
+                    <div className="p-1">
+                      <Link
+                        href="/profile"
+                        onClick={() => setIsUserMenuOpen(false)}
+                        className="flex items-center gap-3 px-3 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-lg transition-colors focus-visible-ring"
+                      >
+                        <User className="w-4 h-4 text-slate-400" />
+                        Editar Perfil
+                      </Link>
+                      <button
+                        onClick={() => {
+                          setIsUserMenuOpen(false);
+                          signOut();
+                        }}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors focus-visible-ring"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        Sair da conta
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </aside>
       ) : null}
 
       {/* Main Content Wrapper */}
