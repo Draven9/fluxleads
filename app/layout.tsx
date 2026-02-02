@@ -9,6 +9,11 @@ const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 export const metadata: Metadata = {
   title: 'Flux Leads',
   description: 'CRM Inteligente para Gestão de Vendas',
+  icons: {
+    icon: '/icons/logo-icon.png',
+    shortcut: '/icons/logo-icon.png',
+    apple: '/icons/logo-icon.png',
+  },
 }
 
 /**
