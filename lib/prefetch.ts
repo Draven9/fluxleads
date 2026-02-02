@@ -14,6 +14,7 @@ const routeImports = {
   activities: () => import('@/features/activities/ActivitiesPage'),
   reports: () => import('@/features/reports/ReportsPage'),
   manual: () => import('@/features/manual/components/ManualLayout'),
+  chat: () => import('@/features/chat/components/ChatLayout'),
 } as const;
 
 export type RouteName = keyof typeof routeImports;

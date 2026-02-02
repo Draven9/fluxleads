@@ -1,5 +1,6 @@
 import React from 'react';
-import { Building2, Mail, Phone, Plus, Calendar, Pencil, Trash2, Globe, MoreHorizontal, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import Link from 'next/link';
+import { Building2, Mail, Phone, Plus, Calendar, Pencil, Trash2, Globe, MoreHorizontal, ArrowUpDown, ArrowUp, ArrowDown, MessageCircle } from 'lucide-react';
 import { Contact, Company, ContactSortableColumn } from '@/types';
 import { StageBadge } from './ContactsStageTabs';
 
@@ -18,21 +19,21 @@ const PT_BR_DATE_TIME_FORMATTER = new Intl.DateTimeFormat('pt-BR', {
  */
 function formatRelativeDate(dateString: string | undefined | null, now: Date): string {
     if (!dateString) return '---';
-    
+
     const date = new Date(dateString);
-    
+
     // Reset hours for accurate day comparison
     const dateDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    
+
     const diffTime = today.getTime() - dateDay.getTime();
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    
+
     if (diffDays === 0) return 'Hoje';
     if (diffDays === 1) return 'Ontem';
     if (diffDays < 7) return `Há ${diffDays} dias`;
     if (diffDays < 30) return `Há ${Math.floor(diffDays / 7)} sem.`;
-    
+
     // For older dates, show the actual date
     return PT_BR_DATE_FORMATTER.format(date);
 }
@@ -49,7 +50,7 @@ interface SortableHeaderProps {
 /** Sortable column header component */
 const SortableHeader: React.FC<SortableHeaderProps> = ({ label, column, currentSort, sortOrder, onSort }) => {
     const isActive = currentSort === column;
-    
+
     return (
         <th scope="col" className="px-6 py-4">
             <button
@@ -170,7 +171,7 @@ export const ContactsList: React.FC<ContactsListProps> = ({
 
     // Performance: avoid creating `new Date()` for each row in formatRelativeDate.
     const now = new Date();
-    
+
     return (
         <div className="glass rounded-xl border border-slate-200 dark:border-white/5 shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
@@ -179,13 +180,13 @@ export const ContactsList: React.FC<ContactsListProps> = ({
                         <thead className="bg-slate-50/80 dark:bg-white/5 border-b border-slate-200 dark:border-white/5">
                             <tr>
                                 <th scope="col" className="w-12 px-6 py-4">
-                                    <input 
-                                        type="checkbox" 
+                                    <input
+                                        type="checkbox"
                                         checked={allSelected}
                                         ref={(el) => { if (el) el.indeterminate = someSelected; }}
                                         onChange={toggleSelectAll}
                                         aria-label={allSelected ? 'Desmarcar todos os contatos' : 'Selecionar todos os contatos'}
-                                        className="rounded border-slate-300 text-primary-600 focus:ring-primary-500 dark:bg-white/5 dark:border-white/10" 
+                                        className="rounded border-slate-300 text-primary-600 focus:ring-primary-500 dark:bg-white/5 dark:border-white/10"
                                     />
                                 </th>
                                 {onSort ? (
@@ -214,12 +215,12 @@ export const ContactsList: React.FC<ContactsListProps> = ({
                             {filteredContacts.map((contact) => (
                                 <tr key={contact.id} className={`hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors group ${selectedIds.has(contact.id) ? 'bg-primary-50/50 dark:bg-primary-900/10' : ''}`}>
                                     <td className="px-6 py-4">
-                                        <input 
-                                            type="checkbox" 
+                                        <input
+                                            type="checkbox"
                                             checked={selectedIds.has(contact.id)}
                                             onChange={() => toggleSelect(contact.id)}
                                             aria-label={`Selecionar ${contact.name}`}
-                                            className="rounded border-slate-300 text-primary-600 focus:ring-primary-500 dark:bg-white/5 dark:border-white/10" 
+                                            className="rounded border-slate-300 text-primary-600 focus:ring-primary-500 dark:bg-white/5 dark:border-white/10"
                                         />
                                     </td>
                                     <td className="px-6 py-4">
@@ -304,6 +305,14 @@ export const ContactsList: React.FC<ContactsListProps> = ({
                                     </td>
                                     <td className="px-6 py-4 text-right">
                                         <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                                            <Link
+                                                href={`/chat?contactId=${contact.id}`}
+                                                className="p-1.5 text-slate-400 hover:text-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 rounded transition-colors"
+                                                aria-label={`Enviar mensagem para ${contact.name}`}
+                                                title="Conversar"
+                                            >
+                                                <MessageCircle size={16} aria-hidden="true" />
+                                            </Link>
                                             <button
                                                 onClick={() => openEditModal(contact)}
                                                 className="p-1.5 text-slate-400 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded transition-colors"
@@ -368,11 +377,10 @@ export const ContactsList: React.FC<ContactsListProps> = ({
                                                             if (firstLinkedContact) openEditModal(firstLinkedContact);
                                                         }}
                                                         disabled={!firstLinkedContact}
-                                                        className={`w-9 h-9 rounded-lg bg-slate-100 dark:bg-white/10 flex items-center justify-center text-slate-500 dark:text-slate-400 shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-dark-card ${
-                                                            firstLinkedContact
-                                                                ? 'hover:bg-slate-200 dark:hover:bg-white/15'
-                                                                : 'opacity-50 cursor-not-allowed'
-                                                        }`}
+                                                        className={`w-9 h-9 rounded-lg bg-slate-100 dark:bg-white/10 flex items-center justify-center text-slate-500 dark:text-slate-400 shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-dark-card ${firstLinkedContact
+                                                            ? 'hover:bg-slate-200 dark:hover:bg-white/15'
+                                                            : 'opacity-50 cursor-not-allowed'
+                                                            }`}
                                                         aria-label={
                                                             firstLinkedContact
                                                                 ? `Abrir contato vinculado de ${company.name}`

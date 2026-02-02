@@ -1,0 +1,86 @@
+import { useEffect, useState, useCallback } from 'react';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/context/AuthContext';
+import { Message } from '../types';
+
+export function useChatMessages(sessionId: string | null) {
+    const { organizationId } = useAuth();
+    const [messages, setMessages] = useState<Message[]>([]);
+    const [loading, setLoading] = useState(false);
+
+    // Fetch Messages
+    useEffect(() => {
+        if (!sessionId || !organizationId) return;
+
+        const fetchMessages = async () => {
+            setLoading(true);
+            const { data, error } = await supabase
+                .from('messages')
+                .select('*')
+                .eq('session_id', sessionId)
+                .order('created_at', { ascending: true });
+
+            if (error) {
+                console.error('Error fetching messages:', error);
+            } else {
+                setMessages(data as Message[]);
+            }
+            setLoading(false);
+        };
+
+        fetchMessages();
+
+        // Mark as read (Clear unread count)
+        // We defer this slightly or call it on mount of chat window
+        supabase
+            .from('chat_sessions')
+            .update({ unread_count: 0 })
+            .eq('id', sessionId)
+            .then();
+
+        // Realtime Subscription
+        const channel = supabase
+            .channel(`chat_messages_${sessionId}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'messages',
+                    filter: `session_id=eq.${sessionId}`,
+                },
+                (payload) => {
+                    setMessages((prev) => [...prev, payload.new as Message]);
+
+                    // If message is inbound, we should technically mark as read if user is looking at it
+                    // But strict read receipts require more complex logic. 
+                    // For now, we assume if window is open, it's read.
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [sessionId, organizationId]);
+
+    const sendMessage = useCallback(async (content: string) => {
+        if (!sessionId || !organizationId) return;
+
+        // Optimistic Update (Optional, let's stick to Supabase response for now to get ID)
+        const { error } = await supabase.from('messages').insert({
+            organization_id: organizationId,
+            session_id: sessionId,
+            direction: 'outbound',
+            content,
+            status: 'sent', // Initially sent
+        });
+
+        if (error) {
+            console.error('Error sending message:', error);
+            throw error;
+        }
+    }, [sessionId, organizationId]);
+
+    return { messages, loading, sendMessage };
+}
