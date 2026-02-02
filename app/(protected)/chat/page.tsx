@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { ChatLayout } from '@/features/chat/components/ChatLayout';
 import { MessageSquare } from 'lucide-react';
 
@@ -10,7 +10,9 @@ export default function ChatPage() {
                 <h1 className="text-2xl font-bold text-slate-800">Mensagens</h1>
             </div>
 
-            <ChatLayout />
+            <Suspense fallback={<div className="p-4 text-slate-500">Carregando chat...</div>}>
+                <ChatLayout />
+            </Suspense>
         </div>
     );
 }
