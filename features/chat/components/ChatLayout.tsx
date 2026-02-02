@@ -40,9 +40,9 @@ export const ChatLayout = () => {
 
 
     return (
-        <div className="flex h-[calc(100vh-2rem)] bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+        <div className="flex h-[calc(100vh-2rem)] bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-slate-200 dark:border-white/10 overflow-hidden">
             {/* Sidebar (Session List) */}
-            <div className={`w-full md:w-80 border-r border-slate-200 flex flex-col ${selectedSession ? 'hidden md:flex' : 'flex'}`}>
+            <div className={`w-full md:w-80 border-r border-slate-200 dark:border-white/10 flex flex-col ${selectedSession ? 'hidden md:flex' : 'flex'}`}>
                 <ChatSessionList
                     selectedSessionId={selectedSession?.id || null}
                     onSelectSession={setSelectedSession}
@@ -50,7 +50,7 @@ export const ChatLayout = () => {
             </div>
 
             {/* Main Content (Chat Window) */}
-            <div className={`flex-1 flex flex-col bg-slate-50 ${!selectedSession ? 'hidden md:flex' : 'flex'}`}>
+            <div className={`flex-1 flex flex-col bg-slate-50 dark:bg-black/20 ${!selectedSession ? 'hidden md:flex' : 'flex'}`}>
                 {selectedSession ? (
                     <ChatWindow
                         session={selectedSession}

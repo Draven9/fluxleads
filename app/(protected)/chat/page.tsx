@@ -7,10 +7,10 @@ export default function ChatPage() {
         <div className="h-full flex flex-col space-y-4">
             <div className="flex items-center space-x-2 px-1">
                 <MessageSquare className="w-6 h-6 text-primary-500" />
-                <h1 className="text-2xl font-bold text-slate-800">Mensagens</h1>
+                <h1 className="text-2xl font-bold text-slate-800 dark:text-white">Mensagens</h1>
             </div>
 
-            <Suspense fallback={<div className="p-4 text-slate-500">Carregando chat...</div>}>
+            <Suspense fallback={<div className="p-4 text-slate-500 dark:text-slate-400">Carregando chat...</div>}>
                 <ChatLayout />
             </Suspense>
         </div>
