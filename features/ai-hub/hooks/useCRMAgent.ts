@@ -235,6 +235,7 @@ export function useCRMAgent(options: UseCRMAgentOptions = {}) {
         description: description || '',
         date,
         user: { name: 'Eu', avatar: '' },
+        priority: 'medium',
         completed: false,
       };
 
