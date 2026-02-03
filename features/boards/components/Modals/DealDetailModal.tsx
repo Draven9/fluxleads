@@ -288,6 +288,7 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({ dealId, isOpen
       date: new Date().toISOString(),
       user: { name: 'Eu', avatar: 'https://i.pravatar.cc/150?u=me' },
       completed: true,
+      priority: 'low',
     };
 
     addActivity(noteActivity);
