@@ -83,6 +83,46 @@ Ao criar uma atividade, você verá o campo **"Negócio Relacionado"**.
 - **Por que usar**: Garante que o histórico daquela venda fique completo. Se você ligou para o cliente para falar sobre a Proposta X, vincule ao Deal da Proposta X.
         `,
             },
+            {
+                id: 'chat-feature',
+                title: 'Chat e Mensagens',
+                tags: ['whatsapp', 'conversas', 'chat'],
+                content: `
+# Chat e Mensagens Ao Vivo
+
+Centralize sua comunicação com clientes via WhatsApp diretamente no CRM.
+
+## Funcionalidades
+- **Chat em Tempo Real**: Envie e receba mensagens sem sair do sistema.
+- **Histórico Completo**: Todas as conversas ficam salvas no cadastro do contato.
+- **Integração**: Conecte seu número de WhatsApp via Evolution API (Configuração Técnica necessária).
+
+## Como usar
+1. Acesse o menu **"Mensagens"**.
+2. Selecione uma conversa ou inicie uma nova.
+3. Você também pode abrir o chat diretamente pelo Card do Negócio ou Perfil do Cliente.
+        `,
+            },
+            {
+                id: 'client-vault',
+                title: 'Carteira e Cofre',
+                tags: ['clientes', 'senhas', 'gestão'],
+                content: `
+# Carteira de Clientes & Cofre
+
+Agora você pode separar seus Leads (Vendas) dos seus Clientes Ativos (Gestão).
+
+## O que é a Carteira?
+É o lugar onde ficam todos os clientes que já fecharam contrato com você.
+- **Acesse**: Menu lateral > Carteira (Ícone de Maleta).
+- **Novo Cliente**: Clique no botão "+" para adicionar.
+
+## Cofre de Senhas (Vault)
+Dentro de cada cliente, você tem uma aba segura para guardar senhas e acessos.
+- **Guardar**: Instagram, Facebook, Admin do Site, Banco de Dados, Wi-Fi.
+- **Segurança**: As senhas ficam ocultas (\`••••••\`). Clique no "Olho" para ver ou no ícone de "Copiar".
+        `,
+            },
         ],
     },
     {
@@ -109,14 +149,13 @@ Para manter nosso CRM organizado, siga estas regras:
                 title: 'Oportunidades Paradas',
                 tags: ['alerta', 'regras'],
                 content: `
-# Política de Estagnação
+# Política de Estagnação (SLA)
 
-Não deixe oportunidades "mofando" no funil.
+O sistema agora monitora automaticamente o tempo que cada negócio fica parado em uma etapa.
 
-- **Alerta Amarelo**: 7 dias sem interação.
-- **Alerta Vermelho**: 15 dias sem interação.
-
-Se um lead não responde há mais de 30 dias, considere movê-lo para "Perdido" ou devolvê-lo para a base de Marketing para nutrição.
+- **Configuração**: Cada etapa do funil pode ter um limite de dias diferente (configure em *Editar Board*).
+- **Alerta**: Se o negócio passar do limite, o cartão ficará com uma borda vermelha e um alerta visual.
+- **Ação**: Mova o card, adicione uma nota ou agende uma atividade para "ressuscitar" o negócio.
         `,
             },
         ],
