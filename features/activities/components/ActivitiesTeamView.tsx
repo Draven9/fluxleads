@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
-import { Activity, Profile } from '@/types';
+import { Activity } from '@/types';
+import { Profile } from '@/lib/supabase/profiles';
 import { User, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
 
 interface ActivitiesTeamViewProps {
@@ -66,8 +67,8 @@ export const ActivitiesTeamView: React.FC<ActivitiesTeamViewProps> = ({
                 <div
                     onClick={() => onSelectAssignee('unassigned')}
                     className={`cursor-pointer p-4 rounded-xl border transition-all ${selectedAssigneeId === 'unassigned'
-                            ? 'bg-primary-50 border-primary-500 ring-1 ring-primary-500 dark:bg-primary-900/20 dark:border-primary-500'
-                            : 'bg-white border-slate-200 hover:border-primary-300 dark:bg-dark-card dark:border-white/5'
+                        ? 'bg-primary-50 border-primary-500 ring-1 ring-primary-500 dark:bg-primary-900/20 dark:border-primary-500'
+                        : 'bg-white border-slate-200 hover:border-primary-300 dark:bg-dark-card dark:border-white/5'
                         }`}
                 >
                     <div className="flex items-center gap-3 mb-3">
@@ -106,8 +107,8 @@ export const ActivitiesTeamView: React.FC<ActivitiesTeamViewProps> = ({
                         key={profile.id}
                         onClick={() => onSelectAssignee(isSelected ? null : profile.id)}
                         className={`cursor-pointer p-4 rounded-xl border transition-all ${isSelected
-                                ? 'bg-primary-50 border-primary-500 ring-1 ring-primary-500 dark:bg-primary-900/20 dark:border-primary-500'
-                                : 'bg-white border-slate-200 hover:border-primary-300 dark:bg-dark-card dark:border-white/5'
+                            ? 'bg-primary-50 border-primary-500 ring-1 ring-primary-500 dark:bg-primary-900/20 dark:border-primary-500'
+                            : 'bg-white border-slate-200 hover:border-primary-300 dark:bg-dark-card dark:border-white/5'
                             }`}
                     >
                         <div className="flex items-center gap-3 mb-3">

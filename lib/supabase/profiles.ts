@@ -6,6 +6,7 @@ export interface Profile {
     name: string;
     email: string;
     avatar: string;
+    avatar_url?: string;
     role: string;
 }
 
@@ -14,7 +15,7 @@ export const profilesService = {
         try {
             const { data, error } = await supabase
                 .from('profiles')
-                .select('id, name, email, avatar, role')
+                .select('id, name, email, avatar, avatar_url, role')
                 .order('name', { ascending: true });
 
             if (error) return { data: null, error };
