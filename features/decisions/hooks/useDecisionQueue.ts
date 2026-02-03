@@ -99,6 +99,7 @@ export function useDecisionQueue() {
               date: payload.activityDate,
               user: { name: 'Você', avatar: '' },
               completed: false,
+              priority: 'medium' as const,
             };
             addActivity(newActivity);
             return true;
