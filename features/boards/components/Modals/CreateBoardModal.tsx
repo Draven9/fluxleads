@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useId } from 'react';
-import { Plus, GripVertical, Trash2, ChevronDown, Settings, Copy } from 'lucide-react';
+import { Plus, GripVertical, Trash2, ChevronDown, Settings, Copy, CheckSquare } from 'lucide-react';
 import { Board, BoardStage, ContactStage } from '@/types';
 import { BOARD_TEMPLATES, BoardTemplateType } from '@/lib/templates/board-templates';
 import { LifecycleSettingsModal } from '@/features/settings/components/LifecycleSettingsModal';
@@ -8,6 +8,7 @@ import { useToast } from '@/context/ToastContext';
 import { Modal } from '@/components/ui/Modal';
 import { MODAL_FOOTER_CLASS } from '@/components/ui/modalStyles';
 import { slugify } from '@/lib/utils/slugify';
+import { PlaybookEditor } from '../PlaybookEditor';
 
 interface CreateBoardModalProps {
   isOpen: boolean;
@@ -136,6 +137,9 @@ export const CreateBoardModal: React.FC<CreateBoardModalProps> = ({
   const [isLifecycleModalOpen, setIsLifecycleModalOpen] = useState(false);
   const [draggingStageId, setDraggingStageId] = useState<string | null>(null);
   const [dragOverStageId, setDragOverStageId] = useState<string | null>(null);
+
+  // Playbook Modal State
+  const [playbookConfig, setPlaybookConfig] = useState<{ stageId: string, stageLabel: string } | null>(null);
 
   React.useEffect(() => {
     if (isOpen) {
@@ -722,6 +726,23 @@ export const CreateBoardModal: React.FC<CreateBoardModalProps> = ({
                       </button>
                     </div>
 
+                    <div className="flex justify-end mt-2">
+                      {editingBoard?.id ? (
+                        <button
+                          onClick={() => setPlaybookConfig({ stageId: stage.id, stageLabel: stage.label })}
+                          className="text-xs font-medium text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-1"
+                        >
+                          <CheckSquare size={12} />
+                          Configurar Playbook
+                        </button>
+                      ) : (
+                        <span className="text-xs text-slate-400 flex items-center gap-1 cursor-not-allowed" title="Salve o board primeiro para adicionar checklists">
+                          <CheckSquare size={12} />
+                          Playbook (Salve o board para editar)
+                        </span>
+                      )}
+                    </div>
+
                     {/* Lifecycle Automation */}
                     <div className="pl-9">
                       <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">
@@ -793,13 +814,23 @@ export const CreateBoardModal: React.FC<CreateBoardModalProps> = ({
               {editingBoard ? 'Salvar Alterações' : 'Criar Board'}
             </button>
           </div>
-        </div >
-      </Modal >
+        </div>
+      </Modal>
 
       <LifecycleSettingsModal
         isOpen={isLifecycleModalOpen}
         onClose={() => setIsLifecycleModalOpen(false)}
       />
+
+      {playbookConfig && editingBoard?.id && (
+        <PlaybookEditor
+          isOpen={!!playbookConfig}
+          onClose={() => setPlaybookConfig(null)}
+          boardId={editingBoard.id}
+          stageId={playbookConfig.stageId}
+          stageLabel={playbookConfig.stageLabel}
+        />
+      )}
     </>
   );
 };

@@ -24,6 +24,8 @@
  * ```
  */
 
+'use client';
+
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -150,8 +152,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   // Hydration safety: `isDebugMode()` reads localStorage. On SSR it is always false.
   // Initialize deterministically and sync on mount to avoid hydration mismatch warnings.
   const [debugEnabled, setDebugEnabled] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     setDebugEnabled(isDebugMode());
   }, []);
 
@@ -462,7 +466,14 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 onClick={toggleDarkMode}
                 className="p-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 rounded-full transition-all active:scale-95 focus-visible-ring"
               >
-                {darkMode ? <Sun size={20} aria-hidden="true" /> : <Moon size={20} aria-hidden="true" />}
+                {/* Prevent hydration mismatch by only rendering icon after mount */}
+                {!mounted ? (
+                  <div className="w-5 h-5" /> // Placeholder to prevent layout shift
+                ) : darkMode ? (
+                  <Sun size={20} aria-hidden="true" />
+                ) : (
+                  <Moon size={20} aria-hidden="true" />
+                )}
               </button>
             </div>
           </header>

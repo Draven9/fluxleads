@@ -8,19 +8,72 @@ import { useCompaniesController } from './hooks/useCompaniesController';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import Link from 'next/link';
+import { Modal, ModalForm } from '@/components/ui/Modal';
+import { InputField, SubmitButton } from '@/components/ui/FormField';
 
 export default function CompaniesPage() {
     const { companies, loading, addCompany } = useCompaniesController();
+    const [isModalOpen, setIsModalOpen] = React.useState(false);
+    const [isSubmitting, setIsSubmitting] = React.useState(false);
 
-    const handleNewCompany = async () => {
-        // TODO: Replace with proper Modal
-        const name = window.prompt('Nome do Cliente:');
-        if (!name) return;
+    // Filter State
+    const [searchTerm, setSearchTerm] = React.useState('');
+    const [statusFilter, setStatusFilter] = React.useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ACTIVE');
+    const [isFilterOpen, setIsFilterOpen] = React.useState(false);
 
-        await addCompany({
-            name,
-            status: 'ACTIVE'
+    // Derived State
+    const filteredCompanies = React.useMemo(() => {
+        return companies.filter(company => {
+            const matchesSearch = (
+                (company.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (company.industry || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (company.website || '').toLowerCase().includes(searchTerm.toLowerCase())
+            );
+
+            const matchesStatus = statusFilter === 'ALL' || company.status === statusFilter;
+
+            return matchesSearch && matchesStatus;
         });
+    }, [companies, searchTerm, statusFilter]);
+
+    // Form State
+    const [formData, setFormData] = React.useState({
+        name: '',
+        industry: '',
+        website: ''
+    });
+
+    const resetForm = () => {
+        setFormData({ name: '', industry: '', website: '' });
+        setIsSubmitting(false);
+    };
+
+    const handleOpenModal = () => {
+        resetForm();
+        setIsModalOpen(true);
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        if (!formData.name.trim()) return;
+
+        try {
+            setIsSubmitting(true);
+            await addCompany({
+                name: formData.name,
+                industry: formData.industry,
+                website: formData.website,
+                status: 'ACTIVE'
+            });
+            setIsModalOpen(false);
+            resetForm();
+        } catch (error) {
+            console.error('Error adding company:', error);
+            // Toast is handled in controller
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -36,27 +89,52 @@ export default function CompaniesPage() {
                         Gerencie seus clientes ativos, contratos e dados de acesso.
                     </p>
                 </div>
-                <Button onClick={handleNewCompany} className="shrink-0 bg-primary-600 hover:bg-primary-700 text-white">
+                <Button onClick={handleOpenModal} className="shrink-0 bg-primary-600 hover:bg-primary-700 text-white">
                     <Plus size={18} className="mr-2" />
                     Novo Cliente
                 </Button>
             </div>
 
             {/* Filters & Search */}
-            <div className="flex items-center gap-3 bg-white dark:bg-white/5 p-3 rounded-xl border border-slate-200 dark:border-white/10 shadow-sm">
-                <div className="relative flex-1 max-w-md">
+            <div className="flex flex-col md:flex-row items-center gap-3 bg-white dark:bg-white/5 p-3 rounded-xl border border-slate-200 dark:border-white/10 shadow-sm">
+                <div className="relative flex-1 w-full md:w-auto">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                     <input
                         type="text"
-                        placeholder="Buscar por nome, e-mail ou empresa..."
-                        className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-black/20 text-sm focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all"
+                        placeholder="Buscar por nome, setor ou site..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-black/20 text-sm focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all dark:text-white"
                     />
                 </div>
-                <div className="h-6 w-px bg-slate-200 dark:bg-white/10 mx-2" />
-                <Button variant="ghost" size="sm" className="text-slate-600 dark:text-slate-400">
-                    <Filter size={16} className="mr-2" />
-                    Filtros
-                </Button>
+
+                {isFilterOpen && (
+                    <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2">
+                        <div className="h-6 w-px bg-slate-200 dark:bg-white/10 mx-2 hidden md:block" />
+                        <select
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value as any)}
+                            className="px-3 py-2 rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-black/20 text-sm focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none dark:text-white"
+                        >
+                            <option value="ALL">Todos os status</option>
+                            <option value="ACTIVE">Ativos</option>
+                            <option value="INACTIVE">Inativos</option>
+                        </select>
+                    </div>
+                )}
+
+                <div className="flex items-center gap-2 ml-auto">
+                    <Button
+                        variant={isFilterOpen ? "secondary" : "ghost"}
+                        size="sm"
+                        onClick={() => setIsFilterOpen(!isFilterOpen)}
+                        className={isFilterOpen ? "bg-slate-100 dark:bg-white/10" : "text-slate-600 dark:text-slate-400"}
+                    >
+                        <Filter size={16} className="mr-2" />
+                        Filtros
+                        {statusFilter !== 'ALL' && <span className="ml-1 w-2 h-2 rounded-full bg-primary-500" />}
+                    </Button>
+                </div>
             </div>
 
             {/* Content */}
@@ -76,14 +154,14 @@ export default function CompaniesPage() {
                     <p className="text-slate-500 dark:text-slate-400 max-w-md mb-6">
                         Adicione seus clientes ativos aqui para gerenciar senhas, contratos e manter um relacionamento duradouro.
                     </p>
-                    <Button variant="outline" className="border-primary-200 dark:border-primary-800 text-primary-700 dark:text-primary-300 hover:bg-primary-50 dark:hover:bg-primary-900/20">
-                        Importar do Deal Ganho
+                    <Button onClick={handleOpenModal} variant="outline" className="border-primary-200 dark:border-primary-800 text-primary-700 dark:text-primary-300 hover:bg-primary-50 dark:hover:bg-primary-900/20">
+                        Adicionar Manualmente
                     </Button>
                 </div>
             ) : (
                 /* List */
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {companies.map(company => (
+                    {filteredCompanies.map(company => (
                         <Link
                             key={company.id}
                             href={`/companies/${company.id}`}
@@ -118,6 +196,45 @@ export default function CompaniesPage() {
                     ))}
                 </div>
             )}
+
+            {/* Add Company Modal */}
+            <Modal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                title="Novo Cliente"
+                size="md"
+            >
+                <ModalForm onSubmit={handleSubmit}>
+                    <InputField
+                        label="Nome da Empresa"
+                        placeholder="Ex: Acme Corp"
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        required
+                        autoFocus
+                    />
+
+                    <InputField
+                        label="Segmento / Indústria"
+                        placeholder="Ex: Tecnologia, Varejo..."
+                        value={formData.industry}
+                        onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
+                    />
+
+                    <InputField
+                        label="Website"
+                        placeholder="https://..."
+                        value={formData.website}
+                        onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                    />
+
+                    <div className="flex justify-end pt-4">
+                        <SubmitButton isLoading={isSubmitting} loadingText="Criando...">
+                            Adicionar Cliente
+                        </SubmitButton>
+                    </div>
+                </ModalForm>
+            </Modal>
         </div>
     );
 }

@@ -161,7 +161,7 @@ export const VaultTab = ({ companyId }: VaultTabProps) => {
                     <div>
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Nome / Serviço</label>
                         <input
-                            className="w-full px-3 py-2 border rounded-md dark:bg-white/5 dark:border-white/10"
+                            className="w-full px-3 py-2 border rounded-md bg-white border-slate-200 text-slate-900 dark:bg-slate-950 dark:border-slate-800 dark:text-white"
                             placeholder="Ex: Instagram, Wordpress Admin..."
                             value={newItem.name}
                             onChange={e => setNewItem({ ...newItem, name: e.target.value })}
@@ -173,7 +173,7 @@ export const VaultTab = ({ companyId }: VaultTabProps) => {
                         <div>
                             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Tipo</label>
                             <select
-                                className="w-full px-3 py-2 border rounded-md dark:bg-white/5 dark:border-white/10"
+                                className="w-full px-3 py-2 border rounded-md bg-white border-slate-200 text-slate-900 dark:bg-slate-950 dark:border-slate-800 dark:text-white"
                                 value={newItem.type}
                                 onChange={e => setNewItem({ ...newItem, type: e.target.value as any })}
                             >
@@ -186,7 +186,7 @@ export const VaultTab = ({ companyId }: VaultTabProps) => {
                         <div>
                             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Link / URL</label>
                             <input
-                                className="w-full px-3 py-2 border rounded-md dark:bg-white/5 dark:border-white/10"
+                                className="w-full px-3 py-2 border rounded-md bg-white border-slate-200 text-slate-900 dark:bg-slate-950 dark:border-slate-800 dark:text-white"
                                 placeholder="https://..."
                                 value={newItem.url}
                                 onChange={e => setNewItem({ ...newItem, url: e.target.value })}
@@ -197,7 +197,7 @@ export const VaultTab = ({ companyId }: VaultTabProps) => {
                     <div>
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Usuário / Email</label>
                         <input
-                            className="w-full px-3 py-2 border rounded-md dark:bg-white/5 dark:border-white/10"
+                            className="w-full px-3 py-2 border rounded-md bg-white border-slate-200 text-slate-900 dark:bg-slate-950 dark:border-slate-800 dark:text-white"
                             value={newItem.username}
                             onChange={e => setNewItem({ ...newItem, username: e.target.value })}
                         />
@@ -208,7 +208,7 @@ export const VaultTab = ({ companyId }: VaultTabProps) => {
                         <div className="relative">
                             <input
                                 type="text"
-                                className="w-full px-3 py-2 border rounded-md dark:bg-white/5 dark:border-white/10 font-mono"
+                                className="w-full px-3 py-2 border rounded-md bg-white border-slate-200 text-slate-900 dark:bg-slate-950 dark:border-slate-800 dark:text-white font-mono"
                                 placeholder="••••••"
                                 value={newItem.encryptedPassword}
                                 onChange={e => setNewItem({ ...newItem, encryptedPassword: e.target.value })}

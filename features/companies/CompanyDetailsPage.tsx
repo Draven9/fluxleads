@@ -5,11 +5,13 @@ import { useParams, useRouter } from 'next/navigation';
 import { companiesService } from './services/companiesService';
 import { CRMCompany } from '@/types/types';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Building, Lock, Globe, Loader2 } from 'lucide-react';
+import { ArrowLeft, Building, Lock, Globe, Loader2, Pencil } from 'lucide-react';
 import Link from 'next/link';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Variable, BookOpen } from 'lucide-react';
 import { VaultTab } from './components/VaultTab';
+import { ContactsTab } from './components/ContactsTab';
+import { EditCompanyModal } from './components/modals/EditCompanyModal';
 
 export default function CompanyDetailsPage() {
     const params = useParams();
@@ -18,6 +20,7 @@ export default function CompanyDetailsPage() {
 
     const [company, setCompany] = useState<CRMCompany | null>(null);
     const [loading, setLoading] = useState(true);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
     useEffect(() => {
         if (!id) return;
@@ -55,32 +58,39 @@ export default function CompanyDetailsPage() {
     return (
         <div className="space-y-6 animate-in fade-in duration-300">
             {/* Header */}
-            <div className="flex items-center gap-4 border-b border-slate-200 dark:border-white/10 pb-4">
-                <Button variant="ghost" size="icon" onClick={() => router.push('/companies')}>
-                    <ArrowLeft size={20} />
-                </Button>
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/10 pb-4">
+                <div className="flex items-center gap-4">
+                    <Button variant="ghost" size="icon" onClick={() => router.push('/companies')}>
+                        <ArrowLeft size={20} />
+                    </Button>
 
-                <div className="h-10 w-10 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center text-primary-600 dark:text-primary-400">
-                    <Building size={20} />
-                </div>
+                    <div className="h-10 w-10 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center text-primary-600 dark:text-primary-400">
+                        <Building size={20} />
+                    </div>
 
-                <div>
-                    <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                        {company.name}
-                        {company.status === 'ACTIVE' && (
-                            <span className="px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-xs dark:bg-green-900/30 dark:text-green-400">Ativo</span>
-                        )}
-                    </h1>
-                    <div className="flex items-center gap-4 text-sm text-slate-500 dark:text-slate-400 mt-1">
-                        {company.industry && <span>{company.industry}</span>}
-                        {company.website && (
-                            <a href={company.website} target="_blank" rel="noreferrer" className="flex items-center gap-1 hover:text-primary-500">
-                                <Globe size={14} />
-                                Website
-                            </a>
-                        )}
+                    <div>
+                        <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                            {company.name}
+                            {company.status === 'ACTIVE' && (
+                                <span className="px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-xs dark:bg-green-900/30 dark:text-green-400">Ativo</span>
+                            )}
+                        </h1>
+                        <div className="flex items-center gap-4 text-sm text-slate-500 dark:text-slate-400 mt-1">
+                            {company.industry && <span>{company.industry}</span>}
+                            {company.website && (
+                                <a href={company.website} target="_blank" rel="noreferrer" className="flex items-center gap-1 hover:text-primary-500">
+                                    <Globe size={14} />
+                                    Website
+                                </a>
+                            )}
+                        </div>
                     </div>
                 </div>
+
+                <Button variant="outline" onClick={() => setIsEditModalOpen(true)}>
+                    <Pencil size={16} className="mr-2" />
+                    Editar
+                </Button>
             </div>
 
             {/* Tabs */}
@@ -93,7 +103,7 @@ export default function CompanyDetailsPage() {
                     </TabsTrigger>
                     <TabsTrigger value="contacts" className="gap-2">
                         <Variable size={16} />
-                        Contatos (Soon)
+                        Contatos
                     </TabsTrigger>
                 </TabsList>
 
@@ -109,12 +119,17 @@ export default function CompanyDetailsPage() {
                     </TabsContent>
 
                     <TabsContent value="contacts">
-                        <div className="p-8 text-center text-slate-500 bg-white/50 dark:bg-white/5 rounded-xl border border-dashed border-slate-300 dark:border-slate-700">
-                            Em breve: Lista de pessoas de contato desta empresa.
-                        </div>
+                        <ContactsTab companyId={company.id} />
                     </TabsContent>
                 </div>
             </Tabs>
+
+            <EditCompanyModal
+                isOpen={isEditModalOpen}
+                onClose={() => setIsEditModalOpen(false)}
+                company={company}
+                onUpdate={(updated) => setCompany(updated)}
+            />
         </div>
     );
 }

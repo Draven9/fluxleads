@@ -305,6 +305,23 @@ export interface BoardGoal {
   type?: 'currency' | 'number' | 'percentage'; // Explicit type for calculation
 }
 
+// Checklists / Playbooks
+export interface PlaybookItem {
+  id: string;
+  boardId: string;
+  stageId: string;
+  text: string;
+  orderIndex: number;
+}
+
+export interface DealChecklistProgress {
+  dealId: string;
+  playbookItemId: string;
+  completed: boolean;
+  completedAt?: string;
+  completedBy?: string;
+}
+
 // Persona do Agente (Quem opera o board)
 export interface AgentPersona {
   name: string; // "Dra. Ana (Virtual)"

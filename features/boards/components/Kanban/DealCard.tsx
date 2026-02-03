@@ -3,6 +3,10 @@ import Image from 'next/image';
 import { DealView } from '@/types';
 import { Building2, Hourglass, Trophy, XCircle } from 'lucide-react';
 import { ActivityStatusIcon } from './ActivityStatusIcon';
+import { DealChecklist } from '../DealChecklist';
+
+// ... (existing imports, but replace_file_content requires me to target specific blocks. I will do 2 chunks)
+
 import { priorityAriaLabelPtBr } from '@/lib/utils/priority';
 
 interface DealCardProps {
@@ -263,7 +267,15 @@ const DealCardComponent: React.FC<DealCardProps> = ({
           </span>
         </div>
 
-        <div className="flex items-center">
+        <div className="flex items-center gap-2">
+          <div onClick={(e) => e.stopPropagation()}>
+            <DealChecklist
+              dealId={deal.id}
+              boardId={deal.boardId}
+              stageId={deal.status}
+              compact
+            />
+          </div>
           <ActivityStatusIcon
             status={activityStatus}
             type={deal.nextActivity?.type}
