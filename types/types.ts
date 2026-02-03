@@ -277,6 +277,10 @@ export interface Activity {
   };
   completed: boolean;
   priority: 'low' | 'medium' | 'high';
+  startedAt?: string;
+  durationMinutes?: number;
+  completedAt?: string;
+  assigneeId?: string;
 }
 
 export interface DashboardStats {
