@@ -4,7 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Message } from '../types';
 
 export function useChatMessages(sessionId: string | null) {
-    const { organizationId } = useAuth();
+    const { organizationId, profile } = useAuth();
     const [messages, setMessages] = useState<Message[]>([]);
     const [loading, setLoading] = useState(false);
 
@@ -67,12 +67,17 @@ export function useChatMessages(sessionId: string | null) {
     const sendMessage = useCallback(async (content: string) => {
         if (!sessionId || !organizationId) return;
 
+        // Format message with signature
+        // Example: *[João]:* Olá, tudo bem?
+        const senderName = profile?.first_name || profile?.nickname || 'Atendente';
+        const finalContent = `*[${senderName}]:* ${content}`;
+
         // Optimistic Update (Optional, let's stick to Supabase response for now to get ID)
         const { error } = await supabase.from('messages').insert({
             organization_id: organizationId,
             session_id: sessionId,
             direction: 'outbound',
-            content,
+            content: finalContent,
             status: 'sent', // Initially sent
         });
 
