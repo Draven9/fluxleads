@@ -203,7 +203,7 @@ export const activitiesService = {
           delete insertData.participant_contact_ids;
           const retry = await sb.from('activities').insert(insertData).select().single();
           if (retry.error) return { data: null, error: retry.error as any };
-          if (retry.error) return { data: null, error: retry.error as any };
+
           return { data: transformActivity(retry.data as DbActivity), error: null };
         }
         if (code === '42703' && msg.includes('assignee_id')) {

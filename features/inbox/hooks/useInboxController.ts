@@ -386,6 +386,7 @@ export const useInboxController = () => {
         dealId: '',
         dealTitle: '',
         completed: false,
+        priority: 'medium',
         user: { name: 'Eu', avatar: '' },
       },
     });
@@ -479,6 +480,7 @@ export const useInboxController = () => {
               participantContactIds: deal.contactId ? [deal.contactId] : [],
               dealTitle: deal.title,
               completed: false,
+              priority: 'high',
               user: { name: 'Eu', avatar: '' },
             },
           });
@@ -502,6 +504,7 @@ export const useInboxController = () => {
               participantContactIds: [c.id],
               dealTitle: '',
               completed: false,
+              priority: 'high',
               user: { name: 'Eu', avatar: '' },
             },
           });

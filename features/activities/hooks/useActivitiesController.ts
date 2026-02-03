@@ -58,6 +58,7 @@ export const useActivitiesController = () => {
 
   const [formData, setFormData] = useState({
     title: '',
+    priority: 'medium' as Activity['priority'],
     type: 'CALL' as Activity['type'],
     date: new Date().toISOString().split('T')[0],
     time: '09:00',
@@ -124,6 +125,7 @@ export const useActivitiesController = () => {
     setEditingActivity(null);
     setFormData({
       title: '',
+      priority: 'medium',
       type: 'CALL',
       date: new Date().toISOString().split('T')[0],
       time: '09:00',
@@ -139,6 +141,7 @@ export const useActivitiesController = () => {
     const date = new Date(activity.date);
     setFormData({
       title: activity.title,
+      priority: activity.priority,
       type: activity.type,
       date: date.toISOString().split('T')[0],
       time: date.toTimeString().slice(0, 5),
@@ -252,6 +255,7 @@ export const useActivitiesController = () => {
             participantContactIds,
             dealTitle: selectedDeal?.title || '',
             completed: false,
+            priority: formData.priority,
             user: { name: 'Eu', avatar: '' },
           },
         },

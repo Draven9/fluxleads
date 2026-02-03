@@ -376,7 +376,7 @@ const CRMInnerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     if (process.env.NODE_ENV !== 'production') {
       const logData = { tempId: optimisticTempId.slice(0, 15), title: deal.title, boardId: optimisticBoardId.slice(0, 8), stageId: optimisticStageId.slice(0, 8) };
       console.log(`[CRMContext.addDeal] 🔄 Starting optimistic insert`, logData);
-      fetch('http://127.0.0.1:7242/ingest/d70f541c-09d7-4128-9745-93f15f184017',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CRMContext.tsx:365',message:'Starting optimistic insert',data:logData,timestamp:Date.now(),sessionId:'debug-session',runId:'crm-create-deal',hypothesisId:'CRM1'})}).catch(()=>{});
+      fetch('http://127.0.0.1:7242/ingest/d70f541c-09d7-4128-9745-93f15f184017', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'CRMContext.tsx:365', message: 'Starting optimistic insert', data: logData, timestamp: Date.now(), sessionId: 'debug-session', runId: 'crm-create-deal', hypothesisId: 'CRM1' }) }).catch(() => { });
     }
     // #endregion
 
@@ -400,11 +400,11 @@ const CRMInnerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
           [...queryKeys.deals.lists(), 'view'],
           (old = []) => [optimisticDealView, ...old]
         );
-        
+
         // #region agent log
         if (process.env.NODE_ENV !== 'production') {
           console.log(`[CRMContext.addDeal] ✅ Temp deal inserted into cache`, { tempId: optimisticTempId.slice(0, 15) });
-          fetch('http://127.0.0.1:7242/ingest/d70f541c-09d7-4128-9745-93f15f184017',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CRMContext.tsx:390',message:'Temp deal inserted into cache',data:{tempId:optimisticTempId.slice(0,15)},timestamp:Date.now(),sessionId:'debug-session',runId:'crm-create-deal',hypothesisId:'CRM2'})}).catch(()=>{});
+          fetch('http://127.0.0.1:7242/ingest/d70f541c-09d7-4128-9745-93f15f184017', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'CRMContext.tsx:390', message: 'Temp deal inserted into cache', data: { tempId: optimisticTempId.slice(0, 15) }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'crm-create-deal', hypothesisId: 'CRM2' }) }).catch(() => { });
         }
         // #endregion
       } catch (e) {
@@ -476,10 +476,10 @@ const CRMInnerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     // #region agent log
     if (process.env.NODE_ENV !== 'production') {
       console.log(`[CRMContext.addDeal] 📤 Calling addDealState (server)`, { title: deal.title });
-      fetch('http://127.0.0.1:7242/ingest/d70f541c-09d7-4128-9745-93f15f184017',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CRMContext.tsx:475',message:'Calling addDealState',data:{title:deal.title},timestamp:Date.now(),sessionId:'debug-session',runId:'crm-create-deal',hypothesisId:'CRM3'})}).catch(()=>{});
+      fetch('http://127.0.0.1:7242/ingest/d70f541c-09d7-4128-9745-93f15f184017', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'CRMContext.tsx:475', message: 'Calling addDealState', data: { title: deal.title }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'crm-create-deal', hypothesisId: 'CRM3' }) }).catch(() => { });
     }
     // #endregion
-    
+
     const createdDeal = await addDealState({
       ...deal,
       companyId: finalCompanyId,
@@ -489,7 +489,7 @@ const CRMInnerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     // #region agent log
     if (process.env.NODE_ENV !== 'production') {
       console.log(`[CRMContext.addDeal] ✅ Server returned`, { dealId: createdDeal?.id?.slice(0, 8) || 'null', title: createdDeal?.title });
-      fetch('http://127.0.0.1:7242/ingest/d70f541c-09d7-4128-9745-93f15f184017',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CRMContext.tsx:485',message:'Server returned',data:{dealId:createdDeal?.id?.slice(0,8)||'null',title:createdDeal?.title},timestamp:Date.now(),sessionId:'debug-session',runId:'crm-create-deal',hypothesisId:'CRM4'})}).catch(()=>{});
+      fetch('http://127.0.0.1:7242/ingest/d70f541c-09d7-4128-9745-93f15f184017', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'CRMContext.tsx:485', message: 'Server returned', data: { dealId: createdDeal?.id?.slice(0, 8) || 'null', title: createdDeal?.title }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'crm-create-deal', hypothesisId: 'CRM4' }) }).catch(() => { });
     }
     // #endregion
 
@@ -497,7 +497,7 @@ const CRMInnerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     // #region agent log
     if (process.env.NODE_ENV !== 'production') {
       console.log(`[CRMContext.addDeal] 🔍 H5 Check: optimisticBoardId`, { optimisticBoardId, hasValue: !!optimisticBoardId });
-      fetch('http://127.0.0.1:7242/ingest/d70f541c-09d7-4128-9745-93f15f184017',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CRMContext.tsx:497',message:'H5 Check optimisticBoardId',data:{optimisticBoardId,hasValue:!!optimisticBoardId},timestamp:Date.now(),sessionId:'debug-session',runId:'crm-create-deal',hypothesisId:'H5'})}).catch(()=>{});
+      fetch('http://127.0.0.1:7242/ingest/d70f541c-09d7-4128-9745-93f15f184017', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'CRMContext.tsx:497', message: 'H5 Check optimisticBoardId', data: { optimisticBoardId, hasValue: !!optimisticBoardId }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'crm-create-deal', hypothesisId: 'H5' }) }).catch(() => { });
     }
     // #endregion
     if (optimisticBoardId) {
@@ -511,27 +511,27 @@ const CRMInnerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
             clientCompanyName: optimisticCompanyName,
             companyName: optimisticCompanyName,
           };
-          
+
           // #region agent log
           if (process.env.NODE_ENV !== 'production') {
             console.log(`[CRMContext.addDeal] 🔄 Replacing temp with real deal`, { tempId: optimisticTempId.slice(0, 15), realId: createdDeal.id.slice(0, 8) });
-            fetch('http://127.0.0.1:7242/ingest/d70f541c-09d7-4128-9745-93f15f184017',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CRMContext.tsx:505',message:'Replacing temp with real',data:{tempId:optimisticTempId.slice(0,15),realId:createdDeal.id.slice(0,8)},timestamp:Date.now(),sessionId:'debug-session',runId:'crm-create-deal',hypothesisId:'CRM5'})}).catch(()=>{});
+            fetch('http://127.0.0.1:7242/ingest/d70f541c-09d7-4128-9745-93f15f184017', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'CRMContext.tsx:505', message: 'Replacing temp with real', data: { tempId: optimisticTempId.slice(0, 15), realId: createdDeal.id.slice(0, 8) }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'crm-create-deal', hypothesisId: 'CRM5' }) }).catch(() => { });
           }
           // #endregion
-          
+
           queryClient.setQueryData<DealView[]>(
             [...queryKeys.deals.lists(), 'view'],
             (old = []) => {
               const withoutTemp = old.filter((d) => d.id !== optimisticTempId);
               const already = withoutTemp.some((d) => d.id === createdDeal.id);
-              
+
               // #region agent log
               if (process.env.NODE_ENV !== 'production') {
                 console.log(`[CRMContext.addDeal] 📊 Cache state before swap`, { cacheSize: old.length, tempFound: old.some(d => d.id === optimisticTempId), realExists: already });
-                fetch('http://127.0.0.1:7242/ingest/d70f541c-09d7-4128-9745-93f15f184017',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CRMContext.tsx:515',message:'Cache state before swap',data:{cacheSize:old.length,tempFound:old.some(d=>d.id===optimisticTempId),realExists:already},timestamp:Date.now(),sessionId:'debug-session',runId:'crm-create-deal',hypothesisId:'CRM6'})}).catch(()=>{});
+                fetch('http://127.0.0.1:7242/ingest/d70f541c-09d7-4128-9745-93f15f184017', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'CRMContext.tsx:515', message: 'Cache state before swap', data: { cacheSize: old.length, tempFound: old.some(d => d.id === optimisticTempId), realExists: already }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'crm-create-deal', hypothesisId: 'CRM6' }) }).catch(() => { });
               }
               // #endregion
-              
+
               return already ? withoutTemp : [createdDealView, ...withoutTemp];
             }
           );
@@ -546,7 +546,7 @@ const CRMInnerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         // #region agent log
         if (process.env.NODE_ENV !== 'production') {
           console.log(`[CRMContext.addDeal] ❌ H3 Error in setQueryData`, { error: String(e) });
-          fetch('http://127.0.0.1:7242/ingest/d70f541c-09d7-4128-9745-93f15f184017',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CRMContext.tsx:548',message:'H3 Error in setQueryData',data:{error:String(e)},timestamp:Date.now(),sessionId:'debug-session',runId:'crm-create-deal',hypothesisId:'H3'})}).catch(()=>{});
+          fetch('http://127.0.0.1:7242/ingest/d70f541c-09d7-4128-9745-93f15f184017', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'CRMContext.tsx:548', message: 'H3 Error in setQueryData', data: { error: String(e) }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'crm-create-deal', hypothesisId: 'H3' }) }).catch(() => { });
         }
         // #endregion
       }
@@ -556,8 +556,8 @@ const CRMInnerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     if (process.env.NODE_ENV !== 'production') {
       const finalCache = queryClient.getQueryData<DealView[]>([...queryKeys.deals.lists(), 'view']) || [];
       const dealInCache = finalCache.some(d => d.id === createdDeal?.id);
-      console.log(`[CRMContext.addDeal] 📊 H2 Final cache state`, { cacheSize: finalCache.length, dealInCache, createdDealId: createdDeal?.id?.slice(0,8) });
-      fetch('http://127.0.0.1:7242/ingest/d70f541c-09d7-4128-9745-93f15f184017',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CRMContext.tsx:555',message:'H2 Final cache state',data:{cacheSize:finalCache.length,dealInCache,createdDealId:createdDeal?.id?.slice(0,8)},timestamp:Date.now(),sessionId:'debug-session',runId:'crm-create-deal',hypothesisId:'H2'})}).catch(()=>{});
+      console.log(`[CRMContext.addDeal] 📊 H2 Final cache state`, { cacheSize: finalCache.length, dealInCache, createdDealId: createdDeal?.id?.slice(0, 8) });
+      fetch('http://127.0.0.1:7242/ingest/d70f541c-09d7-4128-9745-93f15f184017', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'CRMContext.tsx:555', message: 'H2 Final cache state', data: { cacheSize: finalCache.length, dealInCache, createdDealId: createdDeal?.id?.slice(0, 8) }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'crm-create-deal', hypothesisId: 'H2' }) }).catch(() => { });
     }
     // #endregion
 
@@ -570,6 +570,7 @@ const CRMInnerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         date: new Date().toISOString(),
         user: { name: 'Eu', avatar: 'https://i.pravatar.cc/150?u=me' },
         completed: true,
+        priority: 'medium',
       });
     }
 
@@ -578,7 +579,7 @@ const CRMInnerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
       const postActivityCache = queryClient.getQueryData<DealView[]>([...queryKeys.deals.lists(), 'view']) || [];
       const stillInCache = postActivityCache.some(d => d.id === createdDeal?.id);
       console.log(`[CRMContext.addDeal] 🏁 H4 Post-activity cache`, { cacheSize: postActivityCache.length, stillInCache, returning: !!createdDeal });
-      fetch('http://127.0.0.1:7242/ingest/d70f541c-09d7-4128-9745-93f15f184017',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CRMContext.tsx:580',message:'H4 Post-activity cache',data:{cacheSize:postActivityCache.length,stillInCache,returning:!!createdDeal},timestamp:Date.now(),sessionId:'debug-session',runId:'crm-create-deal',hypothesisId:'H4'})}).catch(()=>{});
+      fetch('http://127.0.0.1:7242/ingest/d70f541c-09d7-4128-9745-93f15f184017', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'CRMContext.tsx:580', message: 'H4 Post-activity cache', data: { cacheSize: postActivityCache.length, stillInCache, returning: !!createdDeal }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'crm-create-deal', hypothesisId: 'H4' }) }).catch(() => { });
     }
     // #endregion
 
@@ -634,6 +635,7 @@ const CRMInnerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
           date: new Date().toISOString(),
           user: { name: 'Sistema', avatar: '' },
           completed: true,
+          priority: 'medium',
         });
       }
     }
@@ -694,6 +696,7 @@ const CRMInnerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         date: new Date().toISOString(),
         user: { name: 'Sistema', avatar: '' },
         completed: true,
+        priority: 'medium',
       });
     }
   }, [leads, activeBoard, activeBoardId, addCompany, addContact, addDealState, addActivity, discardLead]);
@@ -743,6 +746,7 @@ const CRMInnerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
           date: new Date().toISOString(),
           user: { name: 'Sistema', avatar: '' },
           completed: false,
+          priority: 'medium',
         });
         newActivitiesCount++;
       }
@@ -783,6 +787,7 @@ const CRMInnerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
             date: new Date().toISOString(),
             user: { name: 'Sistema', avatar: '' },
             completed: false,
+            priority: 'medium',
           });
           count++;
         }

@@ -793,33 +793,33 @@ export default function DealCockpitClient({ dealId }: { dealId?: string }) {
 
     const boardInfo = selectedBoard
       ? {
-          id: selectedBoard.id,
-          name: selectedBoard.name,
-          description: selectedBoard.description,
-          wonStageId: selectedBoard.wonStageId,
-          lostStageId: selectedBoard.lostStageId,
-          stages: (selectedBoard.stages ?? []).map((s) => ({ id: s.id, label: s.label, color: s.color })),
-        }
+        id: selectedBoard.id,
+        name: selectedBoard.name,
+        description: selectedBoard.description,
+        wonStageId: selectedBoard.wonStageId,
+        lostStageId: selectedBoard.lostStageId,
+        stages: (selectedBoard.stages ?? []).map((s) => ({ id: s.id, label: s.label, color: s.color })),
+      }
       : undefined;
 
     const contactInfo = selectedContact
       ? {
-          id: selectedContact.id,
-          name: selectedContact.name,
-          role: selectedContact.role,
-          email: selectedContact.email,
-          phone: selectedContact.phone,
-          avatar: selectedContact.avatar,
-          status: selectedContact.status,
-          stage: selectedContact.stage,
-          source: selectedContact.source,
-          notes: selectedContact.notes,
-          lastInteraction: selectedContact.lastInteraction,
-          birthDate: selectedContact.birthDate,
-          lastPurchaseDate: selectedContact.lastPurchaseDate,
-          totalValue: selectedContact.totalValue,
-          clientCompanyId: selectedContact.clientCompanyId,
-        }
+        id: selectedContact.id,
+        name: selectedContact.name,
+        role: selectedContact.role,
+        email: selectedContact.email,
+        phone: selectedContact.phone,
+        avatar: selectedContact.avatar,
+        status: selectedContact.status,
+        stage: selectedContact.stage,
+        source: selectedContact.source,
+        notes: selectedContact.notes,
+        lastInteraction: selectedContact.lastInteraction,
+        birthDate: selectedContact.birthDate,
+        lastPurchaseDate: selectedContact.lastPurchaseDate,
+        totalValue: selectedContact.totalValue,
+        clientCompanyId: selectedContact.clientCompanyId,
+      }
       : undefined;
 
     const dealInfo = {
@@ -1180,6 +1180,7 @@ export default function DealCockpitClient({ dealId }: { dealId?: string }) {
             date: new Date().toISOString(),
             completed: true,
             user: actor,
+            priority: 'medium',
           });
           pushToast('WhatsApp registrado', 'success');
           setMessageLogContext(null);
@@ -1202,6 +1203,7 @@ export default function DealCockpitClient({ dealId }: { dealId?: string }) {
           date: new Date().toISOString(),
           completed: true,
           user: actor,
+          priority: 'medium',
         });
         pushToast('Email registrado', 'success');
         setMessageLogContext(null);
@@ -1228,6 +1230,7 @@ export default function DealCockpitClient({ dealId }: { dealId?: string }) {
           date: when.toISOString(),
           completed: false,
           user: actor,
+          priority: 'medium',
         });
         pushToast('Atividade agendada', 'success');
       } catch (e) {
@@ -1266,12 +1269,12 @@ export default function DealCockpitClient({ dealId }: { dealId?: string }) {
           dealTitle: selectedDeal.title,
           type: 'CALL',
           title: data.title,
-          description: `${outcomeLabels[data.outcome]} - Duração: ${Math.floor(data.duration / 60)}min ${data.duration % 60}s${
-            data.notes ? `\n\n${data.notes}` : ''
-          }`,
+          description: `${outcomeLabels[data.outcome]} - Duração: ${Math.floor(data.duration / 60)}min ${data.duration % 60}s${data.notes ? `\n\n${data.notes}` : ''
+            }`,
           date: new Date().toISOString(),
           completed: true,
           user: actor,
+          priority: 'medium',
         });
 
         pushToast('Ligação registrada', 'success');
@@ -1376,6 +1379,7 @@ export default function DealCockpitClient({ dealId }: { dealId?: string }) {
             date: new Date().toISOString(),
             completed: true,
             user: actor,
+            priority: 'low',
           });
         } catch {
           // Não bloqueia o fluxo principal
@@ -1580,15 +1584,14 @@ export default function DealCockpitClient({ dealId }: { dealId?: string }) {
             >
               <div className="h-2 w-full rounded-full bg-white/10">
                 <div
-                  className={`h-2 rounded-full ${
-                    health.status === 'excellent'
-                      ? 'bg-emerald-500'
-                      : health.status === 'good'
-                        ? 'bg-green-500'
-                        : health.status === 'warning'
-                          ? 'bg-amber-500'
-                          : 'bg-rose-500'
-                  }`}
+                  className={`h-2 rounded-full ${health.status === 'excellent'
+                    ? 'bg-emerald-500'
+                    : health.status === 'good'
+                      ? 'bg-green-500'
+                      : health.status === 'warning'
+                        ? 'bg-amber-500'
+                        : 'bg-rose-500'
+                    }`}
                   style={{ width: `${health.score}%` }}
                 />
               </div>
@@ -1914,56 +1917,56 @@ export default function DealCockpitClient({ dealId }: { dealId?: string }) {
 
             <div className="flex min-h-0 flex-1 flex-col rounded-2xl border border-white/10 bg-white/3">
               <div className="flex-1 min-h-0 overflow-auto divide-y divide-white/10">
-                  {filteredTimelineItems.length === 0 ? (
-                    <div className="px-6 py-10 text-center">
-                      <div className="text-sm font-semibold text-slate-200">
-                        {timelineItems.length === 0 ? 'Sem atividades ainda' : 'Sem resultados'}
-                      </div>
-                      <div className="mt-2 text-xs text-slate-500">
-                        {timelineItems.length === 0
-                          ? 'Quando você registrar uma nota, ligação ou mudança de etapa, ela aparece aqui.'
-                          : 'Tente limpar busca e filtros para ver tudo novamente.'}
-                      </div>
-                      {timelineItems.length !== 0 ? (
-                        <div className="mt-4 flex items-center justify-center gap-2">
-                          <button
-                            type="button"
-                            className="rounded-xl bg-white px-4 py-2 text-xs font-semibold text-slate-900 hover:bg-slate-100"
-                            onClick={() => {
-                              setQuery('');
-                              setKindFilter('all');
-                              setShowSystemEvents(false);
-                            }}
-                          >
-                            Limpar filtros
-                          </button>
-                        </div>
-                      ) : null}
+                {filteredTimelineItems.length === 0 ? (
+                  <div className="px-6 py-10 text-center">
+                    <div className="text-sm font-semibold text-slate-200">
+                      {timelineItems.length === 0 ? 'Sem atividades ainda' : 'Sem resultados'}
                     </div>
-                  ) : (
-                    filteredTimelineItems.map((t) => (
-                      <div key={t.id} className="px-4 py-3">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs font-semibold text-slate-200">{t.title}</span>
-                              {t.subtitle ? (
-                                t.title === 'Moveu para' ? (
-                                  <Chip tone={t.tone === 'success' ? 'success' : t.tone === 'danger' ? 'danger' : 'neutral'}>{t.subtitle}</Chip>
-                                ) : (
-                                  <span className="truncate text-xs text-slate-400">{t.subtitle}</span>
-                                )
-                              ) : null}
-                            </div>
-                            {t.title !== 'Moveu para' && t.subtitle ? (
-                              <div className="mt-0.5 text-[11px] text-slate-500">{t.subtitle}</div>
+                    <div className="mt-2 text-xs text-slate-500">
+                      {timelineItems.length === 0
+                        ? 'Quando você registrar uma nota, ligação ou mudança de etapa, ela aparece aqui.'
+                        : 'Tente limpar busca e filtros para ver tudo novamente.'}
+                    </div>
+                    {timelineItems.length !== 0 ? (
+                      <div className="mt-4 flex items-center justify-center gap-2">
+                        <button
+                          type="button"
+                          className="rounded-xl bg-white px-4 py-2 text-xs font-semibold text-slate-900 hover:bg-slate-100"
+                          onClick={() => {
+                            setQuery('');
+                            setKindFilter('all');
+                            setShowSystemEvents(false);
+                          }}
+                        >
+                          Limpar filtros
+                        </button>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : (
+                  filteredTimelineItems.map((t) => (
+                    <div key={t.id} className="px-4 py-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-semibold text-slate-200">{t.title}</span>
+                            {t.subtitle ? (
+                              t.title === 'Moveu para' ? (
+                                <Chip tone={t.tone === 'success' ? 'success' : t.tone === 'danger' ? 'danger' : 'neutral'}>{t.subtitle}</Chip>
+                              ) : (
+                                <span className="truncate text-xs text-slate-400">{t.subtitle}</span>
+                              )
                             ) : null}
                           </div>
-                          <div className="shrink-0 text-[11px] text-slate-500">{t.at}</div>
+                          {t.title !== 'Moveu para' && t.subtitle ? (
+                            <div className="mt-0.5 text-[11px] text-slate-500">{t.subtitle}</div>
+                          ) : null}
                         </div>
+                        <div className="shrink-0 text-[11px] text-slate-500">{t.at}</div>
                       </div>
-                    ))
-                  )}
+                    </div>
+                  ))
+                )}
               </div>
 
               <div className="border-t border-white/10 px-4 py-3">
@@ -1993,6 +1996,7 @@ export default function DealCockpitClient({ dealId }: { dealId?: string }) {
                           description: `${header}\n\n---\n\nMensagem enviada (registrado fora do CRM).`,
                           date: new Date().toISOString(),
                           completed: true,
+                          priority: 'medium',
                           user: actor,
                         });
                         pushToast('WhatsApp registrado', 'success');
@@ -2022,6 +2026,7 @@ export default function DealCockpitClient({ dealId }: { dealId?: string }) {
                           description: `${header}\nAssunto: Email\n\n---\n\nEnviado (registrado fora do CRM).`,
                           date: new Date().toISOString(),
                           completed: true,
+                          priority: 'medium',
                           user: actor,
                         });
                         pushToast('Email registrado', 'success');
@@ -2046,6 +2051,7 @@ export default function DealCockpitClient({ dealId }: { dealId?: string }) {
                           description: 'Fonte: Cockpit\nFora do CRM: sim\n\n---\n\nRealizada (registrado fora do CRM).',
                           date: new Date().toISOString(),
                           completed: true,
+                          priority: 'medium',
                           user: actor,
                         });
                         pushToast('Ligação registrada', 'success');
@@ -2070,6 +2076,7 @@ export default function DealCockpitClient({ dealId }: { dealId?: string }) {
                           description: 'Fonte: Cockpit\nFora do CRM: sim\n\n---\n\nRegistrada fora do CRM.',
                           date: new Date().toISOString(),
                           completed: true,
+                          priority: 'medium',
                           user: actor,
                         });
                         pushToast('Reunião registrada', 'success');
@@ -2094,6 +2101,7 @@ export default function DealCockpitClient({ dealId }: { dealId?: string }) {
                           description: 'Fonte: Cockpit\nFora do CRM: sim\n\n---\n\nCriada (registrado fora do CRM).',
                           date: new Date().toISOString(),
                           completed: true,
+                          priority: 'medium',
                           user: actor,
                         });
                         pushToast('Tarefa registrada', 'success');
@@ -2139,6 +2147,7 @@ export default function DealCockpitClient({ dealId }: { dealId?: string }) {
                           description: text,
                           date: new Date().toISOString(),
                           completed: true,
+                          priority: 'medium',
                           user: actor,
                         });
 
