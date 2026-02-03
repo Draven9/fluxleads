@@ -115,7 +115,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
 }) => {
   const { lifecycleStages } = useCRM();
   const [dragOverStage, setDragOverStage] = useState<string | null>(null);
-  
+
   // State for move-to-stage modal (keyboard accessibility alternative to drag-and-drop)
   const [moveToStageModal, setMoveToStageModal] = useState<{
     isOpen: boolean;
@@ -271,7 +271,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
                   key={deal.id}
                   deal={deal}
                   isRotting={
-                    isDealRotting(deal) &&
+                    isDealRotting(deal, stage.limit_days) &&
                     !deal.isWon &&
                     !deal.isLost
                   }
@@ -292,7 +292,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
           </div>
         );
       })}
-      
+
       {/* Keyboard-accessible modal for moving deals between stages */}
       {moveToStageModal && (
         <MoveToStageModal

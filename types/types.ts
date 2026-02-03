@@ -140,6 +140,7 @@ export interface CRMCompany {
   name: string;
   industry?: string;
   website?: string;
+  status?: 'ACTIVE' | 'CHURNED' | 'INACTIVE';
   createdAt: string;
   updatedAt?: string;
 }
@@ -292,6 +293,7 @@ export interface BoardStage {
   label: string;
   color: string;
   linkedLifecycleStage?: string; // ID do LifecycleStage
+  limit_days?: number; // SLA: Dias máximos de permanência
 }
 
 // Metas do Board (Revenue Ops)
