@@ -4,6 +4,7 @@ import { ActivitiesHeader } from './components/ActivitiesHeader';
 import { ActivitiesFilters } from './components/ActivitiesFilters';
 import { ActivitiesList } from './components/ActivitiesList';
 import { ActivitiesCalendar } from './components/ActivitiesCalendar';
+import { ActivitiesTeamView } from './components/ActivitiesTeamView';
 import { ActivityFormModal } from './components/ActivityFormModal';
 import { BulkActionsToolbar } from './components/BulkActionsToolbar';
 import { useToast } from '@/context/ToastContext';
@@ -36,7 +37,11 @@ export const ActivitiesPage: React.FC = () => {
         handleEditActivity,
         handleDeleteActivity,
         handleToggleComplete,
-        handleSubmit
+        handleSubmit,
+        handleSnooze,
+        assigneeFilter,
+        setAssigneeFilter,
+        profiles,
     } = useActivitiesController();
 
     const { addToast } = useToast();
@@ -81,13 +86,16 @@ export const ActivitiesPage: React.FC = () => {
                 dateFilter={dateFilter}
             />
 
-            {viewMode === 'list' ? (
+            {viewMode === 'list' && (
                 <>
                     <ActivitiesFilters
                         searchTerm={searchTerm}
                         setSearchTerm={setSearchTerm}
                         filterType={filterType}
                         setFilterType={setFilterType}
+                        assigneeFilter={assigneeFilter}
+                        setAssigneeFilter={setAssigneeFilter}
+                        profiles={profiles}
                     />
                     <ActivitiesList
                         activities={filteredActivities}
@@ -99,14 +107,29 @@ export const ActivitiesPage: React.FC = () => {
                         onDelete={handleDeleteActivity}
                         selectedActivities={selectedActivities}
                         onSelectActivity={handleSelectActivity}
+                        onSnooze={handleSnooze}
                     />
                 </>
-            ) : (
+            )}
+
+            {viewMode === 'calendar' && (
                 <ActivitiesCalendar
                     activities={filteredActivities}
                     deals={deals}
                     currentDate={currentDate}
                     setCurrentDate={setCurrentDate}
+                />
+            )}
+
+            {viewMode === 'team' && (
+                <ActivitiesTeamView
+                    activities={filteredActivities}
+                    profiles={profiles}
+                    selectedAssigneeId={assigneeFilter === 'ALL' ? null : assigneeFilter}
+                    onSelectAssignee={(id) => {
+                        setAssigneeFilter(id || 'ALL');
+                        if (id) setViewMode('list');
+                    }}
                 />
             )}
 
@@ -118,6 +141,7 @@ export const ActivitiesPage: React.FC = () => {
                 setFormData={setFormData}
                 editingActivity={editingActivity}
                 deals={deals}
+                profiles={profiles}
             />
 
             <BulkActionsToolbar

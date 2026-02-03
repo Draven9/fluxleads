@@ -1,6 +1,7 @@
 import React from 'react';
 import { X } from 'lucide-react';
 import { Activity, Deal } from '@/types';
+import { Profile } from '@/lib/supabase/profiles';
 
 interface ActivityFormData {
   title: string;
@@ -9,6 +10,8 @@ interface ActivityFormData {
   time: string;
   description: string;
   dealId: string;
+  assigneeId: string;
+  priority: 'low' | 'medium' | 'high';
 }
 
 interface ActivityFormModalProps {
@@ -19,6 +22,7 @@ interface ActivityFormModalProps {
   setFormData: (data: ActivityFormData) => void;
   editingActivity: Activity | null;
   deals: Deal[];
+  profiles: Profile[];
 }
 
 /**
@@ -51,6 +55,7 @@ export const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
   setFormData,
   editingActivity,
   deals,
+  profiles,
 }) => {
   React.useEffect(() => {
     if (!isOpen) return;
@@ -117,10 +122,9 @@ export const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
             </div>
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase mb-1">
-                Negócio Relacionado
+                Negócio Relacionado (Opcional)
               </label>
               <select
-                required={!editingActivity}
                 className="w-full bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-primary-500"
                 value={formData.dealId}
                 onChange={e => setFormData({ ...formData, dealId: e.target.value })}
@@ -133,6 +137,45 @@ export const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
                 ))}
               </select>
             </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Prioridade</label>
+            <div className="flex gap-4">
+              {['low', 'medium', 'high'].map((p) => (
+                <label key={p} className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="priority"
+                    value={p}
+                    checked={formData.priority === p}
+                    onChange={() => setFormData({ ...formData, priority: p as any })}
+                    className="w-4 h-4 text-primary-600 focus:ring-primary-500"
+                  />
+                  <span className="text-sm capitalize text-slate-700 dark:text-slate-300">
+                    {p === 'low' ? 'Baixa' : p === 'medium' ? 'Média' : 'Alta'}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">
+              Responsável (Opcional)
+            </label>
+            <select
+              className="w-full bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-primary-500"
+              value={formData.assigneeId}
+              onChange={e => setFormData({ ...formData, assigneeId: e.target.value })}
+            >
+              <option value="">Atribuir a mim (automático)</option>
+              {profiles.map(profile => (
+                <option key={profile.id} value={profile.id}>
+                  {profile.name || profile.email}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="grid grid-cols-2 gap-4">

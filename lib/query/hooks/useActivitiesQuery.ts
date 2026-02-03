@@ -21,6 +21,8 @@ export interface ActivitiesFilters {
   completed?: boolean;
   dateFrom?: string;
   dateTo?: string;
+  search?: string;
+  assigneeId?: string;
 }
 
 /**
@@ -35,34 +37,11 @@ export const useActivities = (filters?: ActivitiesFilters) => {
       ? queryKeys.activities.list(filters as Record<string, unknown>)
       : queryKeys.activities.lists(),
     queryFn: async () => {
-      const { data, error } = await activitiesService.getAll();
+      // Server-side filtering now supported
+      const { data, error } = await activitiesService.getAll(filters);
       if (error) throw error;
 
-      let activities = data || [];
-
-      // Apply client-side filters
-      if (filters) {
-        activities = activities.filter(activity => {
-          if (filters.dealId && activity.dealId !== filters.dealId) return false;
-          if (filters.type && activity.type !== filters.type) return false;
-          if (filters.completed !== undefined && activity.completed !== filters.completed)
-            return false;
-          if (filters.dateFrom) {
-            const activityDate = new Date(activity.date);
-            const fromDate = new Date(filters.dateFrom);
-            if (activityDate < fromDate) return false;
-          }
-          if (filters.dateTo) {
-            const activityDate = new Date(activity.date);
-            const toDate = new Date(filters.dateTo);
-            if (activityDate > toDate) return false;
-          }
-          return true;
-        });
-      }
-
-      // Apply smart sorting (already sorted by service, but re-sort after filtering)
-      return sortActivitiesSmart(activities);
+      return sortActivitiesSmart(data || []);
     },
     enabled: !authLoading && !!user, // Only fetch when auth is ready
     staleTime: 30 * 1000, // 30 seconds - short staleTime for Realtime updates
@@ -164,14 +143,14 @@ export const useCreateActivity = () => {
       queryClient.setQueryData<Activity[]>(queryKeys.activities.lists(), (old = []) => {
         if (!old) return [data];
         const tempId = context?.tempId;
-        
+
         // Check if activity already exists (race condition: Realtime may have already refetched)
         const existingIndex = old.findIndex(a => a.id === data.id);
         if (existingIndex !== -1) {
           // Activity already exists, just re-sort (Realtime already added it)
           return sortActivitiesSmart(old);
         }
-        
+
         if (tempId) {
           // Remove temp activity, add real one, and re-sort
           const withoutTemp = old.filter(a => a.id !== tempId);
@@ -181,7 +160,7 @@ export const useCreateActivity = () => {
         // If temp not found, just add the new one and re-sort
         return sortActivitiesSmart([...old, data]);
       });
-      
+
       // Invalidate to ensure Realtime updates are picked up
       // This is a no-op if data is already fresh, but ensures consistency
       queryClient.invalidateQueries({ queryKey: queryKeys.activities.all });

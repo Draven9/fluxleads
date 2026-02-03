@@ -12,6 +12,7 @@ interface ActivitiesListProps {
     onDelete: (id: string) => void;
     selectedActivities?: Set<string>;
     onSelectActivity?: (id: string, selected: boolean) => void;
+    onSnooze?: (id: string, days?: number) => void;
 }
 
 /**
@@ -45,7 +46,8 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({
     onEdit,
     onDelete,
     selectedActivities = new Set(),
-    onSelectActivity
+    onSelectActivity,
+    onSnooze
 }) => {
     // Performance: Activities pode ser uma lista grande; evitamos `find` por linha (O(N*M)).
     const dealById = useMemo(() => {
@@ -88,6 +90,7 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({
                     onDelete={onDelete}
                     isSelected={selectedActivities.has(activity.id)}
                     onSelect={onSelectActivity}
+                    onSnooze={onSnooze}
                 />
             ))}
         </div>

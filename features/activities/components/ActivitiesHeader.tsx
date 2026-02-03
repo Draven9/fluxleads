@@ -1,9 +1,9 @@
 import React from 'react';
-import { Plus, LayoutList, Calendar as CalendarIcon } from 'lucide-react';
+import { Plus, LayoutList, Calendar as CalendarIcon, Users } from 'lucide-react';
 
 interface ActivitiesHeaderProps {
-  viewMode: 'list' | 'calendar';
-  setViewMode: (mode: 'list' | 'calendar') => void;
+  viewMode: 'list' | 'calendar' | 'team';
+  setViewMode: (mode: 'list' | 'calendar' | 'team') => void;
   onNewActivity: () => void;
   dateFilter?: 'ALL' | 'overdue' | 'today' | 'upcoming';
 }
@@ -58,23 +58,31 @@ export const ActivitiesHeader: React.FC<ActivitiesHeaderProps> = ({
         <div className="flex bg-white dark:bg-dark-card p-1 rounded-lg border border-slate-200 dark:border-white/10">
           <button
             onClick={() => setViewMode('list')}
-            className={`p-2 rounded-md transition-all ${
-              viewMode === 'list'
-                ? 'bg-primary-50 text-primary-600 dark:bg-primary-500/20 dark:text-primary-400'
-                : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
-            }`}
+            className={`p-2 rounded-md transition-all ${viewMode === 'list'
+              ? 'bg-primary-50 text-primary-600 dark:bg-primary-500/20 dark:text-primary-400'
+              : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+              }`}
           >
             <LayoutList size={20} />
           </button>
           <button
             onClick={() => setViewMode('calendar')}
-            className={`p-2 rounded-md transition-all ${
-              viewMode === 'calendar'
-                ? 'bg-primary-50 text-primary-600 dark:bg-primary-500/20 dark:text-primary-400'
-                : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
-            }`}
+            className={`p-2 rounded-md transition-all ${viewMode === 'calendar'
+              ? 'bg-primary-50 text-primary-600 dark:bg-primary-500/20 dark:text-primary-400'
+              : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+              }`}
           >
             <CalendarIcon size={20} />
+          </button>
+          <button
+            onClick={() => setViewMode('team')}
+            title="Visão de Equipe"
+            className={`p-2 rounded-md transition-all ${viewMode === 'team'
+              ? 'bg-primary-50 text-primary-600 dark:bg-primary-500/20 dark:text-primary-400'
+              : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+              }`}
+          >
+            <Users size={20} />
           </button>
         </div>
         <button

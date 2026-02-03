@@ -14,6 +14,7 @@ interface ActivityRowProps {
     onDelete: (id: string) => void;
     isSelected?: boolean;
     onSelect?: (id: string, selected: boolean) => void;
+    onSnooze?: (id: string, days?: number) => void;
 }
 
 /**
@@ -29,7 +30,8 @@ const ActivityRowComponent: React.FC<ActivityRowProps> = ({
     onEdit,
     onDelete,
     isSelected = false,
-    onSelect
+    onSelect,
+    onSnooze
 }) => {
     const getActivityIcon = (type: Activity['type']) => {
         switch (type) {
@@ -70,7 +72,7 @@ const ActivityRowComponent: React.FC<ActivityRowProps> = ({
             'PROSPECT': 'Oportunidade',
             'CUSTOMER': 'Cliente'
         };
-        
+
         // Se ainda é UUID e não encontrou, mostra fallback amigável
         return map[status] || 'Estágio não identificado';
     };
@@ -160,6 +162,11 @@ const ActivityRowComponent: React.FC<ActivityRowProps> = ({
                             ATRASADO
                         </span>
                     )}
+                    {activity.priority === 'high' && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 bg-red-100/50 text-red-600 dark:bg-red-900/40 dark:text-red-400 rounded-full border border-red-200 dark:border-red-800">
+                            ALTA
+                        </span>
+                    )}
                 </div>
                 <div className="flex items-center gap-4 text-sm text-slate-500 dark:text-slate-400">
                     {deal && (
@@ -206,8 +213,29 @@ const ActivityRowComponent: React.FC<ActivityRowProps> = ({
                 >
                     <Trash2 size={16} />
                 </button>
+                {onSnooze && (
+                    <div className="relative group/snooze">
+                        <button
+                            className="p-2 text-slate-400 hover:text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-500/10 rounded-lg transition-colors"
+                            title="Adiar"
+                        >
+                            <Clock size={16} />
+                        </button>
+                        <div className="absolute right-0 bottom-full mb-1 hidden group-hover/snooze:flex flex-col bg-white dark:bg-dark-card border border-slate-200 dark:border-white/10 rounded-lg shadow-xl overflow-hidden z-10 w-32">
+                            <button onClick={() => onSnooze(activity.id, 1)} className="px-3 py-2 text-xs text-left hover:bg-slate-50 dark:hover:bg-white/5 truncate">
+                                +1 Dia (Amanhã)
+                            </button>
+                            <button onClick={() => onSnooze(activity.id, 2)} className="px-3 py-2 text-xs text-left hover:bg-slate-50 dark:hover:bg-white/5 truncate">
+                                +2 Dias
+                            </button>
+                            <button onClick={() => onSnooze(activity.id, 7)} className="px-3 py-2 text-xs text-left hover:bg-slate-50 dark:hover:bg-white/5 truncate">
+                                +1 Semana
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
-        </div>
+        </div >
     );
 };
 

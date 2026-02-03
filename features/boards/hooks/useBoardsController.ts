@@ -582,6 +582,7 @@ export const useBoardsController = () => {
           date: tomorrow.toISOString(),
           completed: false,
           user: { name: 'Eu', avatar: '' },
+          priority: 'medium',
         },
       },
       {}

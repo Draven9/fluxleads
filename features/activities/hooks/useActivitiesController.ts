@@ -11,11 +11,12 @@ import {
 } from '@/lib/query/hooks/useActivitiesQuery';
 import { useDeals } from '@/lib/query/hooks/useDealsQuery';
 import { useContacts, useCompanies } from '@/lib/query/hooks/useContactsQuery';
+import { useProfiles } from '@/lib/query/hooks/useProfilesQuery';
 import { useRealtimeSync } from '@/lib/realtime/useRealtimeSync';
 
 /**
  * Hook React `useActivitiesController` que encapsula uma lógica reutilizável.
- * @returns {{ viewMode: "list" | "calendar"; setViewMode: Dispatch<SetStateAction<"list" | "calendar">>; searchTerm: string; setSearchTerm: Dispatch<SetStateAction<string>>; ... 18 more ...; handleSubmit: (e: FormEvent<...>) => void; }} Retorna um valor do tipo `{ viewMode: "list" | "calendar"; setViewMode: Dispatch<SetStateAction<"list" | "calendar">>; searchTerm: string; setSearchTerm: Dispatch<SetStateAction<string>>; ... 18 more ...; handleSubmit: (e: FormEvent<...>) => void; }`.
+ * @returns {{ viewMode: "list" | "calendar" | "team"; ... }}
  */
 export const useActivitiesController = () => {
   const searchParams = useSearchParams();
@@ -23,27 +24,23 @@ export const useActivitiesController = () => {
   // Auth for tenant organization_id
   const { profile, organizationId } = useAuth();
 
-  // TanStack Query hooks
-  const { data: activities = [], isLoading: activitiesLoading } = useActivities();
-  const { data: deals = [], isLoading: dealsLoading } = useDeals();
-  const { data: contacts = [], isLoading: contactsLoading } = useContacts();
-  const { data: companies = [], isLoading: companiesLoading } = useCompanies();
-  const createActivityMutation = useCreateActivity();
-  const updateActivityMutation = useUpdateActivity();
-  const deleteActivityMutation = useDeleteActivity();
-
-  // Enable realtime sync
-  useRealtimeSync('activities');
-
-  const { showToast } = useToast();
-
-  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'calendar' | 'team'>('list');
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<Activity['type'] | 'ALL'>('ALL');
   const [dateFilter, setDateFilter] = useState<'ALL' | 'overdue' | 'today' | 'upcoming'>('ALL');
+  const [assigneeFilter, setAssigneeFilter] = useState<string>('ALL'); // New assignee filter
   const [currentDate, setCurrentDate] = useState(new Date());
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
+
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   // Permite deep-link do Inbox: /activities?filter=overdue|today|upcoming
   useEffect(() => {
@@ -66,7 +63,52 @@ export const useActivitiesController = () => {
     time: '09:00',
     description: '',
     dealId: '',
+    assigneeId: '', // Added assigneeId to form data
   });
+
+  // Calculate Query Filters (Server-Side)
+  const queryFilters = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Start of today
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1); // Start of tomorrow
+
+    const filters: any = {};
+
+    if (debouncedSearchTerm) filters.search = debouncedSearchTerm;
+    if (filterType !== 'ALL') filters.type = filterType;
+    if (assigneeFilter !== 'ALL') filters.assigneeId = assigneeFilter;
+
+    if (dateFilter === 'overdue') {
+      filters.completed = false;
+      filters.dateTo = today.toISOString(); // < Today (actually LTE, so use careful logic or rely on service)
+      // Service uses lte for dateTo. "Overdue" means < NOW. 
+      // If I send today 00:00, lte means <= today 00:00. This is "Start of today" or earlier. 
+      // Correct for overdue (yesterday or older).
+    } else if (dateFilter === 'today') {
+      filters.dateFrom = today.toISOString();
+      filters.dateTo = new Date(tomorrow.getTime() - 1).toISOString(); // End of today
+    } else if (dateFilter === 'upcoming') {
+      filters.dateFrom = tomorrow.toISOString();
+    }
+
+    return filters;
+  }, [debouncedSearchTerm, filterType, dateFilter, assigneeFilter]);
+
+  // TanStack Query hooks (Pass filters)
+  const { data: activities = [], isLoading: activitiesLoading } = useActivities(queryFilters);
+  const { data: deals = [], isLoading: dealsLoading } = useDeals();
+  const { data: contacts = [], isLoading: contactsLoading } = useContacts();
+  const { data: companies = [], isLoading: companiesLoading } = useCompanies();
+  const { data: profiles = [], isLoading: profilesLoading } = useProfiles();
+  const createActivityMutation = useCreateActivity();
+  const updateActivityMutation = useUpdateActivity();
+  const deleteActivityMutation = useDeleteActivity();
+
+  // Enable realtime sync (Still global for simplicity, or could filter channel)
+  useRealtimeSync('activities');
+
+  const { showToast } = useToast();
 
   const isLoading = activitiesLoading || dealsLoading || contactsLoading || companiesLoading;
 
@@ -75,41 +117,8 @@ export const useActivitiesController = () => {
   const dealsById = useMemo(() => new Map(deals.map((d) => [d.id, d])), [deals]);
   const contactsById = useMemo(() => new Map(contacts.map((c) => [c.id, c])), [contacts]);
 
-  // Performance: compute date boundaries once per render (used inside memoized filters).
-  const dateBoundaries = useMemo(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    return { todayTs: today.getTime(), tomorrowTs: tomorrow.getTime() };
-  }, []);
-
-  const filteredActivities = useMemo(() => {
-    const { todayTs, tomorrowTs } = dateBoundaries;
-    const q = searchTerm.toLowerCase();
-
-    return activities
-      .map((activity) => ({ activity, ts: Date.parse(activity.date) }))
-      .filter(({ activity, ts }) => {
-        const matchesSearch = (activity.title || '').toLowerCase().includes(q);
-        const matchesType = filterType === 'ALL' || activity.type === filterType;
-        const isPending = !activity.completed;
-
-        const matchesDateFilter =
-          dateFilter === 'ALL'
-            ? true
-            : dateFilter === 'overdue'
-              ? isPending && ts < todayTs
-              : dateFilter === 'today'
-                ? isPending && ts >= todayTs && ts < tomorrowTs
-                : isPending && ts >= tomorrowTs;
-
-        return matchesSearch && matchesType && matchesDateFilter;
-      })
-      // Performance: sort by numeric timestamp (avoid `new Date(...)` in comparator).
-      .sort((a, b) => a.ts - b.ts)
-      .map(({ activity }) => activity);
-  }, [activities, dateBoundaries, searchTerm, filterType, dateFilter]);
+  // Filtered Activities - Just return data from query (it's already filtered)
+  const filteredActivities = activities;
 
   const handleNewActivity = () => {
     setEditingActivity(null);
@@ -120,6 +129,7 @@ export const useActivitiesController = () => {
       time: '09:00',
       description: '',
       dealId: '',
+      assigneeId: '',
     });
     setIsModalOpen(true);
   };
@@ -134,6 +144,7 @@ export const useActivitiesController = () => {
       time: date.toTimeString().slice(0, 5),
       description: activity.description || '',
       dealId: activity.dealId,
+      assigneeId: (activity as any).assigneeId || '',
     });
     setIsModalOpen(true);
   };
@@ -167,6 +178,34 @@ export const useActivitiesController = () => {
     },
     [activitiesById, showToast, updateActivityMutation]
   );
+
+  const handleSnooze = (id: string, days = 1) => {
+    const activity = activitiesById.get(id);
+    if (!activity) return;
+
+    // Parse current date
+    const dateObj = new Date(activity.date);
+
+    // Add days
+    dateObj.setDate(dateObj.getDate() + days);
+
+    const updates = {
+      date: dateObj.toISOString(),
+      assignee_id: (activity as any).assigneeId,
+    };
+
+    updateActivityMutation.mutate(
+      { id, updates },
+      {
+        onSuccess: () => {
+          showToast('Atividade adiada com sucesso!', 'success');
+        },
+        onError: () => {
+          showToast('Erro ao adiar atividade', 'error');
+        },
+      }
+    );
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -238,6 +277,8 @@ export const useActivitiesController = () => {
     setFilterType,
     dateFilter,
     setDateFilter,
+    assigneeFilter,
+    setAssigneeFilter,
     currentDate,
     setCurrentDate,
     isModalOpen,
@@ -249,11 +290,13 @@ export const useActivitiesController = () => {
     deals,
     contacts,
     companies,
+    profiles,
     isLoading,
     handleNewActivity,
     handleEditActivity,
     handleDeleteActivity,
     handleToggleComplete,
+    handleSnooze,
     handleSubmit,
   };
 };

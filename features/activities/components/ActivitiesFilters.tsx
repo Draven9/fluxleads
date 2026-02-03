@@ -1,12 +1,16 @@
 import React from 'react';
 import { Search, Filter } from 'lucide-react';
 import { Activity } from '@/types';
+import { Profile } from '@/lib/supabase/profiles';
 
 interface ActivitiesFiltersProps {
   searchTerm: string;
   setSearchTerm: (term: string) => void;
   filterType: Activity['type'] | 'ALL';
   setFilterType: (type: Activity['type'] | 'ALL') => void;
+  assigneeFilter: string;
+  setAssigneeFilter: (id: string) => void;
+  profiles: Profile[];
 }
 
 /**
@@ -30,6 +34,9 @@ export const ActivitiesFilters: React.FC<ActivitiesFiltersProps> = ({
   setSearchTerm,
   filterType,
   setFilterType,
+  assigneeFilter,
+  setAssigneeFilter,
+  profiles,
 }) => {
   return (
     <div className="flex gap-4 mb-6">
@@ -55,6 +62,19 @@ export const ActivitiesFilters: React.FC<ActivitiesFiltersProps> = ({
           <option value="MEETING">Reuniões</option>
           <option value="EMAIL">Emails</option>
           <option value="TASK">Tarefas</option>
+        </select>
+
+        <select
+          className="bg-white dark:bg-dark-card border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-primary-500 text-slate-900 dark:text-white max-w-[200px]"
+          value={assigneeFilter}
+          onChange={e => setAssigneeFilter(e.target.value)}
+        >
+          <option value="ALL">Todos os Responsáveis</option>
+          {profiles.map(p => (
+            <option key={p.id} value={p.id}>
+              {p.name || p.email}
+            </option>
+          ))}
         </select>
       </div>
     </div>

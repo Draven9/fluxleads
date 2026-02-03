@@ -57,7 +57,7 @@ export interface DbActivity {
   /** Data de criação. */
   created_at: string;
   /** ID do dono/responsável. */
-  owner_id: string | null;
+  priority: string;
 }
 
 // Interface auxiliar para o retorno do Supabase com o join
@@ -85,6 +85,7 @@ const transformActivity = (db: DbActivityWithDeal): Activity => ({
   participantContactIds: (db as any).participant_contact_ids || [],
   dealTitle: db.deals?.title || '',
   user: { name: 'Você', avatar: '' }, // Will be enriched later
+  priority: (db as any).priority || 'medium', // Default fallback
 });
 
 /**
@@ -101,35 +102,59 @@ const transformActivityToDb = (activity: Partial<Activity>): Partial<DbActivity>
   if (activity.type !== undefined) db.type = activity.type;
   if (activity.date !== undefined) db.date = activity.date;
   if (activity.completed !== undefined) db.completed = activity.completed;
+  if (activity.priority !== undefined) (db as any).priority = activity.priority;
   if (activity.dealId !== undefined) db.deal_id = sanitizeUUID(activity.dealId);
   if (activity.contactId !== undefined) db.contact_id = sanitizeUUID(activity.contactId);
   if (activity.clientCompanyId !== undefined) (db as any).client_company_id = sanitizeUUID(activity.clientCompanyId);
   if (activity.participantContactIds !== undefined) (db as any).participant_contact_ids = activity.participantContactIds || [];
+  if ((activity as any).assigneeId !== undefined) (db as any).assignee_id = sanitizeUUID((activity as any).assigneeId);
 
   return db;
 };
 
 export const activitiesService = {
   /**
-   * Busca todas as atividades.
+   * Busca todas as atividades com filtros opcionais.
    * 
+   * @param filters - Filtros para a consulta.
    * @returns Promise com array de atividades ou erro.
    */
-  async getAll(): Promise<{ data: Activity[] | null; error: Error | null }> {
+  async getAll(filters?: {
+    dealId?: string;
+    type?: Activity['type'];
+    completed?: boolean;
+    dateFrom?: string;
+    dateTo?: string;
+    search?: string;
+    assigneeId?: string;
+  }): Promise<{ data: Activity[] | null; error: Error | null }> {
     try {
       const sb = supabase;
       if (!sb) return { data: null, error: new Error('Supabase não configurado') };
 
-      const { data, error } = await sb
+      let query = sb
         .from('activities')
         .select(`
           *,
-          deals:deal_id (title)
+          deals (title)
         `)
-        .order('date', { ascending: false }); // Ordenação básica do banco
+        .order('date', { ascending: false });
+
+      // Apply Filters
+      if (filters) {
+        if (filters.dealId) query = query.eq('deal_id', filters.dealId);
+        if (filters.type) query = query.eq('type', filters.type);
+        if (filters.completed !== undefined) query = query.eq('completed', filters.completed);
+        if (filters.dateFrom) query = query.gte('date', filters.dateFrom);
+        if (filters.dateTo) query = query.lte('date', filters.dateTo);
+        if (filters.assigneeId) query = query.eq('assignee_id', filters.assigneeId);
+        if (filters.search) query = query.ilike('title', `%${filters.search}%`);
+      }
+
+      const { data, error } = await query;
 
       if (error) return { data: null, error };
-      
+
       // Transforma e aplica ordenação inteligente
       const activities = (data || []).map(a => transformActivity(a as DbActivityWithDeal));
       return { data: sortActivitiesSmart(activities), error: null };
@@ -159,6 +184,7 @@ export const activitiesService = {
         contact_id: sanitizeUUID(activity.contactId),
         client_company_id: sanitizeUUID(activity.clientCompanyId),
         participant_contact_ids: activity.participantContactIds || [],
+        assignee_id: (activity as any).assigneeId || null,
       };
 
       const { data, error } = await sb.from('activities').insert(insertData).select().single();
@@ -175,6 +201,13 @@ export const activitiesService = {
         }
         if (code === '42703' && msg.includes('participant_contact_ids')) {
           delete insertData.participant_contact_ids;
+          const retry = await sb.from('activities').insert(insertData).select().single();
+          if (retry.error) return { data: null, error: retry.error as any };
+          if (retry.error) return { data: null, error: retry.error as any };
+          return { data: transformActivity(retry.data as DbActivity), error: null };
+        }
+        if (code === '42703' && msg.includes('assignee_id')) {
+          delete insertData.assignee_id;
           const retry = await sb.from('activities').insert(insertData).select().single();
           if (retry.error) return { data: null, error: retry.error as any };
           return { data: transformActivity(retry.data as DbActivity), error: null };
@@ -214,6 +247,11 @@ export const activitiesService = {
         }
         if (code === '42703' && msg.includes('participant_contact_ids')) {
           const { participant_contact_ids, ...rest } = dbUpdates as any;
+          const retry = await sb.from('activities').update(rest).eq('id', id);
+          return { error: retry.error as any };
+        }
+        if (code === '42703' && msg.includes('assignee_id')) {
+          const { assignee_id, ...rest } = dbUpdates as any;
           const retry = await sb.from('activities').update(rest).eq('id', id);
           return { error: retry.error as any };
         }

@@ -276,6 +276,7 @@ export interface Activity {
     avatar: string;
   };
   completed: boolean;
+  priority: 'low' | 'medium' | 'high';
 }
 
 export interface DashboardStats {
