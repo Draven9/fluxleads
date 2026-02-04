@@ -44,7 +44,6 @@ Para enviar respostas manuais ou follow-ups automáticos, você deve conectar o 
 1.  Acesse **Configurações > Webhooks**.
 2.  Em **"Follow-up (Webhook de saída)"**, clique em conectar.
 3.  Insira a **URL do seu Webhook do n8n** (que receberá tanto chat quanto follow-ups).
-    *   *Dica: Você pode usar o mesmo workflow no n8n e usar um nó "Switch" para diferenciar o tipo de evento, ou criar workflows separados com URLs diferentes e ir mudando conforme a necessidade. Recomendo um workflow único que filtre pelo campo `event`.*
 
 ---
 
@@ -67,18 +66,11 @@ Quando você responde um cliente pela aba **Mensagens** do Flux Leads, o sistema
 }
 ```
 
-### ⚡ Configuração no n8n (Send Text)
-1.  Receba o webhook.
-2.  Use um **Switch** ou **If** para verificar se `event` == `chat.new_message`.
-3.  Se sim, conecte ao nó **Evolution API (Send Text)**.
-    *   **Remote Jid:** `{{ $json.body.data.contact.phone }}`
-    *   **Text:** `{{ $json.body.data.content }}`
-
 ---
 
 ## 🚀 Parte 4: Fluxo de Follow-up (Mudança de Etapa)
 
-Quando você arrasta um card no Kanban para outra etapa, o sistema envia este evento (útil para mensagens automáticas tipo "Seu pedido foi aprovado!"):
+Quando você arrasta um card no Kanban para outra etapa, o sistema envia este evento:
 
 **JSON Enviado:**
 ```json
@@ -87,22 +79,191 @@ Quando você arrasta um card no Kanban para outra etapa, o sistema envia este ev
   "data": {
     "deal_id": "uuid...",
     "title": "Negócio Honda Civic",
-    "contact": {
-      "name": "João da Silva",
-      "phone": "551199999999",
-      "email": "joao@email.com"
-    },
-    "from_stage": { "id": "...", "name": "Novos" },
-    "to_stage": { "id": "...", "name": "Qualificados" }
+    "contact": { "name": "João", "phone": "55119999", ... },
+    "from_stage": { "name": "Novos" },
+    "to_stage": { "name": "Qualificados" }
   }
 }
 ```
 
-### ⚡ Configuração no n8n (Automação)
-1.  Receba o webhook (pode ser o mesmo URL do chat).
-2.  Verifique se `event` == `deal.stage_changed`.
-3.  Verifique a etapa (`data.to_stage.name` == "Agendados").
-4.  Se sim, conecte ao nó **Evolution API (Send Text)**.
-    *   **Text:** "Olá {{ $json.body.data.contact.name }}, vi que seu negócio mudou para Agendado!"
+---
 
-Pronto! Seu CRM agora conversa nas duas direções. 🔄
+## 📦 Bônus: Workflow pronto para Copiar/Colar (n8n)
+
+Se quiser, **copie o JSON abaixo** e cole no canvas do n8n para ter uma estrutura base de saída.
+Este workflow recebe o evento do Flux Leads, verifica se é Chat ou Follow-up, e manda para a Evolution API.
+
+> **Importante:** Você precisará atualizar as credenciais e URL da Evolution API dentro do nó de envio.
+
+```json
+{
+  "meta": {
+    "instanceId": "generated_flux_leads_outbound"
+  },
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "flux-leads-notification",
+        "options": {}
+      },
+      "id": "webhook-in",
+      "name": "Webhook (Flux Leads)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [460, 360]
+    },
+    {
+      "parameters": {
+        "dataType": "string",
+        "value1": "={{ $json.body.event }}",
+        "rules": {
+          "rules": [
+            {
+              "value2": "chat.new_message",
+              "output": 0
+            },
+            {
+              "value2": "deal.stage_changed",
+              "output": 1
+            }
+          ]
+        }
+      },
+      "id": "switch-event",
+      "name": "Tipo de Evento?",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [680, 360]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://SEU_EVOLUTION_API/message/sendText/INSTANCIA",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "SUA_APIKEY_AQUI"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "={{ $json.body.data.contact.phone }}"
+            },
+            {
+              "name": "text",
+              "value": "={{ $json.body.data.content }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "send-chat-reply",
+      "name": "Enviar Resposta (Chat)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [920, 260]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.body.data.to_stage.name }}",
+              "operation": "contains",
+              "value2": "Agendado"
+            }
+          ]
+        }
+      },
+      "id": "filter-stage",
+      "name": "Filtra Etapa 'Agendado'",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [920, 480]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://SEU_EVOLUTION_API/message/sendText/INSTANCIA",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "SUA_APIKEY_AQUI"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "={{ $json.body.data.contact.phone }}"
+            },
+            {
+              "name": "text",
+              "value": "Olá {{ $json.body.data.contact.name }}, seu pedido mudou para: {{ $json.body.data.to_stage.name }}!"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "send-followup",
+      "name": "Enviar Follow-up",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1160, 480]
+    }
+  ],
+  "connections": {
+    "Webhook (Flux Leads)": {
+      "main": [
+        [
+          {
+            "node": "Tipo de Evento?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tipo de Evento?": {
+      "main": [
+        [
+          {
+            "node": "Enviar Resposta (Chat)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Filtra Etapa 'Agendado'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtra Etapa 'Agendado'": {
+      "main": [
+        [
+          {
+            "node": "Enviar Follow-up",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
+```
