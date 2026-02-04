@@ -10,7 +10,7 @@ interface ActivitiesCalendarProps {
     onUpdateActivityDate?: (activityId: string, newDate: Date) => Promise<void>;
 }
 
-const HOURS = Array.from({ length: 10 }, (_, i) => i + 9); // 9:00 to 18:00
+const HOURS = Array.from({ length: 18 }, (_, i) => i + 6); // 6:00 to 23:00
 const DAYS_OF_WEEK = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
 /**
