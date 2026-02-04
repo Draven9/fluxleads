@@ -18,7 +18,6 @@ export const ActivitiesMonthView: React.FC<ActivitiesMonthViewProps> = ({
     activities,
     deals,
     currentDate,
-    currentDate,
     setCurrentDate,
     onUpdateActivityDate,
     onEditActivity

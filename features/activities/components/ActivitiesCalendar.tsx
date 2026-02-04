@@ -35,7 +35,6 @@ export const ActivitiesCalendar: React.FC<ActivitiesCalendarProps> = ({
     deals,
     currentDate,
     setCurrentDate,
-    setCurrentDate,
     onUpdateActivityDate,
     onEditActivity
 }) => {
