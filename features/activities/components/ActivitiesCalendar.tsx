@@ -8,6 +8,7 @@ interface ActivitiesCalendarProps {
     currentDate: Date;
     setCurrentDate: (date: Date) => void;
     onUpdateActivityDate?: (activityId: string, newDate: Date) => Promise<void>;
+    onEditActivity: (activity: Activity) => void;
 }
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i); // 0:00 to 23:00
@@ -34,7 +35,9 @@ export const ActivitiesCalendar: React.FC<ActivitiesCalendarProps> = ({
     deals,
     currentDate,
     setCurrentDate,
-    onUpdateActivityDate
+    setCurrentDate,
+    onUpdateActivityDate,
+    onEditActivity
 }) => {
     const getWeekStart = (date: Date) => {
         const d = new Date(date);
@@ -213,10 +216,14 @@ export const ActivitiesCalendar: React.FC<ActivitiesCalendarProps> = ({
                                                     key={activity.id}
                                                     draggable
                                                     onDragStart={(e) => handleDragStart(e, activity.id)}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        onEditActivity(activity);
+                                                    }}
                                                     className={`
                                                         group relative
-                                                        text-xs p-3 rounded-xl border-2
-                                                        ${getActivityGradient(activity.type)}
+                                                        p-1.5 rounded-md text-xs border cursor-move transition-all active:scale-95 z-10 relative
+                                                        ${getActivityGradient(activity.type)} text-white
                                                         ${activity.completed ? 'opacity-50 saturate-50' : ''}
                                                         ${isOverdue(activity) && !activity.completed ? 'ring-2 ring-red-500 ring-offset-2 dark:ring-offset-slate-900' : ''}
                                                         transition-all duration-300
