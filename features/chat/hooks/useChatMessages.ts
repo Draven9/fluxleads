@@ -72,13 +72,13 @@ export function useChatMessages(sessionId: string | null) {
         const senderName = profile?.first_name || profile?.nickname || 'Atendente';
         const finalContent = `*[${senderName}]:* ${content}`;
 
-        // Optimistic Update (Optional, let's stick to Supabase response for now to get ID)
-        const { error } = await supabase.from('messages').insert({
-            organization_id: organizationId,
-            session_id: sessionId,
-            direction: 'outbound',
-            content: finalContent,
-            status: 'sent', // Initially sent
+        // Send via Edge Function (saves to DB + triggers webhook)
+        const { error } = await supabase.functions.invoke('chat-out', {
+            body: {
+                organization_id: organizationId,
+                session_id: sessionId,
+                content: finalContent
+            }
         });
 
         if (error) {
