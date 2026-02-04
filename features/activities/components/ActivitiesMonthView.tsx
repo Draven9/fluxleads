@@ -88,7 +88,25 @@ export const ActivitiesMonthView: React.FC<ActivitiesMonthViewProps> = ({
         e.preventDefault();
         const activityId = e.dataTransfer.getData('application/react-dnd-id');
         if (activityId) {
-            onUpdateActivityDate(activityId, targetDate);
+            // Find original activity to preserve time
+            // Activities prop is flat array, find is O(N)
+            const activity = activities.find(a => a.id === activityId);
+
+            let newDate = new Date(targetDate);
+
+            if (activity) {
+                const originalDate = new Date(activity.date);
+                newDate.setHours(
+                    originalDate.getHours(),
+                    originalDate.getMinutes(),
+                    originalDate.getSeconds()
+                );
+            } else {
+                // Default to 09:00 if not found (fallback)
+                newDate.setHours(9, 0, 0, 0);
+            }
+
+            onUpdateActivityDate(activityId, newDate);
         }
     };
 
