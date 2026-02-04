@@ -3,7 +3,7 @@ import { useActivitiesController } from './hooks/useActivitiesController';
 import { ActivitiesHeader } from './components/ActivitiesHeader';
 import { ActivitiesFilters } from './components/ActivitiesFilters';
 import { ActivitiesList } from './components/ActivitiesList';
-import { ActivitiesCalendar } from './components/ActivitiesCalendar';
+import { ActivitiesCalendarContainer } from './components/ActivitiesCalendarContainer';
 import { ActivitiesTeamView } from './components/ActivitiesTeamView';
 import { ActivityFormModal } from './components/ActivityFormModal';
 import { BulkActionsToolbar } from './components/BulkActionsToolbar';
@@ -42,6 +42,7 @@ export const ActivitiesPage: React.FC = () => {
         assigneeFilter,
         setAssigneeFilter,
         profiles,
+        handleUpdateActivityDate,
     } = useActivitiesController();
 
     const { addToast } = useToast();
@@ -113,11 +114,12 @@ export const ActivitiesPage: React.FC = () => {
             )}
 
             {viewMode === 'calendar' && (
-                <ActivitiesCalendar
+                <ActivitiesCalendarContainer
                     activities={filteredActivities}
                     deals={deals}
                     currentDate={currentDate}
                     setCurrentDate={setCurrentDate}
+                    onUpdateActivityDate={handleUpdateActivityDate}
                 />
             )}
 

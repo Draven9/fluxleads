@@ -302,5 +302,20 @@ export const useActivitiesController = () => {
     handleToggleComplete,
     handleSnooze,
     handleSubmit,
+    handleUpdateActivityDate: async (id: string, date: Date) => {
+      // Helper for drag & drop
+      return new Promise<void>((resolve, reject) => {
+        updateActivityMutation.mutate(
+          { id, updates: { date: date.toISOString() } },
+          {
+            onSuccess: () => {
+              showToast('Data atualizada!', 'success');
+              resolve();
+            },
+            onError: () => reject()
+          }
+        );
+      });
+    }
   };
 };
