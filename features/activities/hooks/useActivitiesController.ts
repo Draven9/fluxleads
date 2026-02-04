@@ -154,13 +154,21 @@ export const useActivitiesController = () => {
 
   const handleEditActivity = (activity: Activity) => {
     setEditingActivity(activity);
-    const date = new Date(activity.date);
+    const dateObj = new Date(activity.date);
+
+    // Extract local date components manually to avoid timezone shift issues
+    const year = dateObj.getFullYear();
+    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const day = String(dateObj.getDate()).padStart(2, '0');
+    const hours = String(dateObj.getHours()).padStart(2, '0');
+    const minutes = String(dateObj.getMinutes()).padStart(2, '0');
+
     setFormData({
       title: activity.title,
       priority: activity.priority,
       type: activity.type,
-      date: date.toISOString().split('T')[0],
-      time: date.toTimeString().slice(0, 5),
+      date: `${year}-${month}-${day}`,
+      time: `${hours}:${minutes}`,
       description: activity.description || '',
       dealId: activity.dealId,
       assigneeId: (activity as any).assigneeId || '',
@@ -229,7 +237,17 @@ export const useActivitiesController = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    const date = new Date(`${formData.date}T${formData.time}`);
+    // Construct date explicitly from parts to avoid naive Date parsing issues
+    const [year, monthStr, dayStr] = formData.date.split('-');
+    const [hoursStr, minutesStr] = formData.time.split(':');
+
+    const date = new Date(
+      Number(year),
+      Number(monthStr) - 1,
+      Number(dayStr),
+      Number(hoursStr),
+      Number(minutesStr)
+    );
     const selectedDeal = formData.dealId ? dealsById.get(formData.dealId) : undefined;
     const selectedContact = selectedDeal?.contactId ? contactsById.get(selectedDeal.contactId) : undefined;
     const clientCompanyId = selectedDeal?.clientCompanyId || selectedContact?.clientCompanyId || undefined;
