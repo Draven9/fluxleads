@@ -432,10 +432,10 @@ Deno.serve(async (req) => {
   }
 
   // 4) Integração com módulo de Chat (Mensagens)
-  // Se for WhatsApp e tiver conteúdo (notes), cria sessão de chat e insere a mensagem.
+  // Se tiver conteúdo (notes), cria sessão de chat e insere a mensagem.
   // Isso garante que a conversa apareça na aba "Mensagens" e não apenas nos logs.
-  const isWhatsApp = String(payload.source || '').toLowerCase().includes('whatsapp');
-  if (contactId && payload.notes && isWhatsApp) {
+  // Aceitamos qualquer source (whatsapp, webhook-ui, n8n, etc) desde que tenha mensagem.
+  if (contactId && payload.notes) {
     try {
       // 4.1) Busca ou cria sessão de chat
       const { data: sessionData } = await supabase
