@@ -10,7 +10,7 @@ interface ActivitiesCalendarProps {
     onUpdateActivityDate?: (activityId: string, newDate: Date) => Promise<void>;
 }
 
-const HOURS = Array.from({ length: 18 }, (_, i) => i + 6); // 6:00 to 23:00
+const HOURS = Array.from({ length: 24 }, (_, i) => i); // 0:00 to 23:00
 const DAYS_OF_WEEK = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
 /**
@@ -96,12 +96,10 @@ export const ActivitiesCalendar: React.FC<ActivitiesCalendarProps> = ({
     };
 
     const activitiesByDayHour = useMemo(() => {
-        console.log("DEBUG: Recomputing activitiesByDayHour", activities.length);
         const map = new Map<string, Activity[]>();
         for (const a of activities) {
             const d = new Date(a.date);
             const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}|${d.getHours()}`;
-            console.log(`DEBUG: Activity ${a.title} (${a.date}) -> Key: ${key}`);
             const list = map.get(key);
             if (list) list.push(a);
             else map.set(key, [a]);
