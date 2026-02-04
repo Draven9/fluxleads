@@ -69,32 +69,48 @@ export const useActivitiesController = () => {
 
   // Calculate Query Filters (Server-Side)
   const queryFilters = useMemo(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0); // Start of today
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1); // Start of tomorrow
-
     const filters: any = {};
+
+    if (viewMode === 'calendar') {
+      // In Calendar mode, we fetch a broad range based on currentDate 
+      // (e.g., beginning of month - padding to end of month + padding)
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth(); // 0-indexed
+
+      // Extensive range: Start of month - 7 days, End of month + 7 days
+      // This covers the "Week view" crossing months and "Month view" padding
+      const start = new Date(year, month, 1);
+      start.setDate(start.getDate() - 14); // Safety margin
+
+      const end = new Date(year, month + 1, 0);
+      end.setDate(end.getDate() + 14);
+
+      filters.dateFrom = start.toISOString();
+      filters.dateTo = end.toISOString();
+    } else {
+      // List/Team View Logic
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+
+      if (dateFilter === 'overdue') {
+        filters.completed = false;
+        filters.dateTo = today.toISOString();
+      } else if (dateFilter === 'today') {
+        filters.dateFrom = today.toISOString();
+        filters.dateTo = new Date(tomorrow.getTime() - 1).toISOString();
+      } else if (dateFilter === 'upcoming') {
+        filters.dateFrom = tomorrow.toISOString();
+      }
+    }
 
     if (debouncedSearchTerm) filters.search = debouncedSearchTerm;
     if (filterType !== 'ALL') filters.type = filterType;
     if (assigneeFilter !== 'ALL') filters.assigneeId = assigneeFilter;
 
-    if (dateFilter === 'overdue') {
-      filters.completed = false;
-      filters.dateTo = today.toISOString(); // < Today (actually LTE, so use careful logic or rely on service)
-      // Service uses lte for dateTo. "Overdue" means < NOW. 
-      // If I send today 00:00, lte means <= today 00:00. This is "Start of today" or earlier. 
-      // Correct for overdue (yesterday or older).
-    } else if (dateFilter === 'today') {
-      filters.dateFrom = today.toISOString();
-      filters.dateTo = new Date(tomorrow.getTime() - 1).toISOString(); // End of today
-    } else if (dateFilter === 'upcoming') {
-      filters.dateFrom = tomorrow.toISOString();
-    }
-
     return filters;
-  }, [debouncedSearchTerm, filterType, dateFilter, assigneeFilter]);
+  }, [debouncedSearchTerm, filterType, dateFilter, assigneeFilter, viewMode, currentDate]);
 
   // TanStack Query hooks (Pass filters)
   const { data: activities = [], isLoading: activitiesLoading } = useActivities(queryFilters);
