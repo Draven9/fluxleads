@@ -7,6 +7,7 @@ interface ActivitiesCalendarProps {
     deals: Deal[];
     currentDate: Date;
     setCurrentDate: (date: Date) => void;
+    onUpdateActivityDate?: (activityId: string, newDate: Date) => Promise<void>;
 }
 
 const HOURS = Array.from({ length: 10 }, (_, i) => i + 9); // 9:00 to 18:00
@@ -32,7 +33,8 @@ export const ActivitiesCalendar: React.FC<ActivitiesCalendarProps> = ({
     activities,
     deals,
     currentDate,
-    setCurrentDate
+    setCurrentDate,
+    onUpdateActivityDate
 }) => {
     const getWeekStart = (date: Date) => {
         const d = new Date(date);
@@ -93,8 +95,6 @@ export const ActivitiesCalendar: React.FC<ActivitiesCalendarProps> = ({
         return new Date(activity.date) < new Date() && !activity.completed;
     };
 
-    // Performance: grid chama `getActivitiesForDateTime` muitas vezes.
-    // Indexamos atividades por (YYYY-MM-DD|hour) uma vez para evitar filters repetidos.
     const activitiesByDayHour = useMemo(() => {
         const map = new Map<string, Activity[]>();
         for (const a of activities) {
@@ -107,12 +107,33 @@ export const ActivitiesCalendar: React.FC<ActivitiesCalendarProps> = ({
         return map;
     }, [activities]);
 
-    // Performance: evitar `deals.find` em hover/tooltips.
     const dealTitleById = useMemo(() => {
         const map = new Map<string, string>();
         for (const d of deals) map.set(d.id, d.title);
         return map;
     }, [deals]);
+
+    // Drag & Drop Handlers
+    const handleDragStart = (e: React.DragEvent, activityId: string) => {
+        e.dataTransfer.setData('application/react-dnd-id', activityId);
+        e.dataTransfer.effectAllowed = 'move';
+    };
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+    };
+
+    const handleDrop = (e: React.DragEvent, targetDate: Date, targetHour: number) => {
+        e.preventDefault();
+        const activityId = e.dataTransfer.getData('application/react-dnd-id');
+        if (activityId && onUpdateActivityDate) {
+            // Set the date AND hour
+            const newDate = new Date(targetDate);
+            newDate.setHours(targetHour, 0, 0, 0);
+            onUpdateActivityDate(activityId, newDate);
+        }
+    };
 
     return (
         <div className="bg-white dark:bg-dark-card rounded-2xl border border-slate-200 dark:border-white/5 overflow-hidden shadow-xl">
@@ -150,16 +171,16 @@ export const ActivitiesCalendar: React.FC<ActivitiesCalendarProps> = ({
                             <div
                                 key={i}
                                 className={`p-4 text-center border-l border-slate-200 dark:border-white/10 transition-all ${isToday(date)
-                                        ? 'bg-gradient-to-b from-primary-50 to-primary-100 dark:from-primary-500/20 dark:to-primary-500/10'
-                                        : 'bg-slate-50 dark:bg-white/5'
+                                    ? 'bg-gradient-to-b from-primary-50 to-primary-100 dark:from-primary-500/20 dark:to-primary-500/10'
+                                    : 'bg-slate-50 dark:bg-white/5'
                                     }`}
                             >
                                 <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                                     {DAYS_OF_WEEK[date.getDay()]}
                                 </div>
                                 <div className={`text-2xl font-black mt-1 font-display ${isToday(date)
-                                        ? 'text-primary-600 dark:text-primary-400'
-                                        : 'text-slate-900 dark:text-white'
+                                    ? 'text-primary-600 dark:text-primary-400'
+                                    : 'text-slate-900 dark:text-white'
                                     }`}>
                                     {date.getDate()}
                                 </div>
@@ -179,15 +200,19 @@ export const ActivitiesCalendar: React.FC<ActivitiesCalendarProps> = ({
                                 return (
                                     <div
                                         key={i}
+                                        onDragOver={handleDragOver}
+                                        onDrop={(e) => handleDrop(e, date, hour)}
                                         className={`min-h-[70px] p-2 border-l border-slate-200 dark:border-white/10 transition-colors ${isToday(date)
-                                                ? 'bg-primary-50/20 dark:bg-primary-500/5'
-                                                : ''
+                                            ? 'bg-primary-50/20 dark:bg-primary-500/5'
+                                            : ''
                                             }`}
                                     >
                                         <div className="space-y-2">
                                             {hourActivities.map(activity => (
                                                 <div
                                                     key={activity.id}
+                                                    draggable
+                                                    onDragStart={(e) => handleDragStart(e, activity.id)}
                                                     className={`
                                                         group relative
                                                         text-xs p-3 rounded-xl border-2
@@ -196,7 +221,7 @@ export const ActivitiesCalendar: React.FC<ActivitiesCalendarProps> = ({
                                                         ${isOverdue(activity) && !activity.completed ? 'ring-2 ring-red-500 ring-offset-2 dark:ring-offset-slate-900' : ''}
                                                         transition-all duration-300
                                                         hover:scale-105 hover:-translate-y-1
-                                                        cursor-pointer
+                                                        cursor-pointer cursor-grab active:cursor-grabbing
                                                         overflow-hidden
                                                     `}
                                                     title={`${activity.title} - ${activity.dealId ? (dealTitleById.get(activity.dealId) ?? '') : ''}`}
