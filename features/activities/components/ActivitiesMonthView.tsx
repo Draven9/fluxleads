@@ -11,14 +11,17 @@ interface ActivitiesMonthViewProps {
     currentDate: Date;
     setCurrentDate: (date: Date) => void;
     onUpdateActivityDate: (activityId: string, newDate: Date) => Promise<void>;
+    onEditActivity: (activity: Activity) => void;
 }
 
 export const ActivitiesMonthView: React.FC<ActivitiesMonthViewProps> = ({
     activities,
     deals,
     currentDate,
+    currentDate,
     setCurrentDate,
-    onUpdateActivityDate
+    onUpdateActivityDate,
+    onEditActivity
 }) => {
     // Generate calendar grid
     const days = useMemo(() => {
@@ -187,14 +190,17 @@ export const ActivitiesMonthView: React.FC<ActivitiesMonthViewProps> = ({
                                 {displayedActivities.map(activity => (
                                     <div
                                         key={activity.id}
-                                        draggable="true"
-                                        onDragStart={(e) => handleDragStart(e, activity.id)}
-                                        className={`
-                                            group text-[10px] px-1.5 py-1 rounded border cursor-grab active:cursor-grabbing truncate
-                                            flex items-center gap-1.5 shadow-sm hover:shadow-md transition-all
-                                            ${getTypeColor(activity.type)}
-                                            ${activity.completed ? 'opacity-50 line-through' : ''}
-                                        `}
+                                        draggable
+                                        onDragStart={(e) => {
+                                            e.dataTransfer.setData('application/react-dnd-id', activity.id);
+                                            e.dataTransfer.effectAllowed = 'move';
+                                        }}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onEditActivity(activity);
+                                        }}
+                                        className={`p-1 px-2 rounded-md text-xs border cursor-move truncate transition-all active:scale-95 z-10 relative mb-1
+                                            ${getTypeColor(activity.type)} text-white`}
                                         title={`${activity.title} (${format(new Date(activity.date), 'HH:mm')})`}
                                     >
                                         <span className="opacity-75 shrink-0">

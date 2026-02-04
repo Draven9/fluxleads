@@ -120,6 +120,7 @@ export const ActivitiesPage: React.FC = () => {
                     currentDate={currentDate}
                     setCurrentDate={setCurrentDate}
                     onUpdateActivityDate={handleUpdateActivityDate}
+                    onEditActivity={handleEditActivity}
                 />
             )}
 

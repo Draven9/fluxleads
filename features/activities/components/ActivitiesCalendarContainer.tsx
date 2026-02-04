@@ -13,6 +13,7 @@ interface ActivitiesCalendarContainerProps {
     currentDate: Date;
     setCurrentDate: (date: Date) => void;
     onUpdateActivityDate: (activityId: string, newDate: Date) => Promise<void>;
+    onEditActivity: (activity: Activity) => void;
 }
 
 export const ActivitiesCalendarContainer: React.FC<ActivitiesCalendarContainerProps> = ({
@@ -20,7 +21,8 @@ export const ActivitiesCalendarContainer: React.FC<ActivitiesCalendarContainerPr
     deals,
     currentDate,
     setCurrentDate,
-    onUpdateActivityDate
+    onUpdateActivityDate,
+    onEditActivity
 }) => {
     const [viewMode, setViewMode] = useState<'week' | 'month'>('week');
 
@@ -38,8 +40,8 @@ export const ActivitiesCalendarContainer: React.FC<ActivitiesCalendarContainerPr
                         <button
                             onClick={() => setViewMode('week')}
                             className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${viewMode === 'week'
-                                    ? 'bg-white dark:bg-slate-700 text-primary-600 dark:text-primary-400 shadow-sm'
-                                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                                ? 'bg-white dark:bg-slate-700 text-primary-600 dark:text-primary-400 shadow-sm'
+                                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
                                 }`}
                         >
                             Semana
@@ -47,8 +49,8 @@ export const ActivitiesCalendarContainer: React.FC<ActivitiesCalendarContainerPr
                         <button
                             onClick={() => setViewMode('month')}
                             className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${viewMode === 'month'
-                                    ? 'bg-white dark:bg-slate-700 text-primary-600 dark:text-primary-400 shadow-sm'
-                                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                                ? 'bg-white dark:bg-slate-700 text-primary-600 dark:text-primary-400 shadow-sm'
+                                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
                                 }`}
                         >
                             Mês
@@ -72,6 +74,8 @@ export const ActivitiesCalendarContainer: React.FC<ActivitiesCalendarContainerPr
                         deals={deals}
                         currentDate={currentDate}
                         setCurrentDate={setCurrentDate}
+                        onUpdateActivityDate={onUpdateActivityDate}
+                        onEditActivity={onEditActivity}
                     />
                 ) : (
                     <ActivitiesMonthView
@@ -80,6 +84,7 @@ export const ActivitiesCalendarContainer: React.FC<ActivitiesCalendarContainerPr
                         currentDate={currentDate}
                         setCurrentDate={setCurrentDate}
                         onUpdateActivityDate={onUpdateActivityDate}
+                        onEditActivity={onEditActivity}
                     />
                 )}
             </div>
