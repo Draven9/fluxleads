@@ -431,6 +431,67 @@ Deno.serve(async (req) => {
     dealAction = "created";
   }
 
+  // 4) Integração com módulo de Chat (Mensagens)
+  // Se for WhatsApp e tiver conteúdo (notes), cria sessão de chat e insere a mensagem.
+  // Isso garante que a conversa apareça na aba "Mensagens" e não apenas nos logs.
+  const isWhatsApp = String(payload.source || '').toLowerCase().includes('whatsapp');
+  if (contactId && payload.notes && isWhatsApp) {
+    try {
+      // 4.1) Busca ou cria sessão de chat
+      const { data: sessionData } = await supabase
+        .from('chat_sessions')
+        .select('id, unread_count')
+        .eq('organization_id', source.organization_id)
+        .eq('contact_id', contactId)
+        .maybeSingle();
+
+      let sessionId = sessionData?.id;
+
+      if (!sessionId) {
+        const { data: newSession } = await supabase
+          .from('chat_sessions')
+          .insert({
+            organization_id: source.organization_id,
+            contact_id: contactId,
+            provider: 'whatsapp',
+            unread_count: 0,
+            last_message_at: new Date().toISOString()
+          })
+          .select('id')
+          .single();
+        sessionId = newSession?.id;
+      }
+
+      if (sessionId) {
+        // 4.2) Insere a mensagem na tabela de chat
+        const content = payload.notes; // O conteúdo vem no campo notes
+
+        await supabase.from('messages').insert({
+          organization_id: source.organization_id,
+          session_id: sessionId,
+          direction: 'inbound',
+          content: content,
+          status: 'received',
+          created_at: new Date().toISOString()
+        });
+
+        // 4.3) Atualiza sessão (timestamp + contador de não lidas)
+        // Se já existia, incrementa. Se é nova, vira 1.
+        const currentUnread = sessionData?.unread_count ?? 0;
+        await supabase
+          .from('chat_sessions')
+          .update({
+            last_message_at: new Date().toISOString(),
+            unread_count: currentUnread + 1
+          })
+          .eq('id', sessionId);
+      }
+    } catch (chatErr) {
+      console.error("Erro ao processar chat:", chatErr);
+      // Não falha o webhook principal se o chat der erro, pois o lead/deal é prioridade
+    }
+  }
+
   // Atualiza auditoria (best-effort)
   if (externalEventId) {
     await supabase
