@@ -201,6 +201,7 @@ Deno.serve(async (req) => {
   let payload: LeadPayload;
   try {
     payload = (await req.json()) as LeadPayload;
+    console.log("WEBHOOK-IN PAYLOAD:", JSON.stringify(payload)); // DEBUG LOG
   } catch {
     return json(400, { error: "JSON inválido" });
   }
