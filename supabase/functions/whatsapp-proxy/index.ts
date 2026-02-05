@@ -82,7 +82,7 @@ serve(async (req) => {
 
             if (!response.ok) {
                 const errText = await response.text();
-                throw new Error(`Evolution API Error: ${errText}`);
+                throw new Error(`Erro na API Evolution: ${errText}`);
             }
 
             const groups = await response.json();
@@ -91,11 +91,14 @@ serve(async (req) => {
             });
         }
 
-        return new Response(JSON.stringify({ error: 'Unknown Action' }), { status: 400, headers: corsHeaders });
+        return new Response(JSON.stringify({ error: 'Unknown Action' }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 200
+        });
 
     } catch (error: any) {
         return new Response(JSON.stringify({ error: error.message || 'Unknown error' }), {
-            status: 400,
+            status: 200, // Return 200 so client SDK can read the body
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
     }

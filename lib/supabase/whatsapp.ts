@@ -29,8 +29,14 @@ export const whatsappService = {
 
             if (error) throw error;
 
-            // The edge function returns the array directly
-            return { data, error: null };
+            // Handle logical errors returned with 200 OK
+            if (data && data.error) {
+                throw new Error(data.error);
+            }
+
+            // The edge function returns the array directly or in a data property
+            // We should ensure we return an array
+            return { data: Array.isArray(data) ? data : [], error: null };
         } catch (error) {
             console.error('Error fetching WhatsApp groups:', error);
             return { data: null, error };
