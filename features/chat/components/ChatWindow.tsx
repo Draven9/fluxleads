@@ -78,6 +78,32 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ session, onBack }) => {
 
                 {messages.map((msg) => {
                     const isOutbound = msg.direction === 'outbound';
+
+                    const getMediaSrc = (msg: typeof messages[0]) => { // Using typeof messages[0] to infer Message type
+                        if (!msg.media_url) return '';
+                        if (msg.media_url.startsWith('http') || msg.media_url.startsWith('data:')) return msg.media_url;
+
+                        // Detect common Base64 magic bytes
+                        const isOgg = msg.media_url.startsWith('T2dnUw');
+                        const isJpeg = msg.media_url.startsWith('/9j/');
+                        const isPng = msg.media_url.startsWith('iVBORw0');
+
+                        if (msg.message_type === 'audio' || msg.message_type === 'audioMessage') {
+                            // WhatsApp voice notes are often OGG (Opus)
+                            const mime = isOgg ? 'audio/ogg' : 'audio/mp4';
+                            return `data:${mime};base64,${msg.media_url}`;
+                        }
+
+                        if (msg.message_type === 'image' || msg.message_type === 'imageMessage') {
+                            const mime = isPng ? 'image/png' : 'image/jpeg';
+                            return `data:${mime};base64,${msg.media_url}`;
+                        }
+
+                        return msg.media_url;
+                    };
+
+                    const mediaSrc = getMediaSrc(msg);
+
                     return (
                         <div key={msg.id} className={`flex ${isOutbound ? 'justify-end' : 'justify-start'}`}>
                             <div className={`max-w-[70%] rounded-2xl px-4 py-2 shadow-sm text-sm ${isOutbound
@@ -90,27 +116,26 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ session, onBack }) => {
                                     <div className="mb-2">
                                         {(msg.message_type === 'image' || msg.message_type === 'imageMessage') && (
                                             <img
-                                                src={msg.media_url}
+                                                src={mediaSrc}
                                                 alt="Imagem"
                                                 className="rounded-lg max-h-64 object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                                                onClick={() => window.open(msg.media_url, '_blank')}
+                                                onClick={() => window.open(mediaSrc, '_blank')}
                                             />
                                         )}
                                         {(msg.message_type === 'audio' || msg.message_type === 'audioMessage') && (
-                                            <audio controls className="w-full min-w-[200px]">
-                                                <source src={msg.media_url} />
+                                            <audio controls className="w-full min-w-[200px]" src={mediaSrc}>
                                                 Seu navegador não suporta áudio.
                                             </audio>
                                         )}
                                         {(msg.message_type === 'video' || msg.message_type === 'videoMessage') && (
                                             <video controls className="rounded-lg max-h-64 w-full">
-                                                <source src={msg.media_url} />
+                                                <source src={mediaSrc} />
                                                 Seu navegador não suporta vídeo.
                                             </video>
                                         )}
                                         {(msg.message_type === 'document' || msg.message_type === 'documentMessage') && (
                                             <a
-                                                href={msg.media_url}
+                                                href={mediaSrc}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 className={`flex items-center space-x-2 p-2 rounded-lg ${isOutbound ? 'bg-primary-700/50' : 'bg-slate-100 dark:bg-slate-700'}`}
