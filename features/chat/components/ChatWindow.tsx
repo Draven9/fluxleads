@@ -84,7 +84,45 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ session, onBack }) => {
                                 ? 'bg-primary-600 text-white rounded-tr-none'
                                 : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 rounded-tl-none'
                                 }`}>
-                                <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+
+                                {/* Media Rendering */}
+                                {msg.media_url && (
+                                    <div className="mb-2">
+                                        {(msg.message_type === 'image' || msg.message_type === 'imageMessage') && (
+                                            <img
+                                                src={msg.media_url}
+                                                alt="Imagem"
+                                                className="rounded-lg max-h-64 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                                                onClick={() => window.open(msg.media_url, '_blank')}
+                                            />
+                                        )}
+                                        {(msg.message_type === 'audio' || msg.message_type === 'audioMessage') && (
+                                            <audio controls className="w-full min-w-[200px]">
+                                                <source src={msg.media_url} />
+                                                Seu navegador não suporta áudio.
+                                            </audio>
+                                        )}
+                                        {(msg.message_type === 'video' || msg.message_type === 'videoMessage') && (
+                                            <video controls className="rounded-lg max-h-64 w-full">
+                                                <source src={msg.media_url} />
+                                                Seu navegador não suporta vídeo.
+                                            </video>
+                                        )}
+                                        {(msg.message_type === 'document' || msg.message_type === 'documentMessage') && (
+                                            <a
+                                                href={msg.media_url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className={`flex items-center space-x-2 p-2 rounded-lg ${isOutbound ? 'bg-primary-700/50' : 'bg-slate-100 dark:bg-slate-700'}`}
+                                            >
+                                                <span className="underline truncate max-w-[200px]">Abrir Documento</span>
+                                            </a>
+                                        )}
+                                    </div>
+                                )}
+
+                                {msg.content && <p className="whitespace-pre-wrap break-words">{msg.content}</p>}
+
                                 <div className={`text-[10px] mt-1 text-right ${isOutbound ? 'text-primary-200' : 'text-slate-400'}`}>
                                     {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                     {isOutbound && (

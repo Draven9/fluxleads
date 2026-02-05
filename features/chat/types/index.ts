@@ -22,7 +22,7 @@ export interface Message {
     session_id: string;
     direction: 'inbound' | 'outbound';
     content: string;
-    message_type: 'text' | 'image' | 'audio' | 'video' | 'document';
+    message_type: 'text' | 'image' | 'audio' | 'video' | 'document' | 'imageMessage' | 'audioMessage' | 'videoMessage' | 'documentMessage' | 'extendedTextMessage' | 'conversation';
     media_url?: string;
     status: 'sending' | 'sent' | 'delivered' | 'read' | 'failed';
     external_id?: string;
