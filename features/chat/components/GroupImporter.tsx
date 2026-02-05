@@ -27,8 +27,8 @@ export function GroupImporter() {
         const { data, error } = await whatsappService.fetchGroups();
 
         if (error) {
-            setError('Falha ao buscar grupos. Verifique a integração.');
-            console.error(error);
+            setError(error.message || 'Falha ao buscar grupos. Verifique a integração.');
+            console.error('Error details:', error);
         } else {
             setGroups(data || []);
         }
