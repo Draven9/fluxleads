@@ -52,8 +52,23 @@ export default function LoginPage() {
 
             <div className="max-w-md w-full relative z-10 px-4">
                 <div className="text-center mb-8">
-                    <h1 className="text-4xl font-bold text-slate-900 dark:text-white font-display tracking-tight mb-2">
-                        Bem-vindo de volta
+                    {/* Logo */}
+                    <div className="flex justify-center mb-4">
+                        {/* 
+                            NOTE: User must place 'flux-logo.png' in the public folder.
+                            Using a standard img tag for simplicity with unknown dimensions, 
+                            but Next/Image is recommended if dimensions are known.
+                        */}
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                            src="/flux-logo.png"
+                            alt="Flux Leads"
+                            className="h-16 w-auto object-contain"
+                        />
+                    </div>
+
+                    <h1 className="text-3xl font-bold text-slate-900 dark:text-white font-display tracking-tight mb-2">
+                        Flux Leads
                     </h1>
                     <p className="text-slate-500 dark:text-slate-400">
                         Entre na sua conta para continuar.
@@ -139,7 +154,7 @@ export default function LoginPage() {
                 </div>
 
                 <p className="mt-8 text-center text-xs text-slate-400 dark:text-slate-500">
-                    &copy; {new Date().getFullYear()} CRM IA. Todos os direitos reservados.
+                    &copy; {new Date().getFullYear()} Desenvolvido por: Flux Comunicação. Todos os direitos reservados.
                 </p>
             </div>
         </div>
