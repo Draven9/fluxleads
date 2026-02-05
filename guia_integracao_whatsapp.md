@@ -1,105 +1,136 @@
 # Guia de Integração: WhatsApp (Evolution API) <-> Flux Leads
 
-Este guia cobre três fluxos principais:
-1.  **Entrada (Inbound):** Receber mensagens/leads (Cria Lead + Chat).
-2.  **Resposta (Chat Outbound):** Enviar respostas manuais pela aba de Mensagens.
-3.  **Follow-up (Automação):** Enviar mensagens automáticas quando um card muda de etapa no kanban.
+Este guia foi separado em dois fluxos distintos para facilitar a organização e evitar erros. Recomenda-se criar **dois workflows separados** no n8n.
 
 ---
 
 ## 📥 Parte 1: Entrada (WhatsApp -> Flux Leads)
 
-Use a **Integração Nativa de Entrada de Leads**, que cria automaticamente Contatos, Negócios e inicia o Chat no Flux Leads.
+**Objetivo:** Receber mensagens dos clientes e criar Leads/Chat no sistema.
 
-### ✅ Passo 1.1: Gerar Credenciais
+### 1. Configurar Flux Leads
 1.  Acesse **Configurações > Webhooks**.
-2.  Clique no botão **"Como usar"** (ou "Quick Start").
-3.  Na aba **"Receber leads"**, configure o funil de entrada e clique em **"Gerar URL e Secret"**.
-4.  Copie a URL e o Secret.
+2.  Na aba **"Receber leads"**, configure o funil de entrada.
+3.  Clique em **"Gerar URL e Secret"**. 
+4.  Copie a **URL** e o **Secret** (você vai precisar dos dois).
 
-### ⚡ Passo 1.2: Configurar no n8n
-No seu workflow de recebimento (Evolution API -> Http Request):
-*   **Method:** POST
-*   **URL:** (Sua URL gerada)
-*   **Header:** `X-Webhook-Secret`: (Seu Secret)
-*   **Body (JSON):**
+### 2. Configurar n8n (Novo Workflow)
+Crie um workflow novo chamado "Receber WhatsApp".
+Copie o JSON abaixo e cole no n8n:
 
-> [!IMPORTANT]
-> **Atenção:** Use o modo **Expression** no n8n (engrenagem ao lado do campo) para que as variáveis fiquem identificadas (cor diferente de preto).
+```json
+{
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "webhook-evolution-in",
+        "options": {}
+      },
+      "id": "webhook-evolution-node",
+      "name": "Webhook (Evolution)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        460,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "SUA_URL_DO_FLUX_LEADS_AQUI",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "X-Webhook-Secret",
+              "value": "SEU_SECRET_DO_FLUX_LEADS_AQUI"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "source",
+              "value": "whatsapp"
+            },
+            {
+              "name": "name",
+              "value": "={{ $json.body.data.pushName }}"
+            },
+            {
+              "name": "phone",
+              "value": "={{ $json.body.data.key.remoteJid.replace('@s.whatsapp.net', '') }}"
+            },
+            {
+              "name": "notes",
+              "value": "={{ $json.body.data.message.conversation || $json.body.data.message.extendedTextMessage.text || 'Mídia/Outros' }}"
+            },
+            {
+              "name": "external_event_id",
+              "value": "={{ $json.body.data.key.id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "http-request-flux",
+      "name": "Enviar p/ Flux Leads",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        680,
+        460
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook (Evolution)": {
+      "main": [
+        [
+          {
+            "node": "Enviar p/ Flux Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
+```
 
-Campos Sugeridos no Body:
-*   `name`: `{{ $json.body.data.pushName }}`
-*   `phone`: `{{ $json.body.data.key.remoteJid.replace('@s.whatsapp.net', '') }}`
-*   `source`: `whatsapp` (**Obrigatório** para ativar o chat)
-*   `notes`: `{{ $json.body.data.message.conversation || $json.body.data.message.extendedTextMessage.text }}`
-*   `external_event_id`: `{{ $json.body.data.key.id }}`
+**Ajustes Necessários neste JSON:**
+1.  Abra o nó **"Enviar p/ Flux Leads"**.
+2.  Substitua `SUA_URL_DO_FLUX_LEADS_AQUI` pela URL copiada.
+3.  **NOVO:** Substitua `SEU_SECRET_DO_FLUX_LEADS_AQUI` pelo Secret copiado (está nos Headers).
+4.  Salve e Ative o Workflow.
+5.  Configure o Webhook na Evolution API.
 
 ---
 
-## 📤 Parte 2: Configurar Saída (Flux Leads -> n8n)
+## 📤 Parte 2: Saída (Flux Leads -> WhatsApp)
 
-Para enviar respostas manuais ou follow-ups automáticos, você deve conectar o Flux Leads ao seu n8n.
+**Objetivo:** Enviar respostas do chat e notificações de follow-up.
 
-### ✅ Passo 2.1: Cadastrar Webhook de Saída
+### 1. Configurar Flux Leads
 1.  Acesse **Configurações > Webhooks**.
 2.  Em **"Follow-up (Webhook de saída)"**, clique em conectar.
-3.  Insira a **URL do seu Webhook do n8n** (que receberá tanto chat quanto follow-ups).
+3.  Insira a URL do seu workflow de saída do n8n (veja abaixo).
 
----
+### 2. Configurar n8n (Workflow de Saída)
+Este é o workflow que você já tem configurado (com o Switch). Se precisar recriar, use o código abaixo.
 
-## 💬 Parte 3: Fluxo de Resposta de Chat (Manual)
-
-Quando você responde um cliente pela aba **Mensagens** do Flux Leads, o sistema envia este evento:
-
-**JSON Enviado:**
-```json
-{
-  "event": "chat.new_message",
-  "data": {
-    "content": "*[Nome Atendente]:* Olá, tudo bem?",
-    "contact": {
-      "name": "Cliente Exemplo",
-      "phone": "551199999999"
-    },
-    ...
-  }
-}
-```
-
----
-
-## 🚀 Parte 4: Fluxo de Follow-up (Mudança de Etapa)
-
-Quando você arrasta um card no Kanban para outra etapa, o sistema envia este evento:
-
-**JSON Enviado:**
-```json
-{
-  "event": "deal.stage_changed",
-  "data": {
-    "deal_id": "uuid...",
-    "title": "Negócio Honda Civic",
-    "contact": { "name": "João", "phone": "55119999", ... },
-    "from_stage": { "name": "Novos" },
-    "to_stage": { "name": "Qualificados" }
-  }
-}
-```
-
----
-
-## 📦 Bônus: Workflow pronto para Copiar/Colar (n8n)
-
-Se quiser, **copie o JSON abaixo** e cole no canvas do n8n para ter uma estrutura base de saída.
-Este workflow recebe o evento do Flux Leads, verifica se é Chat ou Follow-up, e manda para a Evolution API.
-
-> **Importante:** Você precisará atualizar as credenciais e URL da Evolution API dentro do nó de envio.
+> **Atenção:** Lembre-se de trocar `SUA_APIKEY_AQUI` e `INSTANCIA` pelos seus dados reais da Evolution para que o envio funcione.
 
 ```json
 {
-  "meta": {
-    "instanceId": "generated_flux_leads_outbound"
-  },
   "nodes": [
     {
       "parameters": {
@@ -107,11 +138,15 @@ Este workflow recebe o evento do Flux Leads, verifica se é Chat ou Follow-up, e
         "path": "flux-leads-notification",
         "options": {}
       },
-      "id": "webhook-in",
+      "id": "9eb83fa7-7227-4746-bf62-a24bf60af796",
       "name": "Webhook (Flux Leads)",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
-      "position": [460, 360]
+      "position": [
+        -192,
+        1280
+      ],
+      "webhookId": "6bf3f422-2ae0-431f-b1c2-725a616db120"
     },
     {
       "parameters": {
@@ -130,16 +165,19 @@ Este workflow recebe o evento do Flux Leads, verifica se é Chat ou Follow-up, e
           ]
         }
       },
-      "id": "switch-event",
+      "id": "d7d69b28-e393-4f0b-9d1e-222e1c5c4972",
       "name": "Tipo de Evento?",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 1,
-      "position": [680, 360]
+      "position": [
+        48,
+        1248
+      ]
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "https://SEU_EVOLUTION_API/message/sendText/INSTANCIA",
+        "url": "https://prospeccao-evolution.gw3vnc.easypanel.host/message/sendText/INSTANCIA",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -164,11 +202,14 @@ Este workflow recebe o evento do Flux Leads, verifica se é Chat ou Follow-up, e
         },
         "options": {}
       },
-      "id": "send-chat-reply",
+      "id": "67b79aab-2b97-419b-bc77-140cfe1ee40f",
       "name": "Enviar Resposta (Chat)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [920, 260]
+      "position": [
+        368,
+        1104
+      ]
     },
     {
       "parameters": {
@@ -182,16 +223,19 @@ Este workflow recebe o evento do Flux Leads, verifica se é Chat ou Follow-up, e
           ]
         }
       },
-      "id": "filter-stage",
+      "id": "dcea6376-42a8-4594-84ca-fbb59c89c340",
       "name": "Filtra Etapa 'Agendado'",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [920, 480]
+      "position": [
+        368,
+        1264
+      ]
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "https://SEU_EVOLUTION_API/message/sendText/INSTANCIA",
+        "url": "https://prospeccao-evolution.gw3vnc.easypanel.host/message/sendText/INSTANCIA",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -216,11 +260,14 @@ Este workflow recebe o evento do Flux Leads, verifica se é Chat ou Follow-up, e
         },
         "options": {}
       },
-      "id": "send-followup",
+      "id": "55cc7b33-d602-4de9-96fe-c4b944fdf9ee",
       "name": "Enviar Follow-up",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [1160, 480]
+      "position": [
+        640,
+        1248
+      ]
     }
   ],
   "connections": {
@@ -264,6 +311,11 @@ Este workflow recebe o evento do Flux Leads, verifica se é Chat ou Follow-up, e
         ]
       ]
     }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "657917497e9ec72dc7039e3696cf9d9f29c76ebc2c1411870955d0a1d2635826"
   }
 }
 ```

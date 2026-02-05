@@ -69,7 +69,15 @@ export function useChatMessages(sessionId: string | null) {
 
         // Format message with signature
         // Example: *[João]:* Olá, tudo bem?
-        const senderName = profile?.first_name || profile?.nickname || 'Atendente';
+        // Prioriza: First Name > Nickname > Email username > 'Atendente'
+        let senderName = 'Atendente';
+        if (profile) {
+            senderName = profile.first_name ||
+                profile.nickname ||
+                profile.email.split('@')[0] ||
+                'Atendente';
+        }
+
         const finalContent = `*[${senderName}]:* ${content}`;
 
         // Send via Edge Function (saves to DB + triggers webhook)
@@ -85,7 +93,7 @@ export function useChatMessages(sessionId: string | null) {
             console.error('Error sending message:', error);
             throw error;
         }
-    }, [sessionId, organizationId]);
+    }, [sessionId, organizationId, profile]);
 
     return { messages, loading, sendMessage };
 }
