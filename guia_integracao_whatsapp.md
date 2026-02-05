@@ -70,7 +70,15 @@ Copie o JSON abaixo e cole no n8n:
             },
             {
               "name": "notes",
-              "value": "={{ $json.body.data.message.conversation || $json.body.data.message.extendedTextMessage.text || 'Mídia/Outros' }}"
+              "value": "={{ $json.body.data.message.conversation || $json.body.data.message.extendedTextMessage.text || $json.body.data.message.imageMessage?.caption || '' }}"
+            },
+            {
+              "name": "media_url",
+              "value": "={{ $json.body.data.message.base64 || $json.body.data.message.imageMessage?.url || $json.body.data.message.audioMessage?.url || $json.body.data.message.videoMessage?.url || $json.body.data.message.documentMessage?.url }}"
+            },
+            {
+              "name": "message_type",
+              "value": "={{ $json.body.data.messageType }}"
             },
             {
               "name": "external_event_id",

@@ -45,6 +45,15 @@ type LeadPayload = {
   /** Nome do contato principal (alias) */
   contact_name?: string;
 
+  // ===== Campos de Mídia (Chat) =====
+  media_url?: string;
+  message_type?: string;
+
+  // Aliases comuns (camelCase / curtos)
+  mediaUrl?: string;
+  messageType?: string;
+  type?: string;
+
   // Aliases comuns (camelCase / curtos)
   companyName?: string;
   dealTitle?: string;
@@ -431,11 +440,33 @@ Deno.serve(async (req) => {
     dealAction = "created";
   }
 
+  // Helper functions for media fields (assuming LeadPayload type is defined elsewhere)
+  function getMediaUrl(payload: any) { // Changed to 'any' as LeadPayload is not defined in this snippet
+    return (
+      toNullableString(payload.media_url) ||
+      toNullableString(payload.mediaUrl) ||
+      null
+    );
+  }
+
+  function getMessageType(payload: any) { // Changed to 'any' as LeadPayload is not defined in this snippet
+    return (
+      toNullableString(payload.message_type) ||
+      toNullableString(payload.messageType) ||
+      toNullableString(payload.type) ||
+      'text'
+    );
+  }
+
   // 4) Integração com módulo de Chat (Mensagens)
-  // Se tiver conteúdo (notes), cria sessão de chat e insere a mensagem.
+  // Se tiver conteúdo (notes) OU mídia, cria sessão de chat e insere a mensagem.
   // Isso garante que a conversa apareça na aba "Mensagens" e não apenas nos logs.
   // Aceitamos qualquer source (whatsapp, webhook-ui, n8n, etc) desde que tenha mensagem.
-  if (contactId && payload.notes) {
+  const mediaUrl = getMediaUrl(payload);
+  const messageType = getMessageType(payload);
+  const content = payload.notes || (mediaUrl ? '' : null); // Se tem media e não tem texto, content pode ser vazio
+
+  if (contactId && (content !== null || mediaUrl)) {
     try {
       // 4.1) Busca ou cria sessão de chat
       const { data: sessionData } = await supabase
@@ -464,13 +495,13 @@ Deno.serve(async (req) => {
 
       if (sessionId) {
         // 4.2) Insere a mensagem na tabela de chat
-        const content = payload.notes; // O conteúdo vem no campo notes
-
         await supabase.from('messages').insert({
           organization_id: source.organization_id,
           session_id: sessionId,
           direction: 'inbound',
-          content: content,
+          content: content || '', // Ensure not null if empty string
+          message_type: messageType,
+          media_url: mediaUrl,
           status: 'received',
           created_at: new Date().toISOString()
         });
