@@ -25,7 +25,7 @@ interface InviteResult {
 
 interface RoleSetting {
     id: string;
-    role_slug: string; // 'admin', 'vendedor', 'gerente', etc.
+    role: string; // 'admin', 'vendedor', 'gerente', etc.
     label: string;
     description: string;
     is_active: boolean;
@@ -144,7 +144,7 @@ export const UsersPage: React.FC = () => {
                 .from('organization_role_settings')
                 .select('*')
                 .eq('is_active', true)
-                .order('role_slug');
+                .order('role');
 
             if (error) throw error;
 
@@ -153,16 +153,16 @@ export const UsersPage: React.FC = () => {
             } else {
                 // Fallback defaults
                 setAvailableRoles([
-                    { id: 'def_admin', role_slug: 'admin', label: 'Admin', description: 'Acesso total', is_active: true, color_theme: 'amber' },
-                    { id: 'def_vend', role_slug: 'vendedor', label: 'Vendedor', description: 'Acesso a leads e negociações', is_active: true, color_theme: 'primary' }
+                    { id: 'def_admin', role: 'admin', label: 'Admin', description: 'Acesso total', is_active: true, color_theme: 'amber' },
+                    { id: 'def_vend', role: 'vendedor', label: 'Vendedor', description: 'Acesso a leads e negociações', is_active: true, color_theme: 'primary' }
                 ]);
             }
         } catch (err) {
             console.error('Error fetching roles:', err);
             // Fallback defaults on error
             setAvailableRoles([
-                { id: 'def_admin', role_slug: 'admin', label: 'Admin', description: 'Acesso total', is_active: true, color_theme: 'amber' },
-                { id: 'def_vend', role_slug: 'vendedor', label: 'Vendedor', description: 'Acesso a leads e negociações', is_active: true, color_theme: 'primary' }
+                { id: 'def_admin', role: 'admin', label: 'Admin', description: 'Acesso total', is_active: true, color_theme: 'amber' },
+                { id: 'def_vend', role: 'vendedor', label: 'Vendedor', description: 'Acesso a leads e negociações', is_active: true, color_theme: 'primary' }
             ]);
         }
     }, [sb]);
@@ -602,19 +602,19 @@ export const UsersPage: React.FC = () => {
                                         </label>
                                         <div className="grid grid-cols-2 gap-3 max-h-48 overflow-y-auto pr-1">
                                             {availableRoles.map(role => {
-                                                const isActive = newUserRole === role.role_slug;
+                                                const isActive = newUserRole === role.role;
                                                 return (
                                                     <button
                                                         key={role.id}
                                                         type="button"
-                                                        onClick={() => setNewUserRole(role.role_slug)}
+                                                        onClick={() => setNewUserRole(role.role)}
                                                         className={`relative p-3 rounded-xl border-2 text-left transition-all ${isActive
                                                             ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
                                                             : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
                                                             }`}
                                                     >
                                                         <div className="flex items-center gap-2 mb-1">
-                                                            {role.role_slug === 'admin' ? (
+                                                            {role.role === 'admin' ? (
                                                                 <Crown className={`h-4 w-4 ${isActive ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400'}`} />
                                                             ) : (
                                                                 <Briefcase className={`h-4 w-4 ${isActive ? 'text-primary-600 dark:text-primary-400' : 'text-slate-400'}`} />
@@ -742,19 +742,19 @@ export const UsersPage: React.FC = () => {
                                             </label>
                                             <div className="grid grid-cols-2 gap-3 max-h-48 overflow-y-auto pr-1">
                                                 {availableRoles.map(role => {
-                                                    const isActive = newUserRole === role.role_slug;
+                                                    const isActive = newUserRole === role.role;
                                                     return (
                                                         <button
                                                             key={role.id}
                                                             type="button"
-                                                            onClick={() => setNewUserRole(role.role_slug)}
+                                                            onClick={() => setNewUserRole(role.role)}
                                                             className={`relative p-3 rounded-xl border-2 text-left transition-all ${isActive
                                                                 ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
                                                                 : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
                                                                 }`}
                                                         >
                                                             <div className="flex items-center gap-2 mb-1">
-                                                                {role.role_slug === 'admin' ? (
+                                                                {role.role === 'admin' ? (
                                                                     <Crown className={`h-4 w-4 ${isActive ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400'}`} />
                                                                 ) : (
                                                                     <Briefcase className={`h-4 w-4 ${isActive ? 'text-primary-600 dark:text-primary-400' : 'text-slate-400'}`} />

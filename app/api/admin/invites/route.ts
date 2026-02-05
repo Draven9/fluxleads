@@ -9,11 +9,11 @@ function json<T>(body: T, status = 200): Response {
   });
 }
 
-type Role = 'admin' | 'vendedor';
-
+// Role is dynamic now, so we accept any string.
+// Authorization checks will be done against organization_role_settings ideally, or just allow any string for now.
 const CreateInviteSchema = z
   .object({
-    role: z.enum(['admin', 'vendedor']).default('vendedor'),
+    role: z.string().default('vendedor'),
     expiresAt: z.union([z.string().datetime(), z.null()]).optional(),
     email: z.string().email().optional(),
   })
@@ -94,7 +94,7 @@ export async function POST(req: Request) {
     .from('organization_invites')
     .insert({
       organization_id: me.organization_id,
-      role: parsed.data.role as Role,
+      role: parsed.data.role,
       email: parsed.data.email ?? null,
       expires_at: expiresAt,
       created_by: me.id,

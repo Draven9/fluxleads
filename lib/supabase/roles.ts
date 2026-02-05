@@ -4,7 +4,7 @@ import { PostgrestError } from '@supabase/supabase-js';
 export interface RoleSettings {
     id: string;
     organization_id: string;
-    role: 'vendedor' | 'colaborador';
+    role: string;
     permissions: {
         view_all_deals?: boolean; // Can view deals from other users?
         can_export_contacts?: boolean;
@@ -43,7 +43,7 @@ export const roleSettingsService = {
     /**
      * Updates permissions for a specific role.
      */
-    async updatePermissions(role: 'vendedor' | 'colaborador', permissions: Record<string, boolean>): Promise<{ error: PostgrestError | null }> {
+    async updatePermissions(role: string, permissions: Record<string, boolean>): Promise<{ error: PostgrestError | null }> {
         if (!supabase) return { error: { message: 'Supabase not initialized' } as PostgrestError };
 
         const { data: { user } } = await supabase.auth.getUser();
