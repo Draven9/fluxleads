@@ -23,6 +23,15 @@ interface InviteResult {
     error?: string;
 }
 
+interface RoleSetting {
+    id: string;
+    role_slug: string; // 'admin', 'vendedor', 'gerente', etc.
+    label: string;
+    description: string;
+    is_active: boolean;
+    color_theme: string; // 'amber', 'primary', 'slate', etc.
+}
+
 // Gera iniciais e cor consistente baseada no email
 const getAvatarProps = (email: string) => {
     const initials = email.substring(0, 2).toUpperCase();
@@ -58,6 +67,11 @@ export const UsersPage: React.FC = () => {
     const [userToDelete, setUserToDelete] = useState<Profile | null>(null);
     const [activeInvites, setActiveInvites] = useState<any[]>([]);
     const [expirationDays, setExpirationDays] = useState<number | null>(7); // 7 days default, null = never
+
+    // Manual Create & Roles
+    const [inviteMode, setInviteMode] = useState<'link' | 'manual'>('manual'); // Default to manual as requested
+    const [availableRoles, setAvailableRoles] = useState<RoleSetting[]>([]);
+    const [manualForm, setManualForm] = useState({ name: '', email: '', password: '' });
 
     const sb = supabase;
 
@@ -123,9 +137,40 @@ export const UsersPage: React.FC = () => {
         setExpirationDays(7);
     }, []);
 
+
+    const fetchRoles = useCallback(async () => {
+        try {
+            const { data, error } = await sb
+                .from('organization_role_settings')
+                .select('*')
+                .eq('is_active', true)
+                .order('role_slug');
+
+            if (error) throw error;
+
+            if (data && data.length > 0) {
+                setAvailableRoles(data);
+            } else {
+                // Fallback defaults
+                setAvailableRoles([
+                    { id: 'def_admin', role_slug: 'admin', label: 'Admin', description: 'Acesso total', is_active: true, color_theme: 'amber' },
+                    { id: 'def_vend', role_slug: 'vendedor', label: 'Vendedor', description: 'Acesso a leads e negociações', is_active: true, color_theme: 'primary' }
+                ]);
+            }
+        } catch (err) {
+            console.error('Error fetching roles:', err);
+            // Fallback defaults on error
+            setAvailableRoles([
+                { id: 'def_admin', role_slug: 'admin', label: 'Admin', description: 'Acesso total', is_active: true, color_theme: 'amber' },
+                { id: 'def_vend', role_slug: 'vendedor', label: 'Vendedor', description: 'Acesso a leads e negociações', is_active: true, color_theme: 'primary' }
+            ]);
+        }
+    }, [sb]);
+
     useEffect(() => {
         fetchUsers();
-    }, [fetchUsers]);
+        fetchRoles();
+    }, [fetchUsers, fetchRoles]);
 
     useEffect(() => {
         if (isModalOpen) {
@@ -150,6 +195,40 @@ export const UsersPage: React.FC = () => {
 
     const handleDeleteUser = (user: Profile) => {
         setUserToDelete(user);
+    };
+
+    const handleCreateUser = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setSendingInvites(true);
+        setError(null);
+
+        try {
+            const res = await fetch('/api/admin/users', {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({
+                    name: manualForm.name,
+                    email: manualForm.email,
+                    password: manualForm.password,
+                    role: newUserRole
+                }),
+            });
+
+            const data = await res.json().catch(() => null);
+            if (!res.ok) {
+                throw new Error(data?.error || `Erro ao criar usuário (HTTP ${res.status})`);
+            }
+
+            addToast('Usuário criado com sucesso!', 'success');
+            setManualForm({ name: '', email: '', password: '' });
+            closeModal();
+            fetchUsers();
+        } catch (err: any) {
+            setError(err.message || 'Erro ao criar usuário');
+        } finally {
+            setSendingInvites(false);
+        }
     };
 
     const handleGenerateLink = async () => {
@@ -177,10 +256,10 @@ export const UsersPage: React.FC = () => {
 
             // Force refresh of active invites and ensure state updates
             await fetchActiveInvites();
-            
+
             // Small delay to ensure state propagation
             await new Promise(resolve => setTimeout(resolve, 100));
-            
+
             addToast('Novo link gerado!', 'success');
         } catch (err: any) {
             setError(err.message || 'Erro ao gerar link');
@@ -444,174 +523,321 @@ export const UsersPage: React.FC = () => {
                         </div>
 
                         <div className="px-6 pb-6">
-                            {/* Active Links List */}
-                            <div className="mb-6">
-                                <h3 className="text-sm font-medium text-slate-900 dark:text-white mb-3">
-                                    Links Ativos
-                                </h3>
-
-                                {activeInvites.length > 0 ? (
-                                    <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-                                        {activeInvites.map((invite) => (
-                                            <div key={invite.id} className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-3">
-                                                <div className="min-w-0 flex-1">
-                                                    <div className="flex items-center gap-2 mb-1">
-                                                        <span className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${invite.role === 'admin'
-                                                            ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
-                                                            : 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300'
-                                                            }`}>
-                                                            {invite.role}
-                                                        </span>
-                                                        <span className="text-xs text-slate-400">
-                                                            {invite.expires_at
-                                                                ? `Expira em ${new Date(invite.expires_at).toLocaleDateString()}`
-                                                                : 'Nunca expira'
-                                                            }
-                                                        </span>
-                                                    </div>
-                                                    <code className="block text-xs text-slate-600 dark:text-slate-300 truncate">
-                                                        ...{invite.token.slice(-8)}
-                                                    </code>
-                                                </div>
-                                                <div className="flex items-center gap-1">
-                                                    <button
-                                                        onClick={() => copyLink(invite.token)}
-                                                        className="p-2 text-primary-600 hover:bg-primary-100 dark:hover:bg-primary-900/30 rounded-lg transition-colors"
-                                                        title="Copiar link"
-                                                    >
-                                                        <Copy className="h-4 w-4" />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDeleteInvite(invite.id)}
-                                                        className="p-2 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors"
-                                                        title="Revogar link"
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <div className="text-center p-6 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl">
-                                        <p className="text-sm text-slate-500 dark:text-slate-400">
-                                            Nenhum link ativo
-                                        </p>
-                                    </div>
-                                )}
+                            {/* Tabs */}
+                            <div className="flex p-1 bg-slate-100 dark:bg-white/5 rounded-xl mb-6">
+                                <button
+                                    onClick={() => setInviteMode('manual')}
+                                    className={`flex-1 py-2 px-3 text-sm font-medium rounded-lg transition-all ${inviteMode === 'manual'
+                                        ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm'
+                                        : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                                        }`}
+                                >
+                                    Criar Usuário
+                                </button>
+                                <button
+                                    onClick={() => setInviteMode('link')}
+                                    className={`flex-1 py-2 px-3 text-sm font-medium rounded-lg transition-all ${inviteMode === 'link'
+                                        ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm'
+                                        : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                                        }`}
+                                >
+                                    Gerar Link (Convite)
+                                </button>
                             </div>
 
-                            <div className="space-y-5 border-t border-slate-100 dark:border-white/5 pt-5">
-                                {/* Role Selection */}
-                                <div>
-                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
-                                        Cargo
-                                    </label>
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <button
-                                            type="button"
-                                            onClick={() => setNewUserRole('vendedor')}
-                                            className={`relative p-3 rounded-xl border-2 text-left transition-all ${newUserRole === 'vendedor'
-                                                ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-                                                : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
-                                                }`}
-                                        >
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <Briefcase className={`h-4 w-4 ${newUserRole === 'vendedor' ? 'text-primary-600 dark:text-primary-400' : 'text-slate-400'}`} />
-                                                <span className={`font-medium text-sm ${newUserRole === 'vendedor' ? 'text-primary-900 dark:text-primary-100' : 'text-slate-700 dark:text-slate-300'}`}>
-                                                    Vendedor
-                                                </span>
-                                            </div>
-                                            {newUserRole === 'vendedor' && (
-                                                <div className="absolute top-2 right-2 h-2 w-2 rounded-full bg-primary-500" />
-                                            )}
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => setNewUserRole('admin')}
-                                            className={`relative p-3 rounded-xl border-2 text-left transition-all ${newUserRole === 'admin'
-                                                ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/20'
-                                                : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
-                                                }`}
-                                        >
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <Crown className={`h-4 w-4 ${newUserRole === 'admin' ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400'}`} />
-                                                <span className={`font-medium text-sm ${newUserRole === 'admin' ? 'text-amber-900 dark:text-amber-100' : 'text-slate-700 dark:text-slate-300'}`}>
-                                                    Admin
-                                                </span>
-                                            </div>
-                                            {newUserRole === 'admin' && (
-                                                <div className="absolute top-2 right-2 h-2 w-2 rounded-full bg-amber-500" />
-                                            )}
-                                        </button>
-                                    </div>
-                                </div>
-
-                                {/* Expiration Selection */}
-                                <div>
-                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
-                                        Expiração
-                                    </label>
-                                    <div className="grid grid-cols-3 gap-3">
-                                        {[
-                                            { label: '7 dias', value: 7 },
-                                            { label: '30 dias', value: 30 },
-                                            { label: 'Nunca', value: null }
-                                        ].map((opt) => (
-                                            <button
-                                                key={opt.label}
-                                                type="button"
-                                                onClick={() => setExpirationDays(opt.value)}
-                                                className={`py-2 px-3 rounded-lg text-sm font-medium border transition-all ${expirationDays === opt.value
-                                                    ? 'bg-slate-800 text-white border-slate-800 dark:bg-white dark:text-slate-900 dark:border-white'
-                                                    : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'
-                                                    }`}
-                                            >
-                                                {opt.label}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {/* Error Message */}
-                                {error && (
-                                    <div className="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-xl text-sm">
-                                        <div className="h-5 w-5 rounded-full bg-red-100 dark:bg-red-900/40 flex items-center justify-center flex-shrink-0 mt-0.5">
-                                            <span className="text-xs">!</span>
+                            {/* Manual User Creation Form */}
+                            {inviteMode === 'manual' && (
+                                <form onSubmit={handleCreateUser} className="space-y-4">
+                                    <div className="space-y-3">
+                                        <div>
+                                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                                                Nome Completo
+                                            </label>
+                                            <input
+                                                type="text"
+                                                required
+                                                value={manualForm.name}
+                                                onChange={e => setManualForm(prev => ({ ...prev, name: e.target.value }))}
+                                                className="w-full px-3 py-2 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500/50"
+                                                placeholder="Ex: João Silva"
+                                            />
                                         </div>
-                                        <span>{error}</span>
+                                        <div>
+                                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                                                Email Profissional
+                                            </label>
+                                            <input
+                                                type="email"
+                                                required
+                                                value={manualForm.email}
+                                                onChange={e => setManualForm(prev => ({ ...prev, email: e.target.value }))}
+                                                className="w-full px-3 py-2 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500/50"
+                                                placeholder="joao@empresa.com"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                                                Senha Inicial
+                                            </label>
+                                            <div className="relative">
+                                                <input
+                                                    type="text"
+                                                    required
+                                                    minLength={6}
+                                                    value={manualForm.password}
+                                                    onChange={e => setManualForm(prev => ({ ...prev, password: e.target.value }))}
+                                                    className="w-full px-3 py-2 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500/50 pr-10"
+                                                    placeholder="Mínimo 6 caracteres"
+                                                />
+                                                <KeyRound className="absolute right-3 top-2.5 h-4 w-4 text-slate-400" />
+                                            </div>
+                                            <p className="text-xs text-slate-500 mt-1">O usuário poderá alterar a senha depois.</p>
+                                        </div>
                                     </div>
-                                )}
-                            </div>
 
-                            {/* Modal Footer */}
-                            <div className="flex gap-3 mt-8 pt-6 border-t border-slate-100 dark:border-white/5">
-                                <button
-                                    type="button"
-                                    onClick={closeModal}
-                                    className="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
-                                >
-                                    Fechar
-                                </button>
+                                    {/* Dynamic Role Selection */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
+                                            Cargo / Permissão
+                                        </label>
+                                        <div className="grid grid-cols-2 gap-3 max-h-48 overflow-y-auto pr-1">
+                                            {availableRoles.map(role => {
+                                                const isActive = newUserRole === role.role_slug;
+                                                return (
+                                                    <button
+                                                        key={role.id}
+                                                        type="button"
+                                                        onClick={() => setNewUserRole(role.role_slug)}
+                                                        className={`relative p-3 rounded-xl border-2 text-left transition-all ${isActive
+                                                            ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+                                                            : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
+                                                            }`}
+                                                    >
+                                                        <div className="flex items-center gap-2 mb-1">
+                                                            {role.role_slug === 'admin' ? (
+                                                                <Crown className={`h-4 w-4 ${isActive ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400'}`} />
+                                                            ) : (
+                                                                <Briefcase className={`h-4 w-4 ${isActive ? 'text-primary-600 dark:text-primary-400' : 'text-slate-400'}`} />
+                                                            )}
+                                                            <span className={`font-medium text-sm ${isActive ? 'text-primary-900 dark:text-primary-100' : 'text-slate-700 dark:text-slate-300'}`}>
+                                                                {role.label}
+                                                            </span>
+                                                        </div>
+                                                        <p className="text-[10px] text-slate-500 dark:text-slate-400 line-clamp-1" title={role.description}>
+                                                            {role.description}
+                                                        </p>
+                                                        {isActive && (
+                                                            <div className="absolute top-2 right-2 h-2 w-2 rounded-full bg-primary-500" />
+                                                        )}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
 
-                                <button
-                                    onClick={handleGenerateLink}
-                                    disabled={sendingInvites}
-                                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-white bg-primary-600 hover:bg-primary-500 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary-600/25 transition-all"
-                                >
-                                    {sendingInvites ? (
-                                        <>
-                                            <Loader2 className="animate-spin h-4 w-4" />
-                                            Gerando...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Link className="h-4 w-4" />
-                                            Gerar Link
-                                        </>
+                                    {/* Error Message */}
+                                    {error && (
+                                        <div className="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-xl text-sm animate-in fade-in slide-in-from-top-1">
+                                            <div className="h-5 w-5 rounded-full bg-red-100 dark:bg-red-900/40 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                                <span className="text-xs">!</span>
+                                            </div>
+                                            <span>{error}</span>
+                                        </div>
                                     )}
-                                </button>
-                            </div>
+
+                                    <div className="flex gap-3 pt-4 border-t border-slate-100 dark:border-white/5">
+                                        <button
+                                            type="button"
+                                            onClick={closeModal}
+                                            className="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+                                        >
+                                            Cancelar
+                                        </button>
+                                        <button
+                                            type="submit"
+                                            disabled={sendingInvites}
+                                            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-white bg-primary-600 hover:bg-primary-500 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary-600/25 transition-all"
+                                        >
+                                            {sendingInvites ? (
+                                                <>
+                                                    <Loader2 className="animate-spin h-4 w-4" />
+                                                    Criando...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <UserPlus className="h-4 w-4" />
+                                                    Criar Usuário
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
+                                </form>
+                            )}
+
+                            {/* Invite Link Mode */}
+                            {inviteMode === 'link' && (
+                                <>
+                                    {/* Active Links List */}
+                                    <div className="mb-6">
+                                        <h3 className="text-sm font-medium text-slate-900 dark:text-white mb-3">
+                                            Links Ativos
+                                        </h3>
+
+                                        {activeInvites.length > 0 ? (
+                                            <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                                                {activeInvites.map((invite) => (
+                                                    <div key={invite.id} className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-3">
+                                                        <div className="min-w-0 flex-1">
+                                                            <div className="flex items-center gap-2 mb-1">
+                                                                <span className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${invite.role === 'admin'
+                                                                    ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
+                                                                    : 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300'
+                                                                    }`}>
+                                                                    {invite.role}
+                                                                </span>
+                                                                <span className="text-xs text-slate-400">
+                                                                    {invite.expires_at
+                                                                        ? `Expira em ${new Date(invite.expires_at).toLocaleDateString()}`
+                                                                        : 'Nunca expira'
+                                                                    }
+                                                                </span>
+                                                            </div>
+                                                            <code className="block text-xs text-slate-600 dark:text-slate-300 truncate">
+                                                                ...{invite.token.slice(-8)}
+                                                            </code>
+                                                        </div>
+                                                        <div className="flex items-center gap-1">
+                                                            <button
+                                                                onClick={() => copyLink(invite.token)}
+                                                                className="p-2 text-primary-600 hover:bg-primary-100 dark:hover:bg-primary-900/30 rounded-lg transition-colors"
+                                                                title="Copiar link"
+                                                            >
+                                                                <Copy className="h-4 w-4" />
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleDeleteInvite(invite.id)}
+                                                                className="p-2 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                                                                title="Revogar link"
+                                                            >
+                                                                <Trash2 className="h-4 w-4" />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="text-center p-6 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl">
+                                                <p className="text-sm text-slate-500 dark:text-slate-400">
+                                                    Nenhum link ativo
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="space-y-5 border-t border-slate-100 dark:border-white/5 pt-5">
+                                        {/* Dynamic Role Selection for Invite */}
+                                        <div>
+                                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
+                                                Cargo
+                                            </label>
+                                            <div className="grid grid-cols-2 gap-3 max-h-48 overflow-y-auto pr-1">
+                                                {availableRoles.map(role => {
+                                                    const isActive = newUserRole === role.role_slug;
+                                                    return (
+                                                        <button
+                                                            key={role.id}
+                                                            type="button"
+                                                            onClick={() => setNewUserRole(role.role_slug)}
+                                                            className={`relative p-3 rounded-xl border-2 text-left transition-all ${isActive
+                                                                ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+                                                                : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
+                                                                }`}
+                                                        >
+                                                            <div className="flex items-center gap-2 mb-1">
+                                                                {role.role_slug === 'admin' ? (
+                                                                    <Crown className={`h-4 w-4 ${isActive ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400'}`} />
+                                                                ) : (
+                                                                    <Briefcase className={`h-4 w-4 ${isActive ? 'text-primary-600 dark:text-primary-400' : 'text-slate-400'}`} />
+                                                                )}
+                                                                <span className={`font-medium text-sm ${isActive ? 'text-primary-900 dark:text-primary-100' : 'text-slate-700 dark:text-slate-300'}`}>
+                                                                    {role.label}
+                                                                </span>
+                                                            </div>
+                                                            {isActive && (
+                                                                <div className="absolute top-2 right-2 h-2 w-2 rounded-full bg-primary-500" />
+                                                            )}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+
+                                        {/* Expiration Selection */}
+                                        <div>
+                                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
+                                                Expiração
+                                            </label>
+                                            <div className="grid grid-cols-3 gap-3">
+                                                {[
+                                                    { label: '7 dias', value: 7 },
+                                                    { label: '30 dias', value: 30 },
+                                                    { label: 'Nunca', value: null }
+                                                ].map((opt) => (
+                                                    <button
+                                                        key={opt.label}
+                                                        type="button"
+                                                        onClick={() => setExpirationDays(opt.value)}
+                                                        className={`py-2 px-3 rounded-lg text-sm font-medium border transition-all ${expirationDays === opt.value
+                                                            ? 'bg-slate-800 text-white border-slate-800 dark:bg-white dark:text-slate-900 dark:border-white'
+                                                            : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'
+                                                            }`}
+                                                    >
+                                                        {opt.label}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* Error Message */}
+                                        {error && (
+                                            <div className="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-xl text-sm">
+                                                <div className="h-5 w-5 rounded-full bg-red-100 dark:bg-red-900/40 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                                    <span className="text-xs">!</span>
+                                                </div>
+                                                <span>{error}</span>
+                                            </div>
+                                        )}
+
+                                        <div className="flex gap-3 pt-4 border-t border-slate-100 dark:border-white/5">
+                                            <button
+                                                type="button"
+                                                onClick={closeModal}
+                                                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+                                            >
+                                                Fechar
+                                            </button>
+
+                                            <button
+                                                onClick={handleGenerateLink}
+                                                disabled={sendingInvites}
+                                                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-white bg-primary-600 hover:bg-primary-500 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary-600/25 transition-all"
+                                            >
+                                                {sendingInvites ? (
+                                                    <>
+                                                        <Loader2 className="animate-spin h-4 w-4" />
+                                                        Gerando...
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Link className="h-4 w-4" />
+                                                        Gerar Link
+                                                    </>
+                                                )}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
                         </div>
                     </div>
                 </div>
