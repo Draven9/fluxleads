@@ -8,13 +8,14 @@ import { WebhooksSection } from './components/WebhooksSection';
 import { McpSection } from './components/McpSection';
 import { DataStorageSettings } from './components/DataStorageSettings';
 import { ProductsCatalogManager } from './components/ProductsCatalogManager';
+import { OrganizationRoleSettings } from './components/OrganizationRoleSettings';
 import { AICenterSettings } from './AICenterSettings';
 
 import { UsersPage } from './UsersPage';
 import { useAuth } from '@/context/AuthContext';
-import { Settings as SettingsIcon, Users, Database, Sparkles, Plug, Package } from 'lucide-react';
+import { Settings as SettingsIcon, Users, Database, Sparkles, Plug, Package, Shield } from 'lucide-react';
 
-type SettingsTab = 'general' | 'products' | 'integrations' | 'ai' | 'data' | 'users';
+type SettingsTab = 'general' | 'products' | 'integrations' | 'ai' | 'data' | 'users' | 'access';
 
 interface GeneralSettingsProps {
   hash?: string;
@@ -109,8 +110,8 @@ const IntegrationsSettings: React.FC = () => {
 
   useEffect(() => {
     const syncFromHash = () => {
-    const h = typeof window !== 'undefined' ? (window.location.hash || '').replace('#', '') : '';
-    if (h === 'webhooks' || h === 'api' || h === 'mcp') setSubTab(h as IntegrationsSubTab);
+      const h = typeof window !== 'undefined' ? (window.location.hash || '').replace('#', '') : '';
+      if (h === 'webhooks' || h === 'api' || h === 'mcp') setSubTab(h as IntegrationsSubTab);
     };
 
     syncFromHash();
@@ -144,11 +145,10 @@ const IntegrationsSettings: React.FC = () => {
               key={t.id}
               type="button"
               onClick={() => setSubTabAndHash(t.id)}
-              className={`px-3 py-2 rounded-xl text-sm font-semibold border transition-colors ${
-                active
-                  ? 'border-primary-500/50 bg-primary-500/10 text-primary-700 dark:text-primary-300'
-                  : 'border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10'
-              }`}
+              className={`px-3 py-2 rounded-xl text-sm font-semibold border transition-colors ${active
+                ? 'border-primary-500/50 bg-primary-500/10 text-primary-700 dark:text-primary-300'
+                : 'border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10'
+                }`}
             >
               {t.label}
             </button>
@@ -193,6 +193,8 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ tab: initialTab }) => {
       setActiveTab('data');
     } else if (pathname?.includes('/settings/users')) {
       setActiveTab('users');
+    } else if (pathname?.includes('/settings/access')) {
+      setActiveTab('access');
     } else {
       setActiveTab('general');
     }
@@ -205,6 +207,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ tab: initialTab }) => {
     { id: 'ai' as SettingsTab, name: 'Central de I.A', icon: Sparkles },
     { id: 'data' as SettingsTab, name: 'Dados', icon: Database },
     ...(profile?.role === 'admin' ? [{ id: 'users' as SettingsTab, name: 'Equipe', icon: Users }] : []),
+    ...(profile?.role === 'admin' ? [{ id: 'access' as SettingsTab, name: 'Permissões', icon: Shield }] : []),
   ];
 
   const renderContent = () => {
@@ -219,6 +222,8 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ tab: initialTab }) => {
         return <DataStorageSettings />;
       case 'users':
         return <UsersPage />;
+      case 'access':
+        return <OrganizationRoleSettings />;
       default:
         return <GeneralSettings hash={hash} isAdmin={profile?.role === 'admin'} />;
     }
