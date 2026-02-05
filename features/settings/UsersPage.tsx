@@ -144,6 +144,8 @@ export const UsersPage: React.FC = () => {
                 setAvailableRoles([
                     { id: 'def_admin', role: 'admin', label: 'Admin', description: 'Acesso total', is_active: true, color_theme: 'amber' },
                     { id: 'def_gerente', role: 'gerente', label: 'Gerente', description: 'Gestão de equipe', is_active: true, color_theme: 'blue' },
+                    { id: 'def_suporte', role: 'suporte', label: 'Suporte', description: 'Atendimento', is_active: true, color_theme: 'slate' },
+                    { id: 'def_colab', role: 'colaborador', label: 'Colaborador', description: 'Acesso limitado', is_active: true, color_theme: 'gray' },
                     { id: 'def_vend', role: 'vendedor', label: 'Vendedor', description: 'Acesso a leads e negociações', is_active: true, color_theme: 'primary' }
                 ]);
             }
@@ -152,6 +154,8 @@ export const UsersPage: React.FC = () => {
             setAvailableRoles([
                 { id: 'def_admin', role: 'admin', label: 'Admin', description: 'Acesso total', is_active: true, color_theme: 'amber' },
                 { id: 'def_gerente', role: 'gerente', label: 'Gerente', description: 'Gestão de equipe', is_active: true, color_theme: 'blue' },
+                { id: 'def_suporte', role: 'suporte', label: 'Suporte', description: 'Atendimento', is_active: true, color_theme: 'slate' },
+                { id: 'def_colab', role: 'colaborador', label: 'Colaborador', description: 'Acesso limitado', is_active: true, color_theme: 'gray' },
                 { id: 'def_vend', role: 'vendedor', label: 'Vendedor', description: 'Acesso a leads e negociações', is_active: true, color_theme: 'primary' }
             ]);
         }
@@ -195,15 +199,18 @@ export const UsersPage: React.FC = () => {
             const method = editingUser ? 'PUT' : 'POST';
 
             const payload: any = {
-                role: newUserRole
+                name: manualForm.name,
+                role: newUserRole,
             };
 
-            if (editingUser) {
-                payload.name = manualForm.name;
-            } else {
-                payload.name = manualForm.name;
+            if (!editingUser) {
                 payload.email = manualForm.email;
                 payload.password = manualForm.password;
+            } else {
+                // If editing, only send password if provided
+                if (manualForm.password && manualForm.password.trim() !== '') {
+                    payload.password = manualForm.password;
+                }
             }
 
             const res = await fetch(url, {
@@ -584,26 +591,23 @@ export const UsersPage: React.FC = () => {
                                                 placeholder="joao@empresa.com"
                                             />
                                         </div>
-                                        {!editingUser && (
-                                            <div>
-                                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                                                    Senha Inicial
-                                                </label>
-                                                <div className="relative">
-                                                    <input
-                                                        type="text"
-                                                        required
-                                                        minLength={6}
-                                                        value={manualForm.password}
-                                                        onChange={e => setManualForm(prev => ({ ...prev, password: e.target.value }))}
-                                                        className="w-full px-3 py-2 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500/50 pr-10"
-                                                        placeholder="Mínimo 6 caracteres"
-                                                    />
-                                                    <KeyRound className="absolute right-3 top-2.5 h-4 w-4 text-slate-400" />
-                                                </div>
-                                                <p className="text-xs text-slate-500 mt-1">O usuário poderá alterar a senha depois.</p>
+                                        <div>
+                                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                                                {editingUser ? 'Nova Senha (Opcional)' : 'Senha Inicial'}
+                                            </label>
+                                            <div className="relative">
+                                                <input
+                                                    type="text"
+                                                    required={!editingUser}
+                                                    minLength={6}
+                                                    value={manualForm.password}
+                                                    onChange={e => setManualForm(prev => ({ ...prev, password: e.target.value }))}
+                                                    className="w-full px-3 py-2 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500/50"
+                                                    placeholder={editingUser ? "Deixe em branco para manter a atual" : "Mínimo 6 caracteres"}
+                                                />
                                             </div>
-                                        )}
+                                            <p className="text-xs text-slate-500 mt-1">O usuário poderá alterar a senha depois.</p>
+                                        </div>
                                     </div>
 
                                     {/* Role Selection */}

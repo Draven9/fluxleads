@@ -115,10 +115,15 @@ export async function PUT(req: Request, ctx: { params: Promise<{ id: string }> }
   if (updateError) return json({ error: updateError.message }, 500);
 
   // Update Auth Metadata (for consistency)
-  if (body.name) {
-    await admin.auth.admin.updateUserById(id, {
-      user_metadata: { name: body.name }
-    });
+  const authUpdates: any = {
+    user_metadata: {}
+  };
+
+  if (body.name) authUpdates.user_metadata.name = body.name;
+  if (body.password) authUpdates.password = body.password;
+
+  if (Object.keys(authUpdates.user_metadata).length > 0 || authUpdates.password) {
+    await admin.auth.admin.updateUserById(id, authUpdates);
   }
 
   return json({ success: true });
