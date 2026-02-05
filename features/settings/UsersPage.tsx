@@ -95,6 +95,7 @@ export const UsersPage: React.FC = () => {
                 method: 'GET',
                 headers: { accept: 'application/json' },
                 credentials: 'include',
+                cache: 'no-store',
             });
 
             const data = await res.json().catch(() => null);
@@ -142,6 +143,7 @@ export const UsersPage: React.FC = () => {
             } else {
                 setAvailableRoles([
                     { id: 'def_admin', role: 'admin', label: 'Admin', description: 'Acesso total', is_active: true, color_theme: 'amber' },
+                    { id: 'def_gerente', role: 'gerente', label: 'Gerente', description: 'Gestão de equipe', is_active: true, color_theme: 'blue' },
                     { id: 'def_vend', role: 'vendedor', label: 'Vendedor', description: 'Acesso a leads e negociações', is_active: true, color_theme: 'primary' }
                 ]);
             }
@@ -149,6 +151,7 @@ export const UsersPage: React.FC = () => {
             console.error('Error fetching roles:', err);
             setAvailableRoles([
                 { id: 'def_admin', role: 'admin', label: 'Admin', description: 'Acesso total', is_active: true, color_theme: 'amber' },
+                { id: 'def_gerente', role: 'gerente', label: 'Gerente', description: 'Gestão de equipe', is_active: true, color_theme: 'blue' },
                 { id: 'def_vend', role: 'vendedor', label: 'Vendedor', description: 'Acesso a leads e negociações', is_active: true, color_theme: 'primary' }
             ]);
         }
