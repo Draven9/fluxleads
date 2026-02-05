@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { ArrowLeft, Send, User } from 'lucide-react';
+import { ArrowLeft, Send, User, Paperclip, Mic, X } from 'lucide-react';
 import { ChatSession } from '../types';
 import { useChatMessages } from '../hooks/useChatMessages';
+import { AudioRecorder } from './AudioRecorder';
 
 interface ChatWindowProps {
     session: ChatSession;
@@ -13,6 +14,9 @@ interface ChatWindowProps {
 export const ChatWindow: React.FC<ChatWindowProps> = ({ session, onBack }) => {
     const { messages, loading, sendMessage } = useChatMessages(session.id);
     const [newMessage, setNewMessage] = useState('');
+    const [isRecording, setIsRecording] = useState(false);
+    const [attachment, setAttachment] = useState<File | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     const scrollToBottom = () => {
@@ -24,14 +28,43 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ session, onBack }) => {
     }, [messages]);
 
     const handleSend = async () => {
-        if (!newMessage.trim()) return;
-        const msg = newMessage;
-        setNewMessage(''); // Optimistic clear
+        if (!newMessage.trim() && !attachment) return;
+
+        const msgContent = newMessage;
+        const msgAttachment = attachment;
+
+        setNewMessage('');
+        setAttachment(null);
+
         try {
-            await sendMessage(msg);
+            if (msgAttachment) {
+                let type: 'image' | 'video' | 'document' | 'audio' = 'document';
+                if (msgAttachment.type.startsWith('image/')) type = 'image';
+                else if (msgAttachment.type.startsWith('video/')) type = 'video';
+                else if (msgAttachment.type.startsWith('audio/')) type = 'audio';
+
+                await sendMessage(msgContent, { file: msgAttachment, type });
+            } else {
+                await sendMessage(msgContent);
+            }
         } catch (error) {
             console.error('Failed to send', error);
-            setNewMessage(msg); // Restore on failure
+            // Optionally restore state on error
+        }
+    };
+
+    const handleAudioRecorded = async (audioBlob: Blob) => {
+        setIsRecording(false);
+        try {
+            await sendMessage('', { file: audioBlob, type: 'audio' });
+        } catch (error) {
+            console.error('Failed to send audio', error);
+        }
+    };
+
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            setAttachment(e.target.files[0]);
         }
     };
 
@@ -167,24 +200,63 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ session, onBack }) => {
 
             {/* Input Area */}
             <div className="p-4 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-white/10 shrink-0">
-                <div className="flex items-end space-x-2">
-                    <textarea
-                        value={newMessage}
-                        onChange={(e) => setNewMessage(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        placeholder="Digite uma mensagem..."
-                        rows={1}
-                        className="flex-1 p-3 bg-slate-100 dark:bg-white/5 border-none rounded-xl resize-none focus:ring-2 focus:ring-primary-500 focus:bg-white dark:focus:bg-slate-800 transition-all max-h-32 min-h-[44px] text-slate-900 dark:text-white placeholder-slate-500"
-                        style={{ minHeight: '44px' }}
-                    />
-                    <button
-                        onClick={handleSend}
-                        disabled={!newMessage.trim()}
-                        className="p-3 bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl transition-colors h-[44px] w-[44px] flex items-center justify-center"
-                    >
-                        <Send className="w-5 h-5" />
-                    </button>
-                </div>
+                {isRecording ? (
+                    <AudioRecorder onAudioRecorded={handleAudioRecorded} onCancel={() => setIsRecording(false)} />
+                ) : (
+                    <div className="flex flex-col gap-2">
+                        {/* Attachment Preview */}
+                        {attachment && (
+                            <div className="flex items-center gap-2 p-2 bg-slate-100 dark:bg-slate-800 rounded-lg animate-fade-in">
+                                <span className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-[200px]">{attachment.name}</span>
+                                <button onClick={() => setAttachment(null)} className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full">
+                                    <X className="w-4 h-4 text-slate-500" />
+                                </button>
+                            </div>
+                        )}
+
+                        <div className="flex items-end space-x-2">
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                className="hidden"
+                                onChange={handleFileSelect}
+                            />
+                            <button
+                                onClick={() => fileInputRef.current?.click()}
+                                className={`p-3 rounded-xl transition-colors h-[44px] w-[44px] flex items-center justify-center ${attachment ? 'bg-primary-100 text-primary-600' : 'bg-slate-100 dark:bg-white/5 text-slate-500 hover:bg-slate-200 dark:hover:bg-white/10'
+                                    }`}
+                            >
+                                <Paperclip className="w-5 h-5" />
+                            </button>
+
+                            <textarea
+                                value={newMessage}
+                                onChange={(e) => setNewMessage(e.target.value)}
+                                onKeyDown={handleKeyDown}
+                                placeholder="Digite uma mensagem..."
+                                rows={1}
+                                className="flex-1 p-3 bg-slate-100 dark:bg-white/5 border-none rounded-xl resize-none focus:ring-2 focus:ring-primary-500 focus:bg-white dark:focus:bg-slate-800 transition-all max-h-32 min-h-[44px] text-slate-900 dark:text-white placeholder-slate-500"
+                                style={{ minHeight: '44px' }}
+                            />
+
+                            {newMessage.trim() || attachment ? (
+                                <button
+                                    onClick={handleSend}
+                                    className="p-3 bg-primary-600 hover:bg-primary-700 text-white rounded-xl transition-colors h-[44px] w-[44px] flex items-center justify-center"
+                                >
+                                    <Send className="w-5 h-5" />
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={() => setIsRecording(true)}
+                                    className="p-3 bg-slate-100 dark:bg-white/5 text-slate-500 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-xl transition-colors h-[44px] w-[44px] flex items-center justify-center"
+                                >
+                                    <Mic className="w-5 h-5" />
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

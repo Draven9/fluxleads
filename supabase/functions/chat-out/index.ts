@@ -14,15 +14,16 @@ function json(status: number, body: unknown) {
     });
 }
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: Request) => {
     if (req.method === "OPTIONS") {
         return new Response(null, { status: 204, headers: corsHeaders });
     }
 
-    const { session_id, content, organization_id } = await req.json();
 
-    if (!session_id || !content || !organization_id) {
-        return json(400, { error: "Missing required fields" });
+    const { session_id, content, organization_id, media_url, message_type } = await req.json();
+
+    if (!session_id || (!content && !media_url) || !organization_id) {
+        return json(400, { error: "Missing required fields (session_id, organization_id, and either content or media_url)" });
     }
 
     const supabaseUrl = Deno.env.get("CRM_SUPABASE_URL") ?? Deno.env.get("SUPABASE_URL");
@@ -41,7 +42,9 @@ Deno.serve(async (req) => {
             organization_id,
             session_id,
             direction: "outbound",
-            content, // Already formatted by frontend e.g. *[User]:* ...
+            content: content || "", // Allow empty content if media is present
+            media_url: media_url || null,
+            message_type: message_type || (media_url ? "image" : "text"), // Default to text, or image if media present but type missing
             status: "sent",
         })
         .select()
@@ -86,6 +89,8 @@ Deno.serve(async (req) => {
             session_id: session.id,
             contact: session.contact,
             content: content,
+            media_url: media_url,
+            message_type: message_type || (media_url ? "image" : "text"),
             provider_id: session.provider_id, // Remote JID usually
             created_at: message.created_at
         }

@@ -64,28 +64,60 @@ export function useChatMessages(sessionId: string | null) {
         };
     }, [sessionId, organizationId]);
 
-    const sendMessage = useCallback(async (content: string) => {
+    const sendMessage = useCallback(async (content: string, media?: { file: Blob | File, type: 'audio' | 'image' | 'document' | 'video' }) => {
         if (!sessionId || !organizationId) return;
 
-        // Format message with signature
-        // Example: *[João]:* Olá, tudo bem?
-        // Prioriza: First Name > Nickname > Email username > 'Atendente'
-        let senderName = 'Atendente';
-        if (profile) {
-            senderName = profile.first_name ||
-                profile.nickname ||
-                profile.email.split('@')[0] ||
-                'Atendente';
+        let mediaUrl: string | null = null;
+        let messageType = 'text';
+
+        // 1. Upload Media if present
+        if (media) {
+            try {
+                const fileExt = media.type === 'image' ? 'jpg' : media.type === 'audio' ? 'webm' : 'bin';
+                const fileName = `${organizationId}/${sessionId}/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+                const { data, error: uploadError } = await supabase.storage
+                    .from('chat-media')
+                    .upload(fileName, media.file, {
+                        cacheControl: '3600',
+                        upsert: false
+                    });
+
+                if (uploadError) throw uploadError;
+
+                const { data: { publicUrl } } = supabase.storage
+                    .from('chat-media')
+                    .getPublicUrl(fileName);
+
+                mediaUrl = publicUrl;
+                messageType = media.type;
+            } catch (error) {
+                console.error('Error uploading media:', error);
+                throw new Error('Failed to upload media');
+            }
         }
 
-        const finalContent = `*[${senderName}]:* ${content}`;
+        // Format sender name for text messages
+        let finalContent = content;
+        if (content && !mediaUrl) { // Only add signature to text messages for now, or both? Let's keep it simple.
+            let senderName = 'Atendente';
+            if (profile) {
+                senderName = profile.first_name ||
+                    profile.nickname ||
+                    profile.email.split('@')[0] ||
+                    'Atendente';
+            }
+            finalContent = `*[${senderName}]:* ${content}`;
+        }
 
         // Send via Edge Function (saves to DB + triggers webhook)
         const { error } = await supabase.functions.invoke('chat-out', {
             body: {
                 organization_id: organizationId,
                 session_id: sessionId,
-                content: finalContent
+                content: finalContent,
+                media_url: mediaUrl,
+                message_type: messageType
             }
         });
 

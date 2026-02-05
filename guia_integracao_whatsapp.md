@@ -146,15 +146,14 @@ Este é o workflow que você já tem configurado (com o Switch). Se precisar rec
         "path": "flux-leads-notification",
         "options": {}
       },
-      "id": "9eb83fa7-7227-4746-bf62-a24bf60af796",
+      "id": "webhook-flux",
       "name": "Webhook (Flux Leads)",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [
-        -192,
-        1280
-      ],
-      "webhookId": "6bf3f422-2ae0-431f-b1c2-725a616db120"
+        -220,
+        460
+      ]
     },
     {
       "parameters": {
@@ -173,13 +172,48 @@ Este é o workflow que você já tem configurado (com o Switch). Se precisar rec
           ]
         }
       },
-      "id": "d7d69b28-e393-4f0b-9d1e-222e1c5c4972",
+      "id": "switch-event-type",
       "name": "Tipo de Evento?",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 1,
       "position": [
-        48,
-        1248
+        0,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "dataType": "string",
+        "value1": "={{ $json.body.data.message_type }}",
+        "rules": {
+          "rules": [
+            {
+              "value2": "audio",
+              "output": 1
+            },
+            {
+              "value2": "image",
+              "output": 2
+            },
+            {
+              "value2": "document",
+              "output": 2
+            },
+            {
+              "value2": "video",
+              "output": 2
+            }
+          ]
+        },
+        "fallbackOutput": 0
+      },
+      "id": "switch-message-type",
+      "name": "Tipo de Mensagem?",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [
+        280,
+        360
       ]
     },
     {
@@ -210,13 +244,95 @@ Este é o workflow que você já tem configurado (com o Switch). Se precisar rec
         },
         "options": {}
       },
-      "id": "67b79aab-2b97-419b-bc77-140cfe1ee40f",
-      "name": "Enviar Resposta (Chat)",
+      "id": "send-text",
+      "name": "Enviar Texto",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
       "position": [
-        368,
-        1104
+        580,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://prospeccao-evolution.gw3vnc.easypanel.host/message/sendWhatsAppAudio/INSTANCIA",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "SUA_APIKEY_AQUI"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "={{ $json.body.data.contact.phone }}"
+            },
+            {
+              "name": "audio",
+              "value": "={{ $json.body.data.media_url }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "send-audio",
+      "name": "Enviar Audio (PTT)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        580,
+        360
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://prospeccao-evolution.gw3vnc.easypanel.host/message/sendMedia/INSTANCIA",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "SUA_APIKEY_AQUI"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "={{ $json.body.data.contact.phone }}"
+            },
+            {
+              "name": "media",
+              "value": "={{ $json.body.data.media_url }}"
+            },
+            {
+              "name": "mediatype",
+              "value": "={{ $json.body.data.message_type }}"
+            },
+            {
+              "name": "caption",
+              "value": "={{ $json.body.data.content }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "send-media",
+      "name": "Enviar Mídia (Geral)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        580,
+        520
       ]
     },
     {
@@ -231,13 +347,13 @@ Este é o workflow que você já tem configurado (com o Switch). Se precisar rec
           ]
         }
       },
-      "id": "dcea6376-42a8-4594-84ca-fbb59c89c340",
+      "id": "filter-stage",
       "name": "Filtra Etapa 'Agendado'",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        368,
-        1264
+        280,
+        660
       ]
     },
     {
@@ -268,13 +384,13 @@ Este é o workflow que você já tem configurado (com o Switch). Se precisar rec
         },
         "options": {}
       },
-      "id": "55cc7b33-d602-4de9-96fe-c4b944fdf9ee",
+      "id": "send-followup",
       "name": "Enviar Follow-up",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
       "position": [
-        640,
-        1248
+        580,
+        660
       ]
     }
   ],
@@ -294,7 +410,7 @@ Este é o workflow que você já tem configurado (com o Switch). Se precisar rec
       "main": [
         [
           {
-            "node": "Enviar Resposta (Chat)",
+            "node": "Tipo de Mensagem?",
             "type": "main",
             "index": 0
           }
@@ -302,6 +418,31 @@ Este é o workflow que você já tem configurado (com o Switch). Se precisar rec
         [
           {
             "node": "Filtra Etapa 'Agendado'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tipo de Mensagem?": {
+      "main": [
+        [
+          {
+            "node": "Enviar Texto",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Enviar Audio (PTT)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Enviar Mídia (Geral)",
             "type": "main",
             "index": 0
           }
@@ -319,11 +460,6 @@ Este é o workflow que você já tem configurado (com o Switch). Se precisar rec
         ]
       ]
     }
-  },
-  "pinData": {},
-  "meta": {
-    "templateCredsSetupCompleted": true,
-    "instanceId": "657917497e9ec72dc7039e3696cf9d9f29c76ebc2c1411870955d0a1d2635826"
   }
 }
 ```
