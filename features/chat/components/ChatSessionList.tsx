@@ -4,6 +4,7 @@ import React from 'react';
 import { Search, User } from 'lucide-react';
 import { ChatSession } from '../types';
 import { useChatSessions } from '../hooks/useChatSessions';
+import { GroupImporter } from './GroupImporter';
 
 interface ChatSessionListProps {
     selectedSessionId: string | null;
@@ -27,7 +28,10 @@ export const ChatSessionList: React.FC<ChatSessionListProps> = ({ selectedSessio
         <div className="flex-1 flex flex-col h-full">
             {/* Header / Search */}
             <div className="p-4 border-b border-slate-100 dark:border-white/5 bg-white dark:bg-slate-900">
-                <h2 className="text-lg font-bold text-slate-800 dark:text-white mb-3">Conversas</h2>
+                <div className="flex justify-between items-center mb-3">
+                    <h2 className="text-lg font-bold text-slate-800 dark:text-white">Conversas</h2>
+                    <GroupImporter />
+                </div>
                 <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                     <input

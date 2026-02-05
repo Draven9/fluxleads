@@ -11,6 +11,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys, DEALS_VIEW_KEY } from '../index';
 import { dealsService, contactsService, companiesService, boardStagesService } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
+import { useRBAC } from '@/hooks/useRBAC';
 import type { Deal, DealView, DealItem } from '@/types';
 
 // ============ QUERY HOOKS ============
@@ -30,6 +31,8 @@ export interface DealsFilters {
  */
 export const useDeals = (filters?: DealsFilters) => {
   const { user, loading: authLoading } = useAuth();
+  const { can, isLoading: rbacLoading } = useRBAC();
+  const canViewAll = can('view_all_deals');
 
   return useQuery({
     queryKey: filters
@@ -38,8 +41,15 @@ export const useDeals = (filters?: DealsFilters) => {
     queryFn: async () => {
       const { data, error } = await dealsService.getAll();
       if (error) throw error;
+      return data || [];
+    },
+    select: (data) => {
+      let deals = data;
 
-      let deals = data || [];
+      // RBAC Filter
+      if (!rbacLoading && !canViewAll && user?.id) {
+        deals = deals.filter(d => d.ownerId === user.id);
+      }
 
       // Apply client-side filters
       if (filters) {
@@ -55,11 +65,10 @@ export const useDeals = (filters?: DealsFilters) => {
           return true;
         });
       }
-
       return deals;
     },
-    staleTime: 2 * 60 * 1000, // 2 minutes
-    enabled: !authLoading && !!user, // Only fetch when auth is ready
+    staleTime: 2 * 60 * 1000,
+    enabled: !authLoading && !!user && !rbacLoading,
   });
 };
 
@@ -69,6 +78,8 @@ export const useDeals = (filters?: DealsFilters) => {
  */
 export const useDealsView = (filters?: DealsFilters) => {
   const { user, loading: authLoading } = useAuth();
+  const { can, isLoading: rbacLoading } = useRBAC();
+  const canViewAll = can('view_all_deals');
 
   return useQuery<DealView[]>({
     queryKey: filters
@@ -96,7 +107,7 @@ export const useDealsView = (filters?: DealsFilters) => {
       const stageMap = new Map(stages.map(s => [s.id, s.label || s.name]));
 
       // Enrich deals with company/contact names and stageLabel
-      let enrichedDeals: DealView[] = deals.map(deal => {
+      const enrichedDeals: DealView[] = deals.map(deal => {
         const contact = contactMap.get(deal.contactId);
         const company = deal.clientCompanyId ? companyMap.get(deal.clientCompanyId) : undefined;
         return {
@@ -107,6 +118,16 @@ export const useDealsView = (filters?: DealsFilters) => {
           stageLabel: stageMap.get(deal.status) || 'Estágio não identificado',
         };
       });
+
+      return enrichedDeals;
+    },
+    select: (data) => {
+      let enrichedDeals = data;
+
+      // RBAC Filter
+      if (!rbacLoading && !canViewAll && user?.id) {
+        enrichedDeals = enrichedDeals.filter(d => d.ownerId === user.id);
+      }
 
       // Apply client-side filters
       if (filters) {
@@ -129,8 +150,8 @@ export const useDealsView = (filters?: DealsFilters) => {
 
       return enrichedDeals;
     },
-    staleTime: 2 * 60 * 1000, // 2 minutes
-    enabled: !authLoading && !!user, // Only fetch when auth is ready
+    staleTime: 2 * 60 * 1000,
+    enabled: !authLoading && !!user && !rbacLoading,
   });
 };
 
@@ -160,6 +181,9 @@ export const useDeal = (id: string | undefined) => {
  */
 export const useDealsByBoard = (boardId: string) => {
   const { user, loading: authLoading } = useAuth();
+  const { can, isLoading: rbacLoading } = useRBAC();
+  const canViewAll = can('view_all_deals');
+
   return useQuery<DealView[], Error, DealView[]>({
     // CRÍTICO: Usar a mesma query key que useDealsView para compartilhar cache
     queryKey: [...queryKeys.deals.lists(), 'view'],
@@ -200,11 +224,18 @@ export const useDealsByBoard = (boardId: string) => {
     },
     // Filtrar por boardId no cliente (compartilha cache mas retorna só os deals do board)
     select: (data) => {
+      let filtered = data;
+
+      // RBAC
+      if (!rbacLoading && !canViewAll && user?.id) {
+        filtered = filtered.filter(d => d.ownerId === user.id);
+      }
+
       if (!boardId || boardId.startsWith('temp-')) return [];
-      return data.filter(d => d.boardId === boardId);
+      return filtered.filter(d => d.boardId === boardId);
     },
     staleTime: 2 * 60 * 1000, // 2 minutes (same as useDealsView)
-    enabled: !authLoading && !!user && !!boardId && !boardId.startsWith('temp-'),
+    enabled: !authLoading && !!user && !rbacLoading && !!boardId && !boardId.startsWith('temp-'),
   });
 };
 
@@ -237,7 +268,7 @@ export const useCreateDeal = () => {
       if (process.env.NODE_ENV !== 'production') {
         const logData = { title: deal.title, status: deal.status?.slice(0, 8) || 'null' };
         console.log(`[useCreateDeal] 📤 Sending create to server`, logData);
-        fetch('http://127.0.0.1:7242/ingest/d70f541c-09d7-4128-9745-93f15f184017',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useDealsQuery.ts:230',message:'Sending create to server',data:logData,timestamp:Date.now(),sessionId:'debug-session',runId:'create-deal',hypothesisId:'CD1'})}).catch(()=>{});
+        fetch('http://127.0.0.1:7242/ingest/d70f541c-09d7-4128-9745-93f15f184017', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'useDealsQuery.ts:230', message: 'Sending create to server', data: logData, timestamp: Date.now(), sessionId: 'debug-session', runId: 'create-deal', hypothesisId: 'CD1' }) }).catch(() => { });
       }
       // #endregion
 
@@ -245,15 +276,15 @@ export const useCreateDeal = () => {
       const { data, error } = await dealsService.create(fullDeal);
 
       if (error) throw error;
-      
+
       // #region agent log
       if (process.env.NODE_ENV !== 'production') {
         const logData = { dealId: data?.id?.slice(0, 8) || 'null', title: data?.title };
         console.log(`[useCreateDeal] ✅ Server confirmed creation`, logData);
-        fetch('http://127.0.0.1:7242/ingest/d70f541c-09d7-4128-9745-93f15f184017',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useDealsQuery.ts:240',message:'Server confirmed creation',data:logData,timestamp:Date.now(),sessionId:'debug-session',runId:'create-deal',hypothesisId:'CD2'})}).catch(()=>{});
+        fetch('http://127.0.0.1:7242/ingest/d70f541c-09d7-4128-9745-93f15f184017', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'useDealsQuery.ts:240', message: 'Server confirmed creation', data: logData, timestamp: Date.now(), sessionId: 'debug-session', runId: 'create-deal', hypothesisId: 'CD2' }) }).catch(() => { });
       }
       // #endregion
-      
+
       return data!;
     },
     onMutate: async newDeal => {
@@ -283,7 +314,7 @@ export const useCreateDeal = () => {
       if (process.env.NODE_ENV !== 'production') {
         const logData = { tempId: tempId.slice(0, 15), title: newDeal.title, status: newDeal.status?.slice(0, 8) || 'null' };
         console.log(`[useCreateDeal] 🔄 Optimistic insert with temp ID`, logData);
-        fetch('http://127.0.0.1:7242/ingest/d70f541c-09d7-4128-9745-93f15f184017',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useDealsQuery.ts:260',message:'Optimistic insert with temp ID',data:logData,timestamp:Date.now(),sessionId:'debug-session',runId:'create-deal',hypothesisId:'CD3'})}).catch(()=>{});
+        fetch('http://127.0.0.1:7242/ingest/d70f541c-09d7-4128-9745-93f15f184017', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'useDealsQuery.ts:260', message: 'Optimistic insert with temp ID', data: logData, timestamp: Date.now(), sessionId: 'debug-session', runId: 'create-deal', hypothesisId: 'CD3' }) }).catch(() => { });
       }
       // #endregion
 
@@ -295,15 +326,15 @@ export const useCreateDeal = () => {
       // Replace temp deal with real one from server
       // This ensures immediate UI update while Realtime syncs in background
       const tempId = context?.tempId;
-      
+
       // #region agent log
       if (process.env.NODE_ENV !== 'production') {
         const logData = { tempId: tempId?.slice(0, 15) || 'null', realId: data.id?.slice(0, 8) || 'null', title: data.title };
         console.log(`[useCreateDeal] 🔄 Replacing temp deal with real one`, logData);
-        fetch('http://127.0.0.1:7242/ingest/d70f541c-09d7-4128-9745-93f15f184017',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useDealsQuery.ts:280',message:'Replacing temp deal with real one',data:logData,timestamp:Date.now(),sessionId:'debug-session',runId:'create-deal',hypothesisId:'CD4'})}).catch(()=>{});
+        fetch('http://127.0.0.1:7242/ingest/d70f541c-09d7-4128-9745-93f15f184017', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'useDealsQuery.ts:280', message: 'Replacing temp deal with real one', data: logData, timestamp: Date.now(), sessionId: 'debug-session', runId: 'create-deal', hypothesisId: 'CD4' }) }).catch(() => { });
       }
       // #endregion
-      
+
       // Usa DEALS_VIEW_KEY - a única fonte de verdade
       // Converte Deal para DealView parcial (Realtime vai enriquecer depois)
       const dealAsView: DealView = {
@@ -314,10 +345,10 @@ export const useCreateDeal = () => {
         contactPhone: '',
         stageLabel: '',
       } as DealView;
-      
+
       queryClient.setQueryData<DealView[]>(DEALS_VIEW_KEY, (old = []) => {
         if (!old) return [dealAsView];
-        
+
         // Check if deal already exists (race condition: Realtime may have already added it)
         const existingIndex = old.findIndex(d => d.id === data.id);
         if (existingIndex !== -1) {
@@ -325,24 +356,24 @@ export const useCreateDeal = () => {
           // #region agent log
           if (process.env.NODE_ENV !== 'production') {
             console.log(`[useCreateDeal] ⚠️ Deal already exists in cache (Realtime beat us)`, { dealId: data.id?.slice(0, 8) });
-            fetch('http://127.0.0.1:7242/ingest/d70f541c-09d7-4128-9745-93f15f184017',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useDealsQuery.ts:290',message:'Deal already exists in cache',data:{dealId:data.id?.slice(0,8)},timestamp:Date.now(),sessionId:'debug-session',runId:'create-deal',hypothesisId:'CD5'})}).catch(()=>{});
+            fetch('http://127.0.0.1:7242/ingest/d70f541c-09d7-4128-9745-93f15f184017', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'useDealsQuery.ts:290', message: 'Deal already exists in cache', data: { dealId: data.id?.slice(0, 8) }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'create-deal', hypothesisId: 'CD5' }) }).catch(() => { });
           }
           // #endregion
           return old; // Não sobrescreve - Realtime já tem dados enriquecidos
         }
-        
+
         if (tempId) {
           // Remove temp deal, add real one
           const withoutTemp = old.filter(d => d.id !== tempId);
           // #region agent log
           if (process.env.NODE_ENV !== 'production') {
             console.log(`[useCreateDeal] ✅ Swapped temp for real deal`, { tempId: tempId.slice(0, 15), realId: data.id?.slice(0, 8), cacheSize: withoutTemp.length + 1 });
-            fetch('http://127.0.0.1:7242/ingest/d70f541c-09d7-4128-9745-93f15f184017',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useDealsQuery.ts:300',message:'Swapped temp for real deal',data:{tempId:tempId.slice(0,15),realId:data.id?.slice(0,8),cacheSize:withoutTemp.length+1},timestamp:Date.now(),sessionId:'debug-session',runId:'create-deal',hypothesisId:'CD6'})}).catch(()=>{});
+            fetch('http://127.0.0.1:7242/ingest/d70f541c-09d7-4128-9745-93f15f184017', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'useDealsQuery.ts:300', message: 'Swapped temp for real deal', data: { tempId: tempId.slice(0, 15), realId: data.id?.slice(0, 8), cacheSize: withoutTemp.length + 1 }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'create-deal', hypothesisId: 'CD6' }) }).catch(() => { });
           }
           // #endregion
           return [dealAsView, ...withoutTemp];
         }
-        
+
         // If temp not found, just add the new one
         return [dealAsView, ...old];
       });
