@@ -397,13 +397,17 @@ Para usar o assistente de IA, você precisa configurar uma chave de API:
 O NossoCRM tem dois tipos de usuários:
 
 - **👑 Administrador**: Pode tudo (configurações, usuários, etc.)
-- **👤 Vendedor**: Pode usar o CRM normalmente, mas não altera configurações
+- **💼 Gerente**: Gere a equipe e vê relatórios.
+- **👤 Vendedor**: Pode usar o CRM normalmente, mas não altera configurações.
+- **🤝 Colaborador**: Acesso limitado.
 
 Para adicionar usuários:
 1. Vá em **Configurações → Equipe**
-2. Clique em **Convidar Usuário**
-3. Escolha o papel (admin ou vendedor)
-4. Envie o convite
+2. Clique em **Convidar**
+3. Escolha entre **Criar Usuário** (Email/Senha manuais) ou **Gerar Link**
+4. Defina o Cargo (Admin, Gerente, Vendedor, etc)
+
+> Para ver a tabela completa de permissões, acesse: [docs/permissoes_e_cargos.md](./docs/permissoes_e_cargos.md)
 
 ### Configurar Webhooks
 
@@ -506,7 +510,7 @@ Veja o guia completo em: [docs/webhooks.md](./docs/webhooks.md)
 ### Documentação
 
 - **[Guia de Webhooks](./docs/webhooks.md)**: Como configurar automações
-- **[Permissões](./docs/security/RBAC.md)**: Entenda admin vs vendedor
+- **[Permissões](./docs/permissoes_e_cargos.md)**: Entenda todos os cargos e acessos
 - **[API Pública](./docs/public-api.md)**: Documentação para desenvolvedores
 
 ### Contato
