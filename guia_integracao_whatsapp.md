@@ -15,7 +15,7 @@ Este guia foi separado em dois fluxos distintos para facilitar a organização e
 4.  Copie a **URL** e o **Secret** (você vai precisar dos dois).
 
 ### 2. Configurar n8n (Novo Workflow)
-Crie um workflow novo chamado "Receber WhatsApp".
+Crie um workflow novo chamado "Receber WhatsApp"..
 Copie o JSON abaixo e cole no n8n:
 
 ```json
