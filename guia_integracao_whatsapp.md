@@ -1,4 +1,4 @@
-# Guia de Integração: WhatsApp (Evolution API) <-> Flux Leads
+# Guia de Integração: WhatsApp (Evolution API) <-> Flux Leads (v1.0.0)
 
 Este guia foi separado em dois fluxos distintos para facilitar a organização e evitar erros. Recomenda-se criar **dois workflows separados** no n8n.
 
