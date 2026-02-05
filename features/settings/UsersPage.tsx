@@ -1,9 +1,9 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import ConfirmModal from '@/components/ConfirmModal';
-import { Loader2, UserPlus, Crown, Briefcase, KeyRound, Mail, Check, X, Sparkles, Clock, RefreshCw, Trash2, Link, Copy, CheckCircle2 } from 'lucide-react';
+import { Loader2, UserPlus, Crown, Briefcase, KeyRound, Link, Copy, Clock, RefreshCw, Trash2 } from 'lucide-react';
 
 interface Profile {
     id: string;
@@ -15,12 +15,9 @@ interface Profile {
     invited_at?: string;
     confirmed_at?: string;
     last_sign_in_at?: string;
-}
-
-interface InviteResult {
-    email: string;
-    success: boolean;
-    error?: string;
+    name?: string;
+    first_name?: string;
+    last_name?: string;
 }
 
 interface RoleSetting {
@@ -47,13 +44,6 @@ const getAvatarProps = (email: string) => {
     return { initials, gradient: colors[colorIndex] };
 };
 
-// Valida formato de email
-const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-
-/**
- * Componente React `UsersPage`.
- * @returns {Element} Retorna um valor do tipo `Element`.
- */
 export const UsersPage: React.FC = () => {
     const { profile: currentUserProfile } = useAuth();
     const { addToast } = useToast();
@@ -69,12 +59,14 @@ export const UsersPage: React.FC = () => {
     const [expirationDays, setExpirationDays] = useState<number | null>(7); // 7 days default, null = never
 
     // Manual Create & Roles
-    const [inviteMode, setInviteMode] = useState<'link' | 'manual'>('manual'); // Default to manual as requested
+    const [inviteMode, setInviteMode] = useState<'link' | 'manual'>('manual');
     const [availableRoles, setAvailableRoles] = useState<RoleSetting[]>([]);
     const [manualForm, setManualForm] = useState({ name: '', email: '', password: '' });
+    const [editingUser, setEditingUser] = useState<Profile | null>(null);
 
     const sb = supabase;
 
+    // Fetch users (with name if available)
     const fetchUsers = useCallback(async () => {
         try {
             const res = await fetch('/api/admin/users', {
@@ -113,19 +105,14 @@ export const UsersPage: React.FC = () => {
             const invites = data?.invites || [];
             const nowTs = Date.now();
             const validInvites = (invites || []).filter((invite: any) => {
-                // Only show invites that are not used
                 if (invite.used_at) return false;
-                // If no expiration, it's valid
                 if (!invite.expires_at) return true;
-                // Check if expiration is in the future (with small buffer for timezone issues)
                 const expiresTs = Date.parse(invite.expires_at);
                 return expiresTs > nowTs;
             });
-            // Force state update by creating new array reference
             setActiveInvites([...validInvites]);
         } catch (error) {
             console.error('Error fetching invites:', error);
-            // On error, still try to update state to empty array to clear stale data
             setActiveInvites([]);
         }
     }, []);
@@ -135,8 +122,10 @@ export const UsersPage: React.FC = () => {
         setError(null);
         setNewUserRole('vendedor');
         setExpirationDays(7);
+        setEditingUser(null);
+        setManualForm({ name: '', email: '', password: '' });
+        setInviteMode('manual');
     }, []);
-
 
     const fetchRoles = useCallback(async () => {
         try {
@@ -151,7 +140,6 @@ export const UsersPage: React.FC = () => {
             if (data && data.length > 0) {
                 setAvailableRoles(data);
             } else {
-                // Fallback defaults
                 setAvailableRoles([
                     { id: 'def_admin', role: 'admin', label: 'Admin', description: 'Acesso total', is_active: true, color_theme: 'amber' },
                     { id: 'def_vend', role: 'vendedor', label: 'Vendedor', description: 'Acesso a leads e negociações', is_active: true, color_theme: 'primary' }
@@ -159,7 +147,6 @@ export const UsersPage: React.FC = () => {
             }
         } catch (err) {
             console.error('Error fetching roles:', err);
-            // Fallback defaults on error
             setAvailableRoles([
                 { id: 'def_admin', role: 'admin', label: 'Admin', description: 'Acesso total', is_active: true, color_theme: 'amber' },
                 { id: 'def_vend', role: 'vendedor', label: 'Vendedor', description: 'Acesso a leads e negociações', is_active: true, color_theme: 'primary' }
@@ -178,57 +165,68 @@ export const UsersPage: React.FC = () => {
         }
     }, [fetchActiveInvites, isModalOpen]);
 
-    if (!sb) {
-        return (
-            <div className="min-h-[60vh] flex items-center justify-center">
-                <div className="text-center max-w-md">
-                    <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
-                        Configuração incompleta
-                    </h2>
-                    <p className="text-slate-500 dark:text-slate-400">
-                        O Supabase não está configurado neste ambiente. Configure as variáveis de ambiente para gerenciar usuários.
-                    </p>
-                </div>
-            </div>
-        );
-    }
+    const handleEditUser = (user: Profile) => {
+        setEditingUser(user);
+        const userName = (user as any).name || (user as any).first_name + ' ' + (user as any).last_name || '';
 
-    const handleDeleteUser = (user: Profile) => {
-        setUserToDelete(user);
+        setManualForm({
+            name: userName.trim(),
+            email: user.email,
+            password: ''
+        });
+        setNewUserRole(user.role);
+        setInviteMode('manual');
+        setIsModalOpen(true);
     };
 
-    const handleCreateUser = async (e: React.FormEvent) => {
+    const handleSubmitUser = async (e: React.FormEvent) => {
         e.preventDefault();
         setSendingInvites(true);
         setError(null);
 
         try {
-            const res = await fetch('/api/admin/users', {
-                method: 'POST',
+            const url = editingUser
+                ? `/api/admin/users/${editingUser.id}`
+                : '/api/admin/users';
+
+            const method = editingUser ? 'PUT' : 'POST';
+
+            const payload: any = {
+                role: newUserRole
+            };
+
+            if (editingUser) {
+                payload.name = manualForm.name;
+            } else {
+                payload.name = manualForm.name;
+                payload.email = manualForm.email;
+                payload.password = manualForm.password;
+            }
+
+            const res = await fetch(url, {
+                method,
                 headers: { 'content-type': 'application/json' },
                 credentials: 'include',
-                body: JSON.stringify({
-                    name: manualForm.name,
-                    email: manualForm.email,
-                    password: manualForm.password,
-                    role: newUserRole
-                }),
+                body: JSON.stringify(payload),
             });
 
             const data = await res.json().catch(() => null);
             if (!res.ok) {
-                throw new Error(data?.error || `Erro ao criar usuário (HTTP ${res.status})`);
+                throw new Error(data?.error || `Erro ao ${editingUser ? 'atualizar' : 'criar'} usuário (HTTP ${res.status})`);
             }
 
-            addToast('Usuário criado com sucesso!', 'success');
-            setManualForm({ name: '', email: '', password: '' });
+            addToast(editingUser ? 'Usuário atualizado!' : 'Usuário criado com sucesso!', 'success');
             closeModal();
             fetchUsers();
         } catch (err: any) {
-            setError(err.message || 'Erro ao criar usuário');
+            setError(err.message || `Erro ao ${editingUser ? 'atualizar' : 'criar'} usuário`);
         } finally {
             setSendingInvites(false);
         }
+    };
+
+    const handleDeleteUser = (user: Profile) => {
+        setUserToDelete(user);
     };
 
     const handleGenerateLink = async () => {
@@ -254,12 +252,8 @@ export const UsersPage: React.FC = () => {
                 throw new Error(data?.error || `Erro ao gerar link (HTTP ${res.status})`);
             }
 
-            // Force refresh of active invites and ensure state updates
             await fetchActiveInvites();
-
-            // Small delay to ensure state propagation
             await new Promise(resolve => setTimeout(resolve, 100));
-
             addToast('Novo link gerado!', 'success');
         } catch (err: any) {
             setError(err.message || 'Erro ao gerar link');
@@ -423,17 +417,19 @@ export const UsersPage: React.FC = () => {
                                             ? 'text-amber-600 dark:text-amber-400'
                                             : 'text-slate-500 dark:text-slate-400'
                                             }`}>
-                                            {user.role === 'admin' ? (
-                                                <>
-                                                    <Crown className="h-3.5 w-3.5" />
-                                                    Administrador
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <Briefcase className="h-3.5 w-3.5" />
-                                                    Vendedor
-                                                </>
-                                            )}
+                                            {(() => {
+                                                const roleDef = availableRoles.find(r => r.role === user.role);
+                                                return (
+                                                    <>
+                                                        {user.role === 'admin' ? (
+                                                            <Crown className="h-3.5 w-3.5" />
+                                                        ) : (
+                                                            <Briefcase className="h-3.5 w-3.5" />
+                                                        )}
+                                                        {roleDef ? roleDef.label : (user.role === 'admin' ? 'Administrador' : user.role)}
+                                                    </>
+                                                );
+                                            })()}
                                         </span>
                                         <span className="text-slate-300 dark:text-slate-600">•</span>
                                         <span className="text-sm text-slate-400 dark:text-slate-500">
@@ -454,7 +450,15 @@ export const UsersPage: React.FC = () => {
                                             </div>
                                         ) : (
                                             <>
-                                                {/* Resend Invite removed as we don't use email invites anymore */}
+                                                {/* Edit Button */}
+                                                <button
+                                                    onClick={() => handleEditUser(user)}
+                                                    className="opacity-0 group-hover:opacity-100 p-2 rounded-lg text-slate-400 hover:text-primary-600 hover:bg-slate-50 dark:hover:bg-white/5 transition-all"
+                                                    title="Editar usuário"
+                                                >
+                                                    <RefreshCw className="h-4 w-4" />
+                                                </button>
+                                                {/* Delete Button */}
                                                 <button
                                                     onClick={() => handleDeleteUser(user)}
                                                     className="opacity-0 group-hover:opacity-100 p-2 rounded-lg text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
@@ -497,7 +501,6 @@ export const UsersPage: React.FC = () => {
                 <div
                     className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50"
                     onClick={(e) => {
-                        // Close only when clicking the backdrop (outside the panel).
                         if (e.target === e.currentTarget) closeModal();
                     }}
                 >
@@ -513,41 +516,43 @@ export const UsersPage: React.FC = () => {
                                 </div>
                                 <div>
                                     <h2 className="text-xl font-bold text-slate-900 dark:text-white font-display">
-                                        Gerar Convite
+                                        {editingUser ? 'Editar Usuário' : 'Gerar Convite'}
                                     </h2>
                                     <p className="text-sm text-slate-500 dark:text-slate-400">
-                                        Crie links de acesso para sua equipe
+                                        {editingUser ? 'Atualize as informações do membro' : 'Crie links de acesso ou adicione membros'}
                                     </p>
                                 </div>
                             </div>
                         </div>
 
                         <div className="px-6 pb-6">
-                            {/* Tabs */}
-                            <div className="flex p-1 bg-slate-100 dark:bg-white/5 rounded-xl mb-6">
-                                <button
-                                    onClick={() => setInviteMode('manual')}
-                                    className={`flex-1 py-2 px-3 text-sm font-medium rounded-lg transition-all ${inviteMode === 'manual'
-                                        ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm'
-                                        : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
-                                        }`}
-                                >
-                                    Criar Usuário
-                                </button>
-                                <button
-                                    onClick={() => setInviteMode('link')}
-                                    className={`flex-1 py-2 px-3 text-sm font-medium rounded-lg transition-all ${inviteMode === 'link'
-                                        ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm'
-                                        : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
-                                        }`}
-                                >
-                                    Gerar Link (Convite)
-                                </button>
-                            </div>
+                            {/* Tabs (Only show in Create Mode) */}
+                            {!editingUser && (
+                                <div className="flex p-1 bg-slate-100 dark:bg-white/5 rounded-xl mb-6">
+                                    <button
+                                        onClick={() => setInviteMode('manual')}
+                                        className={`flex-1 py-2 px-3 text-sm font-medium rounded-lg transition-all ${inviteMode === 'manual'
+                                            ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm'
+                                            : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                                            }`}
+                                    >
+                                        Criar Usuário
+                                    </button>
+                                    <button
+                                        onClick={() => setInviteMode('link')}
+                                        className={`flex-1 py-2 px-3 text-sm font-medium rounded-lg transition-all ${inviteMode === 'link'
+                                            ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm'
+                                            : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                                            }`}
+                                    >
+                                        Gerar Link (Convite)
+                                    </button>
+                                </div>
+                            )}
 
-                            {/* Manual User Creation Form */}
+                            {/* Manual User Creation/Edit Form */}
                             {inviteMode === 'manual' && (
-                                <form onSubmit={handleCreateUser} className="space-y-4">
+                                <form onSubmit={handleSubmitUser} className="space-y-4">
                                     <div className="space-y-3">
                                         <div>
                                             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
@@ -569,36 +574,39 @@ export const UsersPage: React.FC = () => {
                                             <input
                                                 type="email"
                                                 required
+                                                disabled={!!editingUser}
                                                 value={manualForm.email}
                                                 onChange={e => setManualForm(prev => ({ ...prev, email: e.target.value }))}
-                                                className="w-full px-3 py-2 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500/50"
+                                                className={`w-full px-3 py-2 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500/50 ${editingUser ? 'opacity-50 cursor-not-allowed' : ''}`}
                                                 placeholder="joao@empresa.com"
                                             />
                                         </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                                                Senha Inicial
-                                            </label>
-                                            <div className="relative">
-                                                <input
-                                                    type="text"
-                                                    required
-                                                    minLength={6}
-                                                    value={manualForm.password}
-                                                    onChange={e => setManualForm(prev => ({ ...prev, password: e.target.value }))}
-                                                    className="w-full px-3 py-2 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500/50 pr-10"
-                                                    placeholder="Mínimo 6 caracteres"
-                                                />
-                                                <KeyRound className="absolute right-3 top-2.5 h-4 w-4 text-slate-400" />
+                                        {!editingUser && (
+                                            <div>
+                                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                                                    Senha Inicial
+                                                </label>
+                                                <div className="relative">
+                                                    <input
+                                                        type="text"
+                                                        required
+                                                        minLength={6}
+                                                        value={manualForm.password}
+                                                        onChange={e => setManualForm(prev => ({ ...prev, password: e.target.value }))}
+                                                        className="w-full px-3 py-2 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500/50 pr-10"
+                                                        placeholder="Mínimo 6 caracteres"
+                                                    />
+                                                    <KeyRound className="absolute right-3 top-2.5 h-4 w-4 text-slate-400" />
+                                                </div>
+                                                <p className="text-xs text-slate-500 mt-1">O usuário poderá alterar a senha depois.</p>
                                             </div>
-                                            <p className="text-xs text-slate-500 mt-1">O usuário poderá alterar a senha depois.</p>
-                                        </div>
+                                        )}
                                     </div>
 
-                                    {/* Dynamic Role Selection */}
+                                    {/* Role Selection */}
                                     <div>
                                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
-                                            Cargo / Permissão
+                                            {editingUser ? 'Cargo Atual' : 'Cargo / Permissão'}
                                         </label>
                                         <div className="grid grid-cols-2 gap-3 max-h-48 overflow-y-auto pr-1">
                                             {availableRoles.map(role => {
@@ -623,9 +631,6 @@ export const UsersPage: React.FC = () => {
                                                                 {role.label}
                                                             </span>
                                                         </div>
-                                                        <p className="text-[10px] text-slate-500 dark:text-slate-400 line-clamp-1" title={role.description}>
-                                                            {role.description}
-                                                        </p>
                                                         {isActive && (
                                                             <div className="absolute top-2 right-2 h-2 w-2 rounded-full bg-primary-500" />
                                                         )}
@@ -661,12 +666,12 @@ export const UsersPage: React.FC = () => {
                                             {sendingInvites ? (
                                                 <>
                                                     <Loader2 className="animate-spin h-4 w-4" />
-                                                    Criando...
+                                                    {editingUser ? 'Salvando...' : 'Criando...'}
                                                 </>
                                             ) : (
                                                 <>
-                                                    <UserPlus className="h-4 w-4" />
-                                                    Criar Usuário
+                                                    {editingUser ? <RefreshCw className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}
+                                                    {editingUser ? 'Salvar Alterações' : 'Criar Usuário'}
                                                 </>
                                             )}
                                         </button>
@@ -677,7 +682,6 @@ export const UsersPage: React.FC = () => {
                             {/* Invite Link Mode */}
                             {inviteMode === 'link' && (
                                 <>
-                                    {/* Active Links List */}
                                     <div className="mb-6">
                                         <h3 className="text-sm font-medium text-slate-900 dark:text-white mb-3">
                                             Links Ativos
@@ -735,7 +739,6 @@ export const UsersPage: React.FC = () => {
                                     </div>
 
                                     <div className="space-y-5 border-t border-slate-100 dark:border-white/5 pt-5">
-                                        {/* Dynamic Role Selection for Invite */}
                                         <div>
                                             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
                                                 Cargo
@@ -772,7 +775,6 @@ export const UsersPage: React.FC = () => {
                                             </div>
                                         </div>
 
-                                        {/* Expiration Selection */}
                                         <div>
                                             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
                                                 Expiração
@@ -798,7 +800,6 @@ export const UsersPage: React.FC = () => {
                                             </div>
                                         </div>
 
-                                        {/* Error Message */}
                                         {error && (
                                             <div className="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-xl text-sm">
                                                 <div className="h-5 w-5 rounded-full bg-red-100 dark:bg-red-900/40 flex items-center justify-center flex-shrink-0 mt-0.5">

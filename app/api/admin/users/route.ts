@@ -33,7 +33,7 @@ export async function GET() {
   // Performance: evita payload grande em organizações com muitos usuários.
   const { data: profiles, error } = await supabase
     .from('profiles')
-    .select('id, email, role, organization_id, created_at')
+    .select('id, email, role, organization_id, created_at, name, first_name, last_name')
     .eq('organization_id', me.organization_id)
     .limit(200)
     .order('created_at', { ascending: false });
@@ -44,6 +44,9 @@ export async function GET() {
     id: p.id,
     email: p.email,
     role: p.role,
+    name: p.name,
+    first_name: p.first_name,
+    last_name: p.last_name,
     organization_id: p.organization_id,
     created_at: p.created_at,
     status: 'active' as const,
