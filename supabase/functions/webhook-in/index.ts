@@ -546,6 +546,7 @@ Deno.serve(async (req) => {
       let sessionId = sessionData?.id;
 
       if (!sessionId) {
+        console.log(`[Webhook-In] Creating new session for contact ${chatContactId}`);
         const { data: newSession } = await supabase
           .from('chat_sessions')
           .insert({
@@ -561,35 +562,74 @@ Deno.serve(async (req) => {
       }
 
       if (sessionId) {
-        // 4.2) Insere a mensagem na tabela de chat
-        await supabase.from('messages').insert({
-          organization_id: source.organization_id,
-          session_id: sessionId,
-          direction: isFromMe ? 'outbound' : 'inbound',
-          content: content || '',
-          message_type: messageType,
-          media_url: mediaUrl,
-          status: isFromMe ? 'sent' : 'received',
-          created_at: new Date().toISOString(),
-          // Store metadata
-          payload: {
-            is_group: isGroup,
-            participant: participant,
-            push_name: pushName,
-            original_payload: payload,
-            from_me: isFromMe
-          }
-        });
+        // DEDUPLICATION LOGIC for Outbound Messages (Sent by System)
+        // If message is from_me, check if we just sent it via chat-out to avoid duplication.
+        let duplicateMessageId = null;
+        if (isFromMe) {
+          // Look for a message with same session, outbound, content, created recently (< 2 min)
+          // And that does NOT have an external_id yet (or we can overwrite it)
+          const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
 
-        // 4.3) Atualiza sessão
-        const currentUnread = sessionData?.unread_count ?? 0;
-        await supabase
-          .from('chat_sessions')
-          .update({
-            last_message_at: new Date().toISOString(),
-            unread_count: currentUnread + 1
-          })
-          .eq('id', sessionId);
+          const { data: potentialDupes } = await supabase
+            .from('messages')
+            .select('id, content')
+            .eq('session_id', sessionId)
+            .eq('direction', 'outbound')
+            .gte('created_at', twoMinutesAgo)
+            .limit(5);
+
+          if (potentialDupes && potentialDupes.length > 0) {
+            // Fuzzy match content (exact match for now)
+            const match = potentialDupes.find(m => m.content === (content || ''));
+            if (match) {
+              duplicateMessageId = match.id;
+              console.log(`[Webhook-In] Deduplicated message ${match.id} (System sent)`);
+            }
+          }
+        }
+
+        if (duplicateMessageId) {
+          // Update the existing message with the External ID (WhatsApp ID)
+          await supabase.from('messages')
+            .update({
+              external_id: externalEventId,
+              status: 'sent' // Confirm status
+            })
+            .eq('id', duplicateMessageId);
+
+        } else {
+          // 4.2) Insere a mensagem na tabela de chat (New Message)
+          console.log(`[Webhook-In] Inserting new message. Group: ${isGroup} FromMe: ${isFromMe}`);
+          await supabase.from('messages').insert({
+            organization_id: source.organization_id,
+            session_id: sessionId,
+            direction: isFromMe ? 'outbound' : 'inbound',
+            content: content || '',
+            message_type: messageType,
+            media_url: mediaUrl,
+            status: isFromMe ? 'sent' : 'received',
+            external_id: externalEventId, // Save WA ID
+            created_at: new Date().toISOString(),
+            // Store metadata
+            payload: {
+              is_group: isGroup,
+              participant: participant,
+              push_name: pushName,
+              original_payload: payload,
+              from_me: isFromMe
+            }
+          });
+
+          // 4.3) Atualiza sessão
+          const currentUnread = sessionData?.unread_count ?? 0;
+          await supabase
+            .from('chat_sessions')
+            .update({
+              last_message_at: new Date().toISOString(),
+              unread_count: isFromMe ? currentUnread : currentUnread + 1 // Don't inc unread if sent by me
+            })
+            .eq('id', sessionId);
+        }
       }
     } catch (chatErr) {
       console.error("Erro ao processar chat:", chatErr);
@@ -611,18 +651,6 @@ Deno.serve(async (req) => {
 
   return json(200, {
     ok: true,
-    message:
-      dealAction === "updated"
-        ? "Recebido! Atualizamos o negócio existente com os dados mais recentes."
-        : "Recebido! Criamos um novo negócio no funil configurado.",
-    action: {
-      contact: contactAction,
-      company: companyAction,
-      deal: dealAction,
-    },
-    organization_id: source.organization_id,
-    contact_id: contactId,
-    deal_id: dealId,
+    message: "Processado com sucesso"
   });
 });
-
