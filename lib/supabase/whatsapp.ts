@@ -85,7 +85,6 @@ export const whatsappService = {
                     organization_id: profile.organization_id,
                     contact_id: c.id,
                     provider: 'whatsapp',
-                    status: 'active',
                     unread_count: 0
                 }));
 
