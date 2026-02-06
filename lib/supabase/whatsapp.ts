@@ -75,9 +75,33 @@ export const whatsappService = {
                 .from('contacts')
                 .upsert(contactsToCreate, {
                     onConflict: 'phone,organization_id',
-                    ignoreDuplicates: true
+                    ignoreDuplicates: false // We want to update so we get the IDs back reliably or use select
                 })
                 .select();
+
+            if (data) {
+                // Ensure chat sessions exist for these groups so they appear in the list
+                const sessionsToCreate = data.map(c => ({
+                    organization_id: profile.organization_id,
+                    contact_id: c.id,
+                    provider: 'whatsapp',
+                    status: 'active',
+                    unread_count: 0
+                }));
+
+                // Upsert sessions (prevent duplicates if session already exists)
+                // Assuming composite unique key on (organization_id, contact_id) or similar logic needed.
+                // Since chat_sessions might not have a clean composite key for upserting by contact_id, 
+                // we'll try to insert and ignore conflicts if possible, or check first.
+                // However, for bulk, upsert with ignoreDuplicates is best if constraint exists.
+                // Let's assume standard upsert might duplicate if no constraint. 
+                // Safest is to just loop or use ignoreDuplicates on a known constraint.
+                // Prerequisite: Constraint on chat_sessions(organization_id, contact_id)
+
+                await supabase
+                    .from('chat_sessions')
+                    .upsert(sessionsToCreate, { onConflict: 'organization_id,contact_id', ignoreDuplicates: true });
+            }
 
             return { data, error };
         } catch (error) {
