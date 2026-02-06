@@ -545,6 +545,9 @@ Deno.serve(async (req) => {
 
       let sessionId = sessionData?.id;
 
+      // Define duplicateMessageId in current scope
+      let duplicateMessageId: string | null = null;
+
       if (!sessionId) {
         console.log(`[Webhook-In] Creating new session for contact ${chatContactId}`);
         const { data: newSession } = await supabase
@@ -564,7 +567,6 @@ Deno.serve(async (req) => {
       if (sessionId) {
         // DEDUPLICATION LOGIC for Outbound Messages (Sent by System)
         // If message is from_me, check if we just sent it via chat-out to avoid duplication.
-        let duplicateMessageId = null;
         if (isFromMe) {
           // Look for a message with same session, outbound, content, created recently (< 2 min)
           // And that does NOT have an external_id yet (or we can overwrite it)
