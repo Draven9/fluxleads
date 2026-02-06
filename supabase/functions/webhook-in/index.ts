@@ -564,6 +564,8 @@ Deno.serve(async (req) => {
         sessionId = newSession?.id;
       }
 
+
+
       if (sessionId) {
         // DEDUPLICATION LOGIC for Outbound Messages (Sent by System)
         // If message is from_me, check if we just sent it via chat-out to avoid duplication.
