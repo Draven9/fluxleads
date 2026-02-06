@@ -544,9 +544,9 @@ Deno.serve(async (req) => {
         .maybeSingle();
 
       let sessionId = sessionData?.id;
-
-      // Define duplicateMessageId in current scope
       let duplicateMessageId: string | null = null;
+      let insertError = null;
+      let updateError = null;
 
       if (!sessionId) {
         console.log(`[Webhook-In] Creating new session for contact ${chatContactId}`);
