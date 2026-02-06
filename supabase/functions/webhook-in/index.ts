@@ -590,9 +590,6 @@ Deno.serve(async (req) => {
           }
         }
 
-        let insertError = null;
-        let updateError = null;
-
         if (duplicateMessageId) {
           // Update the existing message with the External ID (WhatsApp ID)
           const { error: updMsgErr } = await supabase.from('messages')
