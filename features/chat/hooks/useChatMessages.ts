@@ -16,7 +16,7 @@ export function useChatMessages(sessionId: string | null) {
             setLoading(true);
             const { data, error } = await supabase
                 .from('messages')
-                .select('*')
+                .select('*, reply_to_message_id')
                 .eq('session_id', sessionId)
                 .order('created_at', { ascending: true });
 
@@ -64,7 +64,7 @@ export function useChatMessages(sessionId: string | null) {
         };
     }, [sessionId, organizationId]);
 
-    const sendMessage = useCallback(async (content: string, media?: { file: Blob | File, type: 'audio' | 'image' | 'document' | 'video' }) => {
+    const sendMessage = useCallback(async (content: string, media?: { file: Blob | File, type: 'audio' | 'image' | 'document' | 'video' }, replyToId?: string, mentions?: string[]) => {
         if (!sessionId || !organizationId) return;
 
         let mediaUrl: string | null = null;
@@ -110,6 +110,22 @@ export function useChatMessages(sessionId: string | null) {
             finalContent = `*[${senderName}]:* ${content}`;
         }
 
+        // Optimistic UI Update
+        const tempId = crypto.randomUUID();
+        const optimisticMessage: Message = {
+            id: tempId,
+            organization_id: organizationId,
+            session_id: sessionId,
+            direction: 'outbound',
+            content: finalContent,
+            message_type: messageType as any,
+            media_url: mediaUrl || (media ? URL.createObjectURL(media.file) : undefined),
+            status: 'sending',
+            created_at: new Date().toISOString(),
+            reply_to_message_id: replyToId
+        };
+        setMessages((prev) => [...prev, optimisticMessage]);
+
         // Send via Edge Function (saves to DB + triggers webhook)
         const { error } = await supabase.functions.invoke('chat-out', {
             body: {
@@ -117,7 +133,9 @@ export function useChatMessages(sessionId: string | null) {
                 session_id: sessionId,
                 content: finalContent,
                 media_url: mediaUrl,
-                message_type: messageType
+                message_type: messageType,
+                reply_to_message_id: replyToId,
+                mentions: mentions
             }
         });
 

@@ -20,7 +20,7 @@ Deno.serve(async (req: Request) => {
     }
 
 
-    const { session_id, content, organization_id, media_url, message_type } = await req.json();
+    const { session_id, content, organization_id, media_url, message_type, reply_to_message_id, mentions } = await req.json();
 
     if (!session_id || (!content && !media_url) || !organization_id) {
         return json(400, { error: "Missing required fields (session_id, organization_id, and either content or media_url)" });
@@ -53,10 +53,11 @@ Deno.serve(async (req: Request) => {
             organization_id,
             session_id,
             direction: "outbound",
-            content: content || "", // Allow empty content if media is present
+            content: content || "",
             media_url: media_url || null,
-            message_type: message_type || (media_url ? "image" : "text"), // Default to text, or image if media present but type missing
+            message_type: message_type || (media_url ? "image" : "text"),
             status: "sent",
+            reply_to_message_id: reply_to_message_id || null
         })
         .select()
         .single();
@@ -77,8 +78,6 @@ Deno.serve(async (req: Request) => {
     }
 
     // 3. Find Outbound Configuration (Webhook)
-    // We look for ANY active outbound endpoint. 
-    // Ideally we should filter by event type support, but for simplicity we take the first one.
     const { data: endpoints } = await supabase
         .from("integration_outbound_endpoints")
         .select("*")
@@ -93,7 +92,6 @@ Deno.serve(async (req: Request) => {
     }
 
     // 4. Prepare Payload
-    // Ensure Group JID is correct (append @g.us if needed)
     let contactPhone = session.contact?.phone || "";
     const isGroup = session.contact?.source === 'whatsapp_group';
 
@@ -101,7 +99,18 @@ Deno.serve(async (req: Request) => {
         contactPhone = `${contactPhone}@g.us`;
     }
 
-    // Clone contact to avoid mutation issues if we were using it elsewhere
+    // Fetch quoted message external ID if replying
+    let replyToExternalId = null;
+    if (reply_to_message_id) {
+        const { data: quotedMsg } = await supabase
+            .from('messages')
+            .select('external_id')
+            .eq('id', reply_to_message_id)
+            .single();
+
+        replyToExternalId = quotedMsg?.external_id;
+    }
+
     const contactPayload = {
         ...session.contact,
         phone: contactPhone
@@ -113,12 +122,15 @@ Deno.serve(async (req: Request) => {
         data: {
             message_id: message.id,
             session_id: session.id,
-            contact: contactPayload, // Use the modified contact with correct JID
+            contact: contactPayload,
             content: content,
             media_url: media_url,
             message_type: message_type || (media_url ? "image" : "text"),
-            provider_id: session.provider_id, // Remote JID usually
-            created_at: message.created_at
+            provider_id: session.provider_id,
+            created_at: message.created_at,
+            reply_to_message_id: reply_to_message_id,
+            reply_to_message_external_id: replyToExternalId, // Send external ID for WhatsApp quoting
+            mentions: mentions || [] // Pass mentions array to webhook
         }
     };
 
@@ -127,7 +139,7 @@ Deno.serve(async (req: Request) => {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                "X-Webhook-Secret": endpoint.secret || "", // Send secret if available
+                "X-Webhook-Secret": endpoint.secret || "",
             },
             body: JSON.stringify(payload),
         });

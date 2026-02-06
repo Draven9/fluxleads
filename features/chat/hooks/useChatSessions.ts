@@ -126,5 +126,25 @@ export function useChatSessions() {
         }
     };
 
-    return { sessions, loading, createOrGetSession, deleteSession };
+    const toggleMarkUnread = async (sessionId: string, currentStatus: boolean) => {
+        // Optimistic
+        setSessions((prev) => prev.map(s =>
+            s.id === sessionId ? { ...s, is_marked_unread: !currentStatus } : s
+        ));
+
+        const { error } = await supabase
+            .from('chat_sessions')
+            .update({ is_marked_unread: !currentStatus })
+            .eq('id', sessionId);
+
+        if (error) {
+            console.error('Error toggling unread:', error);
+            // Revert
+            setSessions((prev) => prev.map(s =>
+                s.id === sessionId ? { ...s, is_marked_unread: currentStatus } : s
+            ));
+        }
+    };
+
+    return { sessions, loading, createOrGetSession, deleteSession, toggleMarkUnread };
 }

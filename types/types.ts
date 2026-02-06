@@ -163,7 +163,7 @@ export interface Contact {
   birthDate?: string; // New field for Agentic AI tasks
   status: 'ACTIVE' | 'INACTIVE' | 'CHURNED';
   stage: string; // ID do LifecycleStage (antes era ContactStage enum)
-  source?: 'WEBSITE' | 'LINKEDIN' | 'REFERRAL' | 'MANUAL'; // Origem do contato
+  source?: 'WEBSITE' | 'LINKEDIN' | 'REFERRAL' | 'MANUAL' | 'whatsapp_group'; // Origem do contato
   notes?: string; // Anotações gerais
   lastPurchaseDate?: string;
   totalValue?: number; // LTV

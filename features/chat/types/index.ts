@@ -13,7 +13,9 @@ export interface ChatSession {
     updated_at: string;
 
     // Relations (Joined)
+    // Relations (Joined)
     contact?: Contact;
+    is_marked_unread?: boolean;
 }
 
 export interface Message {
@@ -27,4 +29,5 @@ export interface Message {
     status: 'sending' | 'sent' | 'delivered' | 'read' | 'failed';
     external_id?: string;
     created_at: string;
+    reply_to_message_id?: string | null;
 }

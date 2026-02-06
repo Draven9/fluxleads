@@ -44,6 +44,38 @@ export const whatsappService = {
     },
 
     /**
+     * Fetches participants for a specific group
+     */
+    fetchParticipants: async (groupJid: string): Promise<{ data: any[] | null; error: any }> => {
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+
+            if (!session) {
+                return { data: null, error: 'Unauthorized' };
+            }
+
+            const { data, error } = await supabase.functions.invoke('whatsapp-proxy', {
+                body: { action: 'fetchParticipants', groupJid }
+            });
+
+            if (error) throw error;
+
+            if (data && data.error) {
+                throw new Error(data.error);
+            }
+
+            // Normalization: Evolution v2 might return { participants: [] } or just []
+            // Adjust based on observation or assume array/nested array
+            const participants = Array.isArray(data) ? data : (data.participants || []);
+
+            return { data: participants, error: null };
+        } catch (error) {
+            console.error('Error fetching participants:', error);
+            return { data: null, error };
+        }
+    },
+
+    /**
      * Imports selected groups as Contacts
      */
     importGroupsAsContacts: async (groups: WhatsAppGroup[], ownerId: string) => {

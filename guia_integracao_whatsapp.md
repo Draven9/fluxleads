@@ -255,6 +255,14 @@ Este é o workflow que você já tem configurado (com o Switch). Se precisar rec
             {
               "name": "text",
               "value": "={{ $json.body.data.content }}"
+            },
+            {
+              "name": "mentions",
+              "value": "={{ $json.body.data.mentions }}"
+            },
+            {
+              "name": "quoted",
+              "value": "={{ $json.body.data.reply_to_message_id ? { key: { id: $json.body.data.reply_to_message_external_id } } : undefined }}"
             }
           ]
         },
