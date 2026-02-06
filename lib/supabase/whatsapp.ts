@@ -65,7 +65,7 @@ export const whatsappService = {
                 name: g.subject || 'Grupo sem nome',
                 phone: g.id.split('@')[0], // Extract number part from JID
                 owner_id: ownerId || user.id,
-                type: 'company', // Treat groups closer to companies or generic contacts
+                // type: 'company', // removed: column does not exist on contacts table
                 tags: ['Grupo WhatsApp'],
                 notes: `Importado do WhatsApp via Sync. ID: ${g.id}`,
                 // Custom fields could be added to store group metadata
