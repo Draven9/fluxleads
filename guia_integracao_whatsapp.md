@@ -83,6 +83,22 @@ Copie o JSON abaixo e cole no n8n:
             {
               "name": "external_event_id",
               "value": "={{ $json.body.data.key.id }}"
+            },
+            {
+               "name": "is_group",
+               "value": "={{ $json.body.data.key.remoteJid.includes('@g.us') }}"
+            },
+            {
+               "name": "group_id",
+               "value": "={{ $json.body.data.key.remoteJid }}"
+            },
+            {
+               "name": "participant",
+               "value": "={{ $json.body.data.key.participant ? $json.body.data.key.participant.split('@')[0] : '' }}"
+            },
+            {
+               "name": "pushName",
+               "value": "={{ $json.body.data.pushName }}"
             }
           ]
         },

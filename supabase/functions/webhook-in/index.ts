@@ -441,8 +441,8 @@ Deno.serve(async (req) => {
     dealAction = "created";
   }
 
-  // Helper functions for media fields (assuming LeadPayload type is defined elsewhere)
-  function getMediaUrl(payload: any) { // Changed to 'any' as LeadPayload is not defined in this snippet
+  // Helper functions for media fields
+  function getMediaUrl(payload: any) {
     return (
       toNullableString(payload.media_url) ||
       toNullableString(payload.mediaUrl) ||
@@ -450,7 +450,7 @@ Deno.serve(async (req) => {
     );
   }
 
-  function getMessageType(payload: any) { // Changed to 'any' as LeadPayload is not defined in this snippet
+  function getMessageType(payload: any) {
     return (
       toNullableString(payload.message_type) ||
       toNullableString(payload.messageType) ||
@@ -460,21 +460,81 @@ Deno.serve(async (req) => {
   }
 
   // 4) Integração com módulo de Chat (Mensagens)
-  // Se tiver conteúdo (notes) OU mídia, cria sessão de chat e insere a mensagem.
-  // Isso garante que a conversa apareça na aba "Mensagens" e não apenas nos logs.
-  // Aceitamos qualquer source (whatsapp, webhook-ui, n8n, etc) desde que tenha mensagem.
   const mediaUrl = getMediaUrl(payload);
   const messageType = getMessageType(payload);
-  const content = payload.notes || (mediaUrl ? '' : null); // Se tem media e não tem texto, content pode ser vazio
 
-  if (contactId && (content !== null || mediaUrl)) {
+  // Group Logic Parsing
+  const isGroup = (payload as any).is_group || (payload as any).isGroup || false;
+  // For groups, remoteJid is the Group ID. For DMs, it's the sender.
+  const remoteJid = (payload as any).remoteJid || (payload as any).group_id || (payload as any).groupId;
+  // Sender identity
+  const participant = (payload as any).participant || (payload as any).sender || leadPhone;
+  const pushName = (payload as any).pushName || (payload as any).senderName || leadName || "Desconhecido";
+
+  let content = payload.notes || (mediaUrl ? '' : null);
+
+  // If Group, we MUST link to the GROUP Contact, not the SENDER Contact.
+  let chatContactId = contactId; // Default to the individual contact found above
+
+  if (isGroup && remoteJid) {
+    // Find the Group Contact
+    const groupPhone = remoteJid.includes('@') ? remoteJid.split('@')[0] : remoteJid;
+
+    const { data: groupContact } = await supabase
+      .from('contacts')
+      .select('id')
+      .eq('organization_id', source.organization_id)
+      .eq('phone', groupPhone)
+      .eq('source', 'whatsapp_group') // Ensure we get the group, not a user with same number (unlikely but safe)
+      .maybeSingle();
+
+    if (groupContact) {
+      chatContactId = groupContact.id;
+
+      // Prefix content with Sender Name for visibility in UI
+      if (content) {
+        content = `*${pushName}*: ${content}`;
+      }
+    } else {
+      // If group contact doesn't exist, we might want to create it or fall back.
+      // For now, let's log warning and maybe fail specific chat insertion or fall back to individual?
+      // Falling back to individual (chatContactId = contactId) causes the "new conversation" issue.
+      // Better to create a temporary group contact?
+      // Let's create it on the fly if missing (Best Effort)
+      try {
+        // Basic Upsert for Group
+        const { data: newGroup } = await supabase
+          .from('contacts')
+          .upsert({
+            organization_id: source.organization_id,
+            name: "Grupo " + groupPhone, // We don't have subject here usually unless passed
+            phone: groupPhone,
+            source: 'whatsapp_group',
+            notes: 'Auto-created by Webhook-In'
+          }, { onConflict: 'phone,organization_id' })
+          .select('id')
+          .single();
+
+        if (newGroup) {
+          chatContactId = newGroup.id;
+          if (content) content = `*${pushName}*: ${content}`;
+        }
+      } catch (e) {
+        console.error("Failed to auto-create group contact", e);
+        // chatContactId remains contactId (Individual) - Fallback
+      }
+    }
+  }
+
+
+  if (chatContactId && (content !== null || mediaUrl)) {
     try {
       // 4.1) Busca ou cria sessão de chat
       const { data: sessionData } = await supabase
         .from('chat_sessions')
         .select('id, unread_count')
         .eq('organization_id', source.organization_id)
-        .eq('contact_id', contactId)
+        .eq('contact_id', chatContactId)
         .maybeSingle();
 
       let sessionId = sessionData?.id;
@@ -484,7 +544,7 @@ Deno.serve(async (req) => {
           .from('chat_sessions')
           .insert({
             organization_id: source.organization_id,
-            contact_id: contactId,
+            contact_id: chatContactId,
             provider: 'whatsapp',
             unread_count: 0,
             last_message_at: new Date().toISOString()
@@ -500,15 +560,21 @@ Deno.serve(async (req) => {
           organization_id: source.organization_id,
           session_id: sessionId,
           direction: 'inbound',
-          content: content || '', // Ensure not null if empty string
+          content: content || '',
           message_type: messageType,
           media_url: mediaUrl,
           status: 'received',
-          created_at: new Date().toISOString()
+          created_at: new Date().toISOString(),
+          // Store metadata for future use (avatars, accurate sender tracking)
+          payload: {
+            is_group: isGroup,
+            participant: participant,
+            push_name: pushName,
+            original_payload: payload
+          }
         });
 
-        // 4.3) Atualiza sessão (timestamp + contador de não lidas)
-        // Se já existia, incrementa. Se é nova, vira 1.
+        // 4.3) Atualiza sessão
         const currentUnread = sessionData?.unread_count ?? 0;
         await supabase
           .from('chat_sessions')
@@ -520,7 +586,6 @@ Deno.serve(async (req) => {
       }
     } catch (chatErr) {
       console.error("Erro ao processar chat:", chatErr);
-      // Não falha o webhook principal se o chat der erro, pois o lead/deal é prioridade
     }
   }
 
