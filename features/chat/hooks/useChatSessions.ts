@@ -111,5 +111,20 @@ export function useChatSessions() {
         return newSession.id;
     };
 
-    return { sessions, loading, createOrGetSession };
+    const deleteSession = async (sessionId: string) => {
+        // Optimistic Update
+        setSessions((prev) => prev.filter((s) => s.id !== sessionId));
+
+        const { error } = await supabase
+            .from('chat_sessions')
+            .delete()
+            .eq('id', sessionId);
+
+        if (error) {
+            console.error('Error deleting session:', error);
+            // Optionally fetch sessions again to revert logic
+        }
+    };
+
+    return { sessions, loading, createOrGetSession, deleteSession };
 }
