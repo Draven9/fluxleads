@@ -590,19 +590,24 @@ Deno.serve(async (req) => {
           }
         }
 
+        let insertError = null;
+        let updateError = null;
+
         if (duplicateMessageId) {
           // Update the existing message with the External ID (WhatsApp ID)
-          await supabase.from('messages')
+          const { error: updMsgErr } = await supabase.from('messages')
             .update({
               external_id: externalEventId,
               status: 'sent' // Confirm status
             })
             .eq('id', duplicateMessageId);
 
+          if (updMsgErr) insertError = updMsgErr;
+
         } else {
           // 4.2) Insere a mensagem na tabela de chat (New Message)
           console.log(`[Webhook-In] Inserting new message. Group: ${isGroup} FromMe: ${isFromMe}`);
-          await supabase.from('messages').insert({
+          const { error: insErr } = await supabase.from('messages').insert({
             organization_id: source.organization_id,
             session_id: sessionId,
             direction: isFromMe ? 'outbound' : 'inbound',
@@ -622,17 +627,25 @@ Deno.serve(async (req) => {
             }
           });
 
+          if (insErr) {
+            console.error('[Webhook-In] Insert Error:', insErr);
+            insertError = insErr;
+          }
+
           // 4.3) Atualiza sessão
           const currentUnread = sessionData?.unread_count ?? 0;
-          await supabase
+          const { error: updSessErr } = await supabase
             .from('chat_sessions')
             .update({
               last_message_at: new Date().toISOString(),
               unread_count: isFromMe ? currentUnread : currentUnread + 1 // Don't inc unread if sent by me
             })
             .eq('id', sessionId);
+
+          if (updSessErr) updateError = updSessErr;
         }
       }
+
       // Build debug object
       const debugInfo = {
         isGroup,
@@ -642,7 +655,9 @@ Deno.serve(async (req) => {
         direction: isFromMe ? 'outbound' : 'inbound',
         duplicateMessageId,
         action: duplicateMessageId ? 'updated_existing' : 'inserted_new',
-        chatContactId
+        chatContactId,
+        insertError,
+        updateError
       };
 
       console.log('[Webhook-In] Debug:', debugInfo);
