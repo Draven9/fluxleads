@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { ArrowLeft, Send, User, Paperclip, Mic, X } from 'lucide-react';
+import { ArrowLeft, Send, User, Paperclip, Mic, X, Trash2 } from 'lucide-react';
 import { ChatSession } from '../types';
 import { useChatMessages } from '../hooks/useChatMessages';
+import { useAuth } from '@/context/AuthContext';
 import { AudioRecorder } from './AudioRecorder';
 
 interface ChatWindowProps {
@@ -12,12 +13,15 @@ interface ChatWindowProps {
 }
 
 export const ChatWindow: React.FC<ChatWindowProps> = ({ session, onBack }) => {
-    const { messages, loading, sendMessage } = useChatMessages(session.id);
+    const { messages, loading, sendMessage, deleteMessage } = useChatMessages(session.id);
+    const { profile } = useAuth();
     const [newMessage, setNewMessage] = useState('');
     const [isRecording, setIsRecording] = useState(false);
     const [attachment, setAttachment] = useState<File | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    const isAdmin = profile?.role === 'admin' || profile?.role === 'owner';
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -72,6 +76,12 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ session, onBack }) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             handleSend();
+        }
+    };
+
+    const handleDelete = async (messageId: string) => {
+        if (window.confirm('Tem certeza que deseja apagar esta mensagem? Esta ação não pode ser desfeita.')) {
+            await deleteMessage(messageId);
         }
     };
 
@@ -138,7 +148,20 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ session, onBack }) => {
                     const mediaSrc = getMediaSrc(msg);
 
                     return (
-                        <div key={msg.id} className={`flex ${isOutbound ? 'justify-end' : 'justify-start'}`}>
+                        <div key={msg.id} className={`group flex ${isOutbound ? 'justify-end' : 'justify-start'}`}>
+                            {/* Delete Button (Left for Outbound) */}
+                            {isOutbound && isAdmin && (
+                                <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center px-2">
+                                    <button
+                                        onClick={() => handleDelete(msg.id)}
+                                        className="p-1 px-2 text-slate-400 hover:text-red-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full"
+                                        title="Apagar mensagem"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            )}
+
                             <div className={`max-w-[70%] rounded-2xl px-4 py-2 shadow-sm text-sm ${isOutbound
                                 ? 'bg-primary-600 text-white rounded-tr-none'
                                 : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 rounded-tl-none'
@@ -192,6 +215,20 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ session, onBack }) => {
                                     )}
                                 </div>
                             </div>
+
+                            {/* Delete Button (Right for Inbound) */}
+                            {!isOutbound && isAdmin && (
+                                <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center px-2">
+                                    <button
+                                        onClick={() => handleDelete(msg.id)}
+                                        className="p-1 px-2 text-slate-400 hover:text-red-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full"
+                                        title="Apagar mensagem"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            )}
+
                         </div>
                     );
                 })}

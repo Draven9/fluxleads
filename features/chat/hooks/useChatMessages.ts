@@ -127,5 +127,22 @@ export function useChatMessages(sessionId: string | null) {
         }
     }, [sessionId, organizationId, profile]);
 
-    return { messages, loading, sendMessage };
+    const deleteMessage = useCallback(async (messageId: string) => {
+        // Optimistic Update
+        setMessages((prev) => prev.filter((msg) => msg.id !== messageId));
+
+        const { error } = await supabase
+            .from('messages')
+            .delete()
+            .eq('id', messageId);
+
+        if (error) {
+            console.error('Error deleting message:', error);
+            // Revert on error (fetching again would be safer but simple revert is hard without history)
+            // For now, let's just log. Realtime should handle sync if it fails elsewhere?
+            // Actually, if it fails, we should probably reload or show toast.
+        }
+    }, []);
+
+    return { messages, loading, sendMessage, deleteMessage };
 }

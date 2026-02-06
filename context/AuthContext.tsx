@@ -51,7 +51,7 @@ interface Profile {
     id: string;
     email: string;
     organization_id: OrganizationId;
-    role: 'admin' | 'vendedor';
+    role: 'admin' | 'vendedor' | 'owner';
     first_name?: string | null;
     last_name?: string | null;
     nickname?: string | null;
