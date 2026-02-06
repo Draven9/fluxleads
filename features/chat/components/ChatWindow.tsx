@@ -151,7 +151,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ session, onBack }) => {
                         <div key={msg.id} className={`group flex ${isOutbound ? 'justify-end' : 'justify-start'}`}>
                             {/* Delete Button (Left for Outbound) */}
                             {isOutbound && isAdmin && (
-                                <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center px-2">
+                                <div className="flex items-center px-2">
                                     <button
                                         onClick={() => handleDelete(msg.id)}
                                         className="p-1 px-2 text-slate-400 hover:text-red-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full"
@@ -218,7 +218,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ session, onBack }) => {
 
                             {/* Delete Button (Right for Inbound) */}
                             {!isOutbound && isAdmin && (
-                                <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center px-2">
+                                <div className="flex items-center px-2">
                                     <button
                                         onClick={() => handleDelete(msg.id)}
                                         className="p-1 px-2 text-slate-400 hover:text-red-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full"
