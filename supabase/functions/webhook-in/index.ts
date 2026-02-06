@@ -631,26 +631,38 @@ Deno.serve(async (req) => {
             .eq('id', sessionId);
         }
       }
+      // Build debug object
+      const debugInfo = {
+        isGroup,
+        isFromMe,
+        sessionId,
+        content,
+        direction: isFromMe ? 'outbound' : 'inbound',
+        duplicateMessageId,
+        action: duplicateMessageId ? 'updated_existing' : 'inserted_new',
+        chatContactId
+      };
+
+      console.log('[Webhook-In] Debug:', debugInfo);
+
+      return json(200, {
+        ok: true,
+        message: "Processado com sucesso",
+        debug: debugInfo
+      });
     } catch (chatErr) {
       console.error("Erro ao processar chat:", chatErr);
+      return json(200, {
+        ok: false,
+        message: "Erro no processamento chat",
+        error: String(chatErr)
+      });
     }
-  }
-
-  // Atualiza auditoria (best-effort)
-  if (externalEventId) {
-    await supabase
-      .from("webhook_events_in")
-      .update({
-        status: "processed",
-        created_contact_id: contactId,
-        created_deal_id: dealId,
-      })
-      .eq("source_id", source.id)
-      .eq("external_event_id", externalEventId);
   }
 
   return json(200, {
     ok: true,
-    message: "Processado com sucesso"
+    message: "Processado com sucesso",
+    note: "Sem ação de chat (contato não encontrado ou sem conteúdo)"
   });
 });
