@@ -27,7 +27,10 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ session, onBack }) => {
 
     // Group Mentions State
     const isGroup = session.contact?.source === 'whatsapp_group';
-    const groupJid = session.provider_id.includes('@g.us') ? session.provider_id : (session.contact?.phone && session.contact.phone.includes('-') ? `${session.contact.phone}@g.us` : session.provider_id);
+    const providerId = session.provider_id || '';
+    const groupJid = providerId.includes('@g.us')
+        ? providerId
+        : (session.contact?.phone && session.contact.phone.includes('-') ? `${session.contact.phone}@g.us` : providerId);
     // Heuristic for JID if provider_id is just number. Groups usually have explicit JID in provider_id or we construct it.
 
     // Actually, provider_id IS the JID usually.
