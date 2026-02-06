@@ -57,7 +57,7 @@ Deno.serve(async (req: Request) => {
     // 2. Fetch Chat Session to get Contact details (phone)
     const { data: session, error: sessionError } = await supabase
         .from("chat_sessions")
-        .select("*, contact:contacts(name, phone, email)")
+        .select("*, contact:contacts(name, phone, email, source)")
         .eq("id", session_id)
         .single();
 
@@ -81,13 +81,28 @@ Deno.serve(async (req: Request) => {
         return json(200, { ok: true, warning: "No active outbound webhook configured. Message saved locally." });
     }
 
-    // 4. Send to External Webhook (n8n/Evolution)
+    // 4. Prepare Payload
+    // Ensure Group JID is correct (append @g.us if needed)
+    let contactPhone = session.contact?.phone || "";
+    const isGroup = session.contact?.source === 'whatsapp_group';
+
+    if (isGroup && contactPhone && !contactPhone.includes('@')) {
+        contactPhone = `${contactPhone}@g.us`;
+    }
+
+    // Clone contact to avoid mutation issues if we were using it elsewhere
+    const contactPayload = {
+        ...session.contact,
+        phone: contactPhone
+    };
+
+    // 5. Send to External Webhook (n8n/Evolution)
     const payload = {
         event: "chat.new_message",
         data: {
             message_id: message.id,
             session_id: session.id,
-            contact: session.contact,
+            contact: contactPayload, // Use the modified contact with correct JID
             content: content,
             media_url: media_url,
             message_type: message_type || (media_url ? "image" : "text"),

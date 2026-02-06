@@ -66,7 +66,7 @@ export const whatsappService = {
                 phone: g.id.split('@')[0], // Extract number part from JID
                 owner_id: ownerId || user.id,
                 // type: 'company', // removed: column does not exist on contacts table
-                tags: ['Grupo WhatsApp'],
+                source: 'whatsapp_group', // Mark as group for chat logic
                 notes: `Importado do WhatsApp via Sync. ID: ${g.id}`,
                 // Custom fields could be added to store group metadata
             }));
