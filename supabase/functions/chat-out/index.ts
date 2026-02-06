@@ -35,6 +35,17 @@ Deno.serve(async (req: Request) => {
 
     const supabase = createClient(supabaseUrl, serviceKey);
 
+    // Auth check - Manual verification since verify_jwt is false
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+        return json(401, { error: 'Missing Authorization header' });
+    }
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
+    if (authError || !user) {
+        return json(401, { error: 'Unauthorized: Invalid Token' });
+    }
+
     // 1. Insert message into DB
     const { data: message, error: insertError } = await supabase
         .from("messages")
