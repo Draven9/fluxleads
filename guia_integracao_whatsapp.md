@@ -99,6 +99,10 @@ Copie o JSON abaixo e cole no n8n:
             {
                "name": "pushName",
                "value": "={{ $json.body.data.pushName }}"
+            },
+            {
+               "name": "from_me",
+               "value": "={{ $json.body.data.key.fromMe }}"
             }
           ]
         },

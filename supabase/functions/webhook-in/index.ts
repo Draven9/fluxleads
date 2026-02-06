@@ -471,6 +471,9 @@ Deno.serve(async (req) => {
   const participant = (payload as any).participant || (payload as any).sender || leadPhone;
   const pushName = (payload as any).pushName || (payload as any).senderName || leadName || "Desconhecido";
 
+  // Check if message is from me (sent from mobile)
+  const isFromMe = (payload as any).from_me === true || (payload as any).fromMe === true || (payload as any).from_me === 'true';
+
   let content = payload.notes || (mediaUrl ? '' : null);
 
   // If Group, we MUST link to the GROUP Contact, not the SENDER Contact.
@@ -492,7 +495,8 @@ Deno.serve(async (req) => {
       chatContactId = groupContact.id;
 
       // Prefix content with Sender Name for visibility in UI
-      if (content) {
+      // ONLY if it's NOT from me. If I sent it, I know who I am.
+      if (content && !isFromMe) {
         content = `*${pushName}*: ${content}`;
       }
     } else {
@@ -517,7 +521,9 @@ Deno.serve(async (req) => {
 
         if (newGroup) {
           chatContactId = newGroup.id;
-          if (content) content = `*${pushName}*: ${content}`;
+          if (content && !isFromMe) {
+            content = `*${pushName}*: ${content}`;
+          }
         }
       } catch (e) {
         console.error("Failed to auto-create group contact", e);
@@ -559,18 +565,19 @@ Deno.serve(async (req) => {
         await supabase.from('messages').insert({
           organization_id: source.organization_id,
           session_id: sessionId,
-          direction: 'inbound',
+          direction: isFromMe ? 'outbound' : 'inbound',
           content: content || '',
           message_type: messageType,
           media_url: mediaUrl,
-          status: 'received',
+          status: isFromMe ? 'sent' : 'received',
           created_at: new Date().toISOString(),
-          // Store metadata for future use (avatars, accurate sender tracking)
+          // Store metadata
           payload: {
             is_group: isGroup,
             participant: participant,
             push_name: pushName,
-            original_payload: payload
+            original_payload: payload,
+            from_me: isFromMe
           }
         });
 
