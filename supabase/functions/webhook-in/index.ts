@@ -481,14 +481,17 @@ Deno.serve(async (req) => {
 
   if (isGroup && remoteJid) {
     // Find the Group Contact
-    const groupPhone = remoteJid.includes('@') ? remoteJid.split('@')[0] : remoteJid;
+    // We try multiple formats because the contact might have been created with full JID (generic lead) or stripped number.
+    const groupPhoneParsed = remoteJid.includes('@') ? remoteJid.split('@')[0] : remoteJid;
+    const potentialGroupPhones = [remoteJid, groupPhoneParsed];
 
     const { data: groupContact } = await supabase
       .from('contacts')
       .select('id')
       .eq('organization_id', source.organization_id)
-      .eq('phone', groupPhone)
-      .eq('source', 'whatsapp_group') // Ensure we get the group, not a user with same number (unlikely but safe)
+      .in('phone', potentialGroupPhones)
+      //.eq('source', 'whatsapp_group') // Relaxed source check to find contacts created via generic webhook (source='webhook' or 'whatsapp')
+      .limit(1)
       .maybeSingle();
 
     if (groupContact) {
@@ -500,21 +503,17 @@ Deno.serve(async (req) => {
         content = `*${pushName}*: ${content}`;
       }
     } else {
-      // If group contact doesn't exist, we might want to create it or fall back.
-      // For now, let's log warning and maybe fail specific chat insertion or fall back to individual?
-      // Falling back to individual (chatContactId = contactId) causes the "new conversation" issue.
-      // Better to create a temporary group contact?
-      // Let's create it on the fly if missing (Best Effort)
+      // If group contact doesn't exist, we MUST create it to group messages correctly.
+      // Use the stripped phone (standard) and forced source.
       try {
-        // Basic Upsert for Group
         const { data: newGroup } = await supabase
           .from('contacts')
           .upsert({
             organization_id: source.organization_id,
-            name: "Grupo " + groupPhone, // We don't have subject here usually unless passed
-            phone: groupPhone,
+            name: "Grupo " + (pushName !== "Desconhecido" && pushName !== remoteJid ? pushName : groupPhoneParsed),
+            phone: groupPhoneParsed,
             source: 'whatsapp_group',
-            notes: 'Auto-created by Webhook-In'
+            notes: 'Auto-created by Webhook-In (Group)'
           }, { onConflict: 'phone,organization_id' })
           .select('id')
           .single();
@@ -527,7 +526,48 @@ Deno.serve(async (req) => {
         }
       } catch (e) {
         console.error("Failed to auto-create group contact", e);
-        // chatContactId remains contactId (Individual) - Fallback
+        // Fallback: chatContactId remains contactId (Individual or Generic Group Contact)
+      }
+    }
+  } else if (isFromMe && remoteJid && !isGroup) {
+    // INDIVIDUAL MESSAGE SENT FROM MOBILE (From Me)
+    // contactId might be "Me" (if N8n mapped phone=Sender) or null.
+    // We MUST ensure chatContactId is the RECIPIENT.
+
+    const recipientPhone = remoteJid.includes('@') ? remoteJid.split('@')[0] : remoteJid;
+
+    // Try to find the contact by the recipient's phone (remoteJid)
+    const { data: recipientContact } = await supabase
+      .from('contacts')
+      .select('id')
+      .eq('organization_id', source.organization_id)
+      .eq('phone', recipientPhone)
+      .limit(1)
+      .maybeSingle();
+
+    if (recipientContact) {
+      chatContactId = recipientContact.id;
+    } else {
+      // Create contact for recipient if it doesn't exist
+      // Note: We DO NOT use 'pushName' here because for fromMe messages, pushName is likely MY name.
+      try {
+        const { data: newContact } = await supabase
+          .from('contacts')
+          .insert({
+            organization_id: source.organization_id,
+            name: recipientPhone, // We don't know the name of the recipient in this context
+            phone: recipientPhone,
+            source: 'whatsapp_active', // Active outreach/response
+            notes: 'Auto-created by Webhook-In (Outbound Mobile)'
+          })
+          .select('id')
+          .single();
+
+        if (newContact) {
+          chatContactId = newContact.id;
+        }
+      } catch (e) {
+        console.error("Failed to auto-create individual contact for outbound", e);
       }
     }
   }
