@@ -198,11 +198,19 @@ Deno.serve(async (req) => {
   if (!source || !source.active) return json(404, { error: "Fonte não encontrada/inativa" });
   if (String(source.secret) !== String(secretHeader)) return json(401, { error: "Secret inválido" });
 
+  // Debug Logging - Log Headers and Raw Body
+  console.log("WEBHOOK-IN: Request Received");
+  console.log("Headers:", JSON.stringify(Object.fromEntries(req.headers.entries())));
+
+  const rawBody = await req.text();
+  console.log("RAW BODY:", rawBody);
+
   let payload: LeadPayload;
   try {
-    payload = (await req.json()) as LeadPayload;
-    console.log("WEBHOOK-IN PAYLOAD:", JSON.stringify(payload)); // DEBUG LOG
+    payload = JSON.parse(rawBody) as LeadPayload;
+    // console.log("WEBHOOK-IN PAYLOAD:", JSON.stringify(payload)); 
   } catch {
+    console.error("WEBHOOK-IN: JSON Parse Error", rawBody);
     return json(400, { error: "JSON inválido" });
   }
 
