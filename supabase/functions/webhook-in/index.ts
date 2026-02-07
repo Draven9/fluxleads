@@ -681,15 +681,7 @@ Deno.serve(async (req) => {
             media_url: mediaUrl,
             status: isFromMe ? 'sent' : 'received',
             external_id: externalEventId, // Save WA ID
-            created_at: new Date().toISOString(),
-            // Store metadata
-            payload: {
-              is_group: isGroup,
-              participant: participant,
-              push_name: pushName,
-              original_payload: payload,
-              from_me: isFromMe
-            }
+            created_at: new Date().toISOString()
           });
 
           if (insErr) {
