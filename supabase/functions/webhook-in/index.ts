@@ -485,17 +485,35 @@ Deno.serve(async (req) => {
     const groupPhoneParsed = remoteJid.includes('@') ? remoteJid.split('@')[0] : remoteJid;
     const potentialGroupPhones = [remoteJid, groupPhoneParsed];
 
-    const { data: groupContact } = await supabase
+    const { data: contacts } = await supabase
       .from('contacts')
-      .select('id')
+      .select('id, phone')
       .eq('organization_id', source.organization_id)
-      .in('phone', potentialGroupPhones)
-      //.eq('source', 'whatsapp_group') // Relaxed source check to find contacts created via generic webhook (source='webhook' or 'whatsapp')
-      .limit(1)
-      .maybeSingle();
+      .in('phone', potentialGroupPhones);
 
-    if (groupContact) {
-      chatContactId = groupContact.id;
+    let electedContactId = null;
+
+    if (contacts && contacts.length > 0) {
+      // Prioritize contact that ALREADY has a session (to avoid splitting history)
+      const contactIds = contacts.map(c => c.id);
+      const { data: sessions } = await supabase
+        .from('chat_sessions')
+        .select('contact_id')
+        .eq('organization_id', source.organization_id)
+        .in('contact_id', contactIds)
+        .limit(1);
+
+      if (sessions && sessions.length > 0) {
+        electedContactId = sessions[0].contact_id;
+      } else {
+        // No session exists? Prefer the one with short phone (Legacy Standard)
+        const shortMatch = contacts.find(c => c.phone === groupPhoneParsed);
+        electedContactId = shortMatch ? shortMatch.id : contacts[0].id;
+      }
+    }
+
+    if (electedContactId) {
+      chatContactId = electedContactId;
 
       // Prefix content with Sender Name for visibility in UI
       // ONLY if it's NOT from me. If I sent it, I know who I am.
