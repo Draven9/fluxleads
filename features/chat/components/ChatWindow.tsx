@@ -196,9 +196,27 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ session, onBack }) => {
                         if (!msg.media_url) return '';
                         if (msg.media_url.startsWith('http') || msg.media_url.startsWith('data:')) return msg.media_url;
 
-                        const isOgg = msg.media_url.startsWith('T2dnUw');
-                        const isPng = msg.media_url.startsWith('iVBORw0');
-                        // Simplification for brevity
+                        // Detect MIME type from Base64 signature
+                        if (msg.media_url.startsWith('/9j/')) return `data:image/jpeg;base64,${msg.media_url}`;
+                        if (msg.media_url.startsWith('iVBORw0')) return `data:image/png;base64,${msg.media_url}`;
+                        if (msg.media_url.startsWith('R0lGOD')) return `data:image/gif;base64,${msg.media_url}`;
+                        if (msg.media_url.startsWith('UklGR')) return `data:image/webp;base64,${msg.media_url}`;
+
+                        // Audio
+                        if (msg.media_url.startsWith('T2dnUw')) return `data:audio/ogg;base64,${msg.media_url}`;
+                        if (msg.media_url.startsWith('SUQz')) return `data:audio/mp3;base64,${msg.media_url}`; // ID3 tag
+
+                        // Documents
+                        if (msg.media_url.startsWith('JVBER')) return `data:application/pdf;base64,${msg.media_url}`;
+
+                        // Videos (MP4 usually starts with ....ftyp or similar, harder to detect by fixed start if header varies, but often:)
+                        // AAAA... ftypisom
+
+                        // Fallback logic using message_type if available
+                        if (msg.message_type === 'image') return `data:image/jpeg;base64,${msg.media_url}`; // Default assumption
+                        if (msg.message_type === 'audio') return `data:audio/ogg;base64,${msg.media_url}`;
+                        if (msg.message_type === 'video') return `data:video/mp4;base64,${msg.media_url}`;
+
                         return msg.media_url;
                     };
 
