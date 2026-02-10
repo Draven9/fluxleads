@@ -317,8 +317,18 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ session, onBack }) => {
                             <p className="text-xs font-semibold text-primary-600 dark:text-primary-400 mb-0.5">
                                 Respondendo a {replyingTo.direction === 'outbound' ? 'Você' : session.contact?.name || 'Cliente'}
                             </p>
-                            <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                                {replyingTo.content || (replyingTo.media_url ? '[Mídia]' : 'Mensagem')}
+                            <p className="text-xs text-slate-500 dark:text-slate-400 truncate flex items-center gap-1">
+                                {replyingTo.media_url && !replyingTo.content ? (
+                                    <>
+                                        {replyingTo.message_type === 'image' && '📷 Imagem'}
+                                        {replyingTo.message_type === 'video' && '🎥 Vídeo'}
+                                        {replyingTo.message_type === 'audio' && '🎵 Áudio'}
+                                        {replyingTo.message_type === 'document' && '📄 Documento'}
+                                        {!['image', 'video', 'audio', 'document'].includes(replyingTo.message_type || '') && '📎 Anexo'}
+                                    </>
+                                ) : (
+                                    replyingTo.content
+                                )}
                             </p>
                         </div>
                         <button

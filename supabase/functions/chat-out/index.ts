@@ -99,16 +99,24 @@ Deno.serve(async (req: Request) => {
         contactPhone = `${contactPhone}@g.us`;
     }
 
-    // Fetch quoted message external ID if replying
+    // Fetch quoted message details if replying
     let replyToExternalId = null;
+    let replyToContent = null;
+    let replyToParticipant = null;
+
     if (reply_to_message_id) {
         const { data: quotedMsg } = await supabase
             .from('messages')
-            .select('external_id')
+            .select('external_id, content, direction')
             .eq('id', reply_to_message_id)
             .single();
 
-        replyToExternalId = quotedMsg?.external_id;
+        if (quotedMsg) {
+            replyToExternalId = quotedMsg.external_id;
+            replyToContent = quotedMsg.content;
+            // If outbound, participant is ME (null/undefined in Evolution usually triggers standard behavior)
+            // If inbound, we might need the participant header but usually ID is enough.
+        }
     }
 
     const contactPayload = {
@@ -130,6 +138,7 @@ Deno.serve(async (req: Request) => {
             created_at: message.created_at,
             reply_to_message_id: reply_to_message_id,
             reply_to_message_external_id: replyToExternalId, // Send external ID for WhatsApp quoting
+            reply_to_message_content: replyToContent, // Context for N8n if needed
             mentions: mentions || [] // Pass mentions array to webhook
         }
     };

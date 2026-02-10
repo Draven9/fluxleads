@@ -304,6 +304,10 @@ Este é o workflow que você já tem configurado (com o Switch). Se precisar rec
             {
               "name": "audio",
               "value": "={{ $json.body.data.media_url }}"
+            },
+            {
+              "name": "quoted",
+              "value": "={{ $json.body.data.reply_to_message_id ? { key: { id: $json.body.data.reply_to_message_external_id } } : undefined }}"
             }
           ]
         },
@@ -349,6 +353,10 @@ Este é o workflow que você já tem configurado (com o Switch). Se precisar rec
             {
               "name": "caption",
               "value": "={{ $json.body.data.content }}"
+            },
+            {
+              "name": "quoted",
+              "value": "={{ $json.body.data.reply_to_message_id ? { key: { id: $json.body.data.reply_to_message_external_id } } : undefined }}"
             }
           ]
         },
