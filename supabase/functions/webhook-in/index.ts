@@ -214,13 +214,21 @@ Deno.serve(async (req) => {
     return json(400, { error: "JSON inválido" });
   }
 
-  const leadName = getContactName(payload);
+  let leadName = getContactName(payload);
   const leadEmail = payload.email?.trim()?.toLowerCase() || null;
   const leadPhone = normalizePhone(payload.phone || undefined);
   const externalEventId = payload.external_event_id?.trim() || null;
   const companyName = getCompanyName(payload);
   const dealTitleFromPayload = getDealTitle(payload);
   const dealValue = getDealValue(payload);
+
+  // Check early if message is fromMe to avoid using business profile name as contact name
+  const isFromMeEarly = (payload as any).from_me === true || (payload as any).fromMe === true || (payload as any).from_me === 'true';
+  if (isFromMeEarly && leadName) {
+    // For fromMe messages, pushName is the BUSINESS profile name, not the contact's name.
+    // We should NOT use it as the contact name. Use phone number instead.
+    leadName = null;
+  }
 
   // 1) Auditoria/dedupe (idempotente quando external_event_id existe)
   if (externalEventId) {

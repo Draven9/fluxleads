@@ -20,8 +20,12 @@ Deno.serve(async (req: Request) => {
     }
 
 
-    const { session_id, content, organization_id, media_url, message_type, reply_to_message_id, mentions, is_forwarded, forward_original_message_id } = await req.json();
-    const reqBody = { forward_original_message_id }; // Helper to keep scope for now
+    const { session_id, content, organization_id, media_url, message_type: rawMessageType, reply_to_message_id, mentions, is_forwarded, forward_original_message_id } = await req.json();
+
+    // Normalize WhatsApp message types: "imageMessage" -> "image", "videoMessage" -> "video", etc.
+    const message_type = rawMessageType
+        ? rawMessageType.replace(/Message$/i, '').toLowerCase()
+        : (media_url ? 'image' : 'text');
 
     if (!session_id || (!content && !media_url) || !organization_id) {
         return json(400, { error: "Missing required fields (session_id, organization_id, and either content or media_url)" });
@@ -56,7 +60,7 @@ Deno.serve(async (req: Request) => {
             direction: "outbound",
             content: content || "",
             media_url: media_url || null,
-            message_type: message_type || (media_url ? "image" : "text"),
+            message_type: message_type,
             status: "sent",
             reply_to_message_id: reply_to_message_id || null
         })
@@ -122,11 +126,11 @@ Deno.serve(async (req: Request) => {
 
     // Fetch forwarded message details if forwarding
     let forwardExternalId = null;
-    if (is_forwarded && reqBody.forward_original_message_id) {
+    if (is_forwarded && forward_original_message_id) {
         const { data: fwdMsg } = await supabase
             .from('messages')
             .select('external_id')
-            .eq('id', reqBody.forward_original_message_id)
+            .eq('id', forward_original_message_id)
             .single();
 
         forwardExternalId = fwdMsg?.external_id;
@@ -146,11 +150,10 @@ Deno.serve(async (req: Request) => {
             contact: contactPayload,
             content: content,
             media_url: media_url,
-            message_type: message_type || (media_url ? "image" : "text"),
+            message_type: message_type,
             provider_id: session.provider_id,
             created_at: message.created_at,
             reply_to_message_id: reply_to_message_id,
-            reply_to_message_external_id: replyToExternalId, // Send external ID for WhatsApp quoting
             reply_to_message_external_id: replyToExternalId, // Send external ID for WhatsApp quoting
             reply_to_message_content: replyToContent, // Context for N8n if needed
             mentions: mentions || [], // Pass mentions array to webhook
