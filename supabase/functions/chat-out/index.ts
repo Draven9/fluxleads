@@ -20,7 +20,8 @@ Deno.serve(async (req: Request) => {
     }
 
 
-    const { session_id, content, organization_id, media_url, message_type, reply_to_message_id, mentions } = await req.json();
+    const { session_id, content, organization_id, media_url, message_type, reply_to_message_id, mentions, is_forwarded, forward_original_message_id } = await req.json();
+    const reqBody = { forward_original_message_id }; // Helper to keep scope for now
 
     if (!session_id || (!content && !media_url) || !organization_id) {
         return json(400, { error: "Missing required fields (session_id, organization_id, and either content or media_url)" });
@@ -119,6 +120,18 @@ Deno.serve(async (req: Request) => {
         }
     }
 
+    // Fetch forwarded message details if forwarding
+    let forwardExternalId = null;
+    if (is_forwarded && reqBody.forward_original_message_id) {
+        const { data: fwdMsg } = await supabase
+            .from('messages')
+            .select('external_id')
+            .eq('id', reqBody.forward_original_message_id)
+            .single();
+
+        forwardExternalId = fwdMsg?.external_id;
+    }
+
     const contactPayload = {
         ...session.contact,
         phone: contactPhone
@@ -138,8 +151,11 @@ Deno.serve(async (req: Request) => {
             created_at: message.created_at,
             reply_to_message_id: reply_to_message_id,
             reply_to_message_external_id: replyToExternalId, // Send external ID for WhatsApp quoting
+            reply_to_message_external_id: replyToExternalId, // Send external ID for WhatsApp quoting
             reply_to_message_content: replyToContent, // Context for N8n if needed
-            mentions: mentions || [] // Pass mentions array to webhook
+            mentions: mentions || [], // Pass mentions array to webhook
+            is_forwarded: is_forwarded || false, // Pass forwarded flag
+            forward_message_external_id: forwardExternalId // Pass external ID for forwarding
         }
     };
 

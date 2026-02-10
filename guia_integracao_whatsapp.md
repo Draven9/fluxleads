@@ -203,6 +203,67 @@ Este é o workflow que você já tem configurado (com o Switch). Se precisar rec
     },
     {
       "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.body.data.forward_message_external_id }}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      },
+      "id": "switch-is-forward",
+      "name": "É Encaminhamento?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        220,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://prospeccao-evolution.gw3vnc.easypanel.host/message/forwardMessage/INSTANCIA",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "SUA_APIKEY_AQUI"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "={{ $json.body.data.contact.phone }}"
+            },
+            {
+              "name": "key",
+              "value": "={{ { id: $json.body.data.forward_message_external_id } }}"
+            },
+             {
+              "name": "contextInfo",
+              "value": "={{ { isForwarded: true } }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "send-forward",
+      "name": "Encaminhar Mensagem",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        500,
+        100
+      ]
+    },
+    {
+      "parameters": {
         "dataType": "string",
         "value1": "={{ $json.body.data.message_type }}",
         "rules": {
@@ -233,7 +294,7 @@ Este é o workflow que você já tem configurado (com o Switch). Se precisar rec
       "typeVersion": 1,
       "position": [
         280,
-        360
+        460
       ]
     },
     {
@@ -278,7 +339,7 @@ Este é o workflow que você já tem configurado (com o Switch). Se precisar rec
       "typeVersion": 4.1,
       "position": [
         580,
-        200
+        300
       ]
     },
     {
@@ -319,7 +380,7 @@ Este é o workflow que você já tem configurado (com o Switch). Se precisar rec
       "typeVersion": 4.1,
       "position": [
         580,
-        360
+        460
       ]
     },
     {
@@ -368,7 +429,7 @@ Este é o workflow que você já tem configurado (com o Switch). Se precisar rec
       "typeVersion": 4.1,
       "position": [
         580,
-        520
+        620
       ]
     },
     {
@@ -389,7 +450,7 @@ Este é o workflow que você já tem configurado (com o Switch). Se precisar rec
       "typeVersion": 1,
       "position": [
         280,
-        660
+        760
       ]
     },
     {
@@ -426,7 +487,7 @@ Este é o workflow que você já tem configurado (com o Switch). Se precisar rec
       "typeVersion": 4.1,
       "position": [
         580,
-        660
+        760
       ]
     }
   ],
@@ -446,7 +507,7 @@ Este é o workflow que você já tem configurado (com o Switch). Se precisar rec
       "main": [
         [
           {
-            "node": "Tipo de Mensagem?",
+            "node": "É Encaminhamento?",
             "type": "main",
             "index": 0
           }
@@ -454,6 +515,24 @@ Este é o workflow que você já tem configurado (com o Switch). Se precisar rec
         [
           {
             "node": "Filtra Etapa 'Agendado'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "É Encaminhamento?": {
+      "main": [
+        [
+          {
+            "node": "Encaminhar Mensagem",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Tipo de Mensagem?",
             "type": "main",
             "index": 0
           }

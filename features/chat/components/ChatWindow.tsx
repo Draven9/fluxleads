@@ -139,7 +139,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ session, onBack }) => {
                     session_id: targetSessionId,
                     content: forwardingMessage.content,
                     media_url: forwardingMessage.media_url,
-                    message_type: forwardingMessage.message_type
+                    message_type: forwardingMessage.message_type,
+                    is_forwarded: true,
+                    forward_original_message_id: forwardingMessage.id
                 }
             });
 
