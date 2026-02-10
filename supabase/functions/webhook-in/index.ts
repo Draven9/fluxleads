@@ -451,20 +451,59 @@ Deno.serve(async (req) => {
 
   // Helper functions for media fields
   function getMediaUrl(payload: any) {
-    return (
+    const url = (
       toNullableString(payload.media_url) ||
       toNullableString(payload.mediaUrl) ||
       null
     );
+    // If we have a URL/Base64, return it.
+    if (url) return url;
+
+    // Check for nested media in extendedTextMessage (Forwarded case)
+    // N8n might have flattened it to media_url already, but if not:
+    const quoted = payload.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+    if (quoted) {
+      return (
+        quoted.imageMessage?.url ||
+        quoted.videoMessage?.url ||
+        quoted.audioMessage?.url ||
+        quoted.documentMessage?.url ||
+        quoted.stickerMessage?.url ||
+        null
+      );
+    }
+    return null;
   }
 
   function getMessageType(payload: any) {
-    return (
+    let type = (
       toNullableString(payload.message_type) ||
       toNullableString(payload.messageType) ||
       toNullableString(payload.type) ||
       'text'
     );
+
+    // Normalize 'extendedTextMessage' to 'text' unless it has media
+    if (type === 'extendedTextMessage' || type === 'conversation') {
+      const media = getMediaUrl(payload);
+      if (media) {
+        // infer type from payload keys if possible, or default to image if we can't tell
+        // (Strictly speaking we should check which key existed, but for now relies on valid mediaUrl)
+        // If the mediaUrl came from imageMessage, it's an image.
+        // Simplified heuristic: if it has mediaUrl, treatment as 'image' is safer than 'text' for UI rendering
+        // but ideally we keep original type if it's mixed. 
+        // However, UI renders 'text' as text-only. 
+        // Let's try to detect specific type from payload if we can.
+        if (payload.media_url?.startsWith('data:image') || payload.message?.imageMessage || payload.message?.extendedTextMessage?.contextInfo?.quotedMessage?.imageMessage) return 'image';
+        if (payload.media_url?.startsWith('data:video') || payload.message?.videoMessage || payload.message?.extendedTextMessage?.contextInfo?.quotedMessage?.videoMessage) return 'video';
+        if (payload.media_url?.startsWith('data:audio') || payload.message?.audioMessage || payload.message?.extendedTextMessage?.contextInfo?.quotedMessage?.audioMessage) return 'audio';
+
+        return 'image'; // Fallback for forwarded media visual
+      }
+      return 'text';
+    }
+
+    return type;
   }
 
   // 4) Integração com módulo de Chat (Mensagens)

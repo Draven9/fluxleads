@@ -74,7 +74,7 @@ Copie o JSON abaixo e cole no n8n:
             },
             {
               "name": "media_url",
-              "value": "={{ $json.body.data.message.base64 || $json.body.data.message.imageMessage?.url || $json.body.data.message.audioMessage?.url || $json.body.data.message.videoMessage?.url || $json.body.data.message.documentMessage?.url }}"
+              "value": "={{ $json.body.data.message.base64 || $json.body.data.message.imageMessage?.url || $json.body.data.message.audioMessage?.url || $json.body.data.message.videoMessage?.url || $json.body.data.message.documentMessage?.url || $json.body.data.message.extendedTextMessage?.contextInfo?.quotedMessage?.imageMessage?.url || $json.body.data.message.extendedTextMessage?.contextInfo?.quotedMessage?.videoMessage?.url || $json.body.data.message?.imageMessage?.jpegThumbnail }}"
             },
             {
               "name": "message_type",
