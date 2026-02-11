@@ -1,37 +1,44 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { Message } from '../types';
+
+const MESSAGES_PER_PAGE = 50;
 
 export function useChatMessages(sessionId: string | null) {
     const { organizationId, profile } = useAuth();
     const [messages, setMessages] = useState<Message[]>([]);
     const [loading, setLoading] = useState(false);
+    const [hasMore, setHasMore] = useState(true);
+    const [page, setPage] = useState(0);
 
-    // Fetch Messages
+    // Fetch Messages (Initial Load)
     useEffect(() => {
         if (!sessionId || !organizationId) return;
 
-        const fetchMessages = async () => {
+        const fetchInitialMessages = async () => {
             setLoading(true);
             const { data, error } = await supabase
                 .from('messages')
                 .select('*, reply_to_message_id')
                 .eq('session_id', sessionId)
-                .order('created_at', { ascending: true });
+                .order('created_at', { ascending: false }) // Get newest first
+                .range(0, MESSAGES_PER_PAGE - 1);
 
             if (error) {
                 console.error('Error fetching messages:', error);
             } else {
-                setMessages(data as Message[]);
+                // Reverse to display chronologically (oldest at top)
+                setMessages((data as Message[]).reverse());
+                setHasMore(data.length === MESSAGES_PER_PAGE);
+                setPage(1);
             }
             setLoading(false);
         };
 
-        fetchMessages();
+        fetchInitialMessages();
 
-        // Mark as read (Clear unread count)
-        // We defer this slightly or call it on mount of chat window
+        // Mark as read
         supabase
             .from('chat_sessions')
             .update({ unread_count: 0 })
@@ -50,11 +57,13 @@ export function useChatMessages(sessionId: string | null) {
                     filter: `session_id=eq.${sessionId}`,
                 },
                 (payload) => {
-                    setMessages((prev) => [...prev, payload.new as Message]);
-
-                    // If message is inbound, we should technically mark as read if user is looking at it
-                    // But strict read receipts require more complex logic. 
-                    // For now, we assume if window is open, it's read.
+                    // Start Optimistic UI handled by sendMessage, but for incoming:
+                    const newMsg = payload.new as Message;
+                    setMessages((prev) => {
+                        // Avoid duplicates if optimistic update already added it
+                        if (prev.some(m => m.id === newMsg.id)) return prev;
+                        return [...prev, newMsg];
+                    });
                 }
             )
             .subscribe();
@@ -63,6 +72,35 @@ export function useChatMessages(sessionId: string | null) {
             supabase.removeChannel(channel);
         };
     }, [sessionId, organizationId]);
+
+    const loadMore = useCallback(async () => {
+        if (!sessionId || !hasMore || loading) return;
+
+        setLoading(true);
+        const from = page * MESSAGES_PER_PAGE;
+        const to = from + MESSAGES_PER_PAGE - 1;
+
+        const { data, error } = await supabase
+            .from('messages')
+            .select('*, reply_to_message_id')
+            .eq('session_id', sessionId)
+            .order('created_at', { ascending: false })
+            .range(from, to);
+
+        if (error) {
+            console.error('Error loading more messages:', error);
+        } else {
+            if (data.length > 0) {
+                const olderMessages = (data as Message[]).reverse();
+                setMessages(prev => [...olderMessages, ...prev]);
+                setPage(prev => prev + 1);
+                setHasMore(data.length === MESSAGES_PER_PAGE);
+            } else {
+                setHasMore(false);
+            }
+        }
+        setLoading(false);
+    }, [sessionId, hasMore, loading, page]);
 
     const sendMessage = useCallback(async (content: string, media?: { file: Blob | File, type: 'audio' | 'image' | 'document' | 'video' }, replyToId?: string, mentions?: string[]) => {
         if (!sessionId || !organizationId) return;
@@ -99,7 +137,7 @@ export function useChatMessages(sessionId: string | null) {
 
         // Format sender name for text messages
         let finalContent = content;
-        if (content && !mediaUrl) { // Only add signature to text messages for now, or both? Let's keep it simple.
+        if (content && !mediaUrl) {
             let senderName = 'Atendente';
             if (profile) {
                 senderName = profile.first_name ||
@@ -156,11 +194,8 @@ export function useChatMessages(sessionId: string | null) {
 
         if (error) {
             console.error('Error deleting message:', error);
-            // Revert on error (fetching again would be safer but simple revert is hard without history)
-            // For now, let's just log. Realtime should handle sync if it fails elsewhere?
-            // Actually, if it fails, we should probably reload or show toast.
         }
     }, []);
 
-    return { messages, loading, sendMessage, deleteMessage };
+    return { messages, loading, sendMessage, deleteMessage, loadMore, hasMore };
 }

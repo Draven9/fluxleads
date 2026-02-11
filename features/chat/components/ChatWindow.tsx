@@ -1,7 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
-import { ArrowLeft, Send, User, Paperclip, Mic, X, Trash2, Reply } from 'lucide-react';
+import { ArrowLeft, Send, User, Paperclip, Mic, X, Trash2, Reply, Loader2 } from 'lucide-react';
 import { ChatSession, Message } from '../types';
 import { useChatMessages } from '../hooks/useChatMessages';
 import { useGroupParticipants } from '../hooks/useGroupParticipants';
@@ -17,7 +16,7 @@ interface ChatWindowProps {
 }
 
 export const ChatWindow: React.FC<ChatWindowProps> = ({ session, onBack }) => {
-    const { messages, loading, sendMessage, deleteMessage } = useChatMessages(session.id);
+    const { messages, loading, sendMessage, deleteMessage, loadMore, hasMore } = useChatMessages(session.id);
     const { profile, organizationId } = useAuth();
     const [newMessage, setNewMessage] = useState('');
     const [isRecording, setIsRecording] = useState(false);
@@ -48,16 +47,55 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ session, onBack }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLTextAreaElement>(null);
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const prevScrollHeightRef = useRef<number>(0);
+    const lastMessageIdRef = useRef<string | null>(null);
 
     const isAdmin = profile?.role === 'admin' || profile?.role === 'owner';
 
     const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        messagesEndRef.current?.scrollIntoView({ behavior: 'auto' }); // changed to auto to match instant feel, smooth can be dizzying on load
     };
 
+    // Smart Scroll Logic
     useEffect(() => {
-        scrollToBottom();
-    }, [messages, replyingTo]); // Scroll when replying too
+        if (messages.length === 0) return;
+
+        const lastMsg = messages[messages.length - 1];
+        const isNewMessage = lastMsg?.id !== lastMessageIdRef.current;
+
+        // Only scroll to bottom if it's a NEW message at the end (sent or received)
+        // OR if it's the very first load.
+        if (isNewMessage || lastMessageIdRef.current === null) {
+            scrollToBottom();
+        } else {
+            // It was a "prepend" (load more). Maintain scroll position.
+            if (scrollContainerRef.current && prevScrollHeightRef.current) {
+                const newScrollHeight = scrollContainerRef.current.scrollHeight;
+                const diff = newScrollHeight - prevScrollHeightRef.current;
+                scrollContainerRef.current.scrollTop = diff;
+                prevScrollHeightRef.current = 0; // Reset
+            }
+        }
+
+        lastMessageIdRef.current = lastMsg?.id || null;
+    }, [messages]);
+
+    useEffect(() => {
+        if (replyingTo) scrollToBottom();
+    }, [replyingTo]);
+
+    const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+        const scrollTop = e.currentTarget.scrollTop;
+
+        if (scrollTop === 0 && hasMore && !loading) {
+            // User hit top, load more
+            if (scrollContainerRef.current) {
+                prevScrollHeightRef.current = scrollContainerRef.current.scrollHeight; // Save height BEFORE load
+            }
+            loadMore?.();
+        }
+    };
 
     const handleSend = async () => {
         if (!newMessage.trim() && !attachment) return;
@@ -181,8 +219,17 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ session, onBack }) => {
             </div>
 
             {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50 dark:bg-black/20 scroll-smooth">
-                {loading && messages.length === 0 && (
+            <div
+                ref={scrollContainerRef}
+                onScroll={handleScroll}
+                className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50 dark:bg-black/20"
+            >
+                {loading && hasMore && (
+                    <div className="flex justify-center p-2">
+                        <Loader2 className="w-5 h-5 text-slate-400 animate-spin" />
+                    </div>
+                )}
+                {loading && !hasMore && messages.length === 0 && (
                     <div className="flex justify-center p-4">
                         <span className="text-slate-400 text-sm">Carregando mensagens...</span>
                     </div>
