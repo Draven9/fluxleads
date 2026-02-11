@@ -20,7 +20,7 @@ Deno.serve(async (req: Request) => {
     }
 
 
-    const { session_id, content, organization_id, media_url, message_type: rawMessageType, reply_to_message_id, mentions, is_forwarded, forward_original_message_id } = await req.json();
+    const { session_id, content, organization_id, media_url, media_name, message_type: rawMessageType, reply_to_message_id, mentions, is_forwarded, forward_original_message_id } = await req.json();
 
     // Normalize WhatsApp message types: "imageMessage" -> "image", "videoMessage" -> "video", etc.
     const message_type = rawMessageType
@@ -158,7 +158,8 @@ Deno.serve(async (req: Request) => {
             reply_to_message_content: replyToContent, // Context for N8n if needed
             mentions: mentions || [], // Pass mentions array to webhook
             is_forwarded: is_forwarded || false, // Pass forwarded flag
-            forward_message_external_id: forwardExternalId // Pass external ID for forwarding
+            forward_message_external_id: forwardExternalId, // Pass external ID for forwarding
+            fileName: media_name // Pass original filename for documents
         }
     };
 

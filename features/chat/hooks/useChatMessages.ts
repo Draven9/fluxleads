@@ -113,7 +113,11 @@ export function useChatMessages(sessionId: string | null) {
         if (media) {
             const toastId = toast.loading('Enviando mídia...');
             try {
-                const fileExt = media.type === 'image' ? 'jpg' : media.type === 'audio' ? 'webm' : 'bin';
+                // Get extension from original file name if possible, otherwise fallback
+                const originalName = (media.file as File).name;
+                const fileExt = originalName ? originalName.split('.').pop() : (media.type === 'image' ? 'jpg' : media.type === 'audio' ? 'webm' : 'bin');
+
+                // Construct a path that keeps the extension
                 const fileName = `${organizationId}/${sessionId}/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
 
                 const { data, error: uploadError } = await supabase.storage
@@ -175,6 +179,7 @@ export function useChatMessages(sessionId: string | null) {
                 session_id: sessionId,
                 content: finalContent,
                 media_url: mediaUrl,
+                media_name: (media?.file as File).name, // Pass original filename
                 message_type: messageType,
                 reply_to_message_id: replyToId,
                 mentions: mentions
