@@ -1,5 +1,6 @@
 'use client';
 
+import React, { useState, useRef, useEffect } from 'react';
 import { ArrowLeft, Send, User, Paperclip, Mic, X, Trash2, Reply, Loader2 } from 'lucide-react';
 import { ChatSession, Message } from '../types';
 import { useChatMessages } from '../hooks/useChatMessages';
