@@ -60,7 +60,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             setAttachment(null);
             setMentionQuery(null);
         } catch (error) {
-            console.error('Error sending message:', error);
+            // console.error('Error sending message:', error);
             // Input is NOT cleared, so user can try again
         }
     };

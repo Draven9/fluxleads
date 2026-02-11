@@ -27,7 +27,6 @@ export function useChatMessages(sessionId: string | null) {
                 .range(0, MESSAGES_PER_PAGE - 1);
 
             if (error) {
-                console.error('Error fetching messages:', error);
                 toast.error('Erro ao carregar mensagens.');
             } else {
                 // Reverse to display chronologically (oldest at top)
@@ -90,7 +89,6 @@ export function useChatMessages(sessionId: string | null) {
             .range(from, to);
 
         if (error) {
-            console.error('Error loading more messages:', error);
             toast.error('Erro ao carregar mensagens antigas.');
         } else {
             if (data.length > 0) {
