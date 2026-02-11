@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Search, User, Trash2 } from 'lucide-react';
+import Image from 'next/image';
 import { ChatSession } from '../types';
 import { useChatSessions } from '../hooks/useChatSessions';
 import { GroupImporter } from './GroupImporter';
@@ -76,11 +77,15 @@ export const ChatSessionList: React.FC<ChatSessionListProps> = ({ selectedSessio
                                         {/* Avatar */}
                                         <div className="relative">
                                             {session.contact?.avatar ? (
-                                                <img
-                                                    src={session.contact.avatar}
-                                                    alt=""
-                                                    className="w-12 h-12 rounded-full object-cover bg-slate-200"
-                                                />
+                                                <div className="relative w-12 h-12 rounded-full overflow-hidden bg-slate-200">
+                                                    <Image
+                                                        src={session.contact.avatar}
+                                                        alt=""
+                                                        fill
+                                                        className="object-cover"
+                                                        sizes="48px"
+                                                    />
+                                                </div>
                                             ) : (
                                                 <div className="w-12 h-12 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400">
                                                     <User className="w-6 h-6" />

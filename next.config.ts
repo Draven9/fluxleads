@@ -4,6 +4,22 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: process.cwd(),
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**.supabase.co',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.supabase.in',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.whatsapp.net', // WhatsApp profile pictures
+      },
+    ],
+  },
   async headers() {
     return [
       {

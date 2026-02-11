@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 import { Message, ChatSession } from '../types';
 import { MessageMenu } from './MessageMenu';
 import { X } from 'lucide-react';
@@ -92,7 +93,15 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
                 {message.media_url && (
                     <div className="mb-2">
                         {(message.message_type === 'image' || message.message_type === 'imageMessage') && (
-                            <img src={mediaSrc} alt="Imagem" className="rounded-lg max-h-64 object-cover cursor-pointer hover:opacity-90 transition-opacity" onClick={() => window.open(mediaSrc, '_blank')} />
+                            <Image
+                                src={mediaSrc}
+                                alt="Imagem"
+                                width={300}
+                                height={200}
+                                className="rounded-lg max-h-64 w-auto object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                                onClick={() => window.open(mediaSrc, '_blank')}
+                                unoptimized={mediaSrc.startsWith('data:')} // Data URLs are already optimized-ish and next/image hates them sometimes
+                            />
                         )}
                         {(message.message_type === 'audio' || message.message_type === 'audioMessage') && (
                             <audio controls className="w-full min-w-[200px]" src={mediaSrc}>Seu navegador não suporta áudio.</audio>

@@ -1,5 +1,6 @@
 import React from 'react';
 import { ArrowLeft, User } from 'lucide-react';
+import Image from 'next/image';
 import { ChatSession } from '../types';
 
 interface ChatHeaderProps {
@@ -17,7 +18,15 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({ session, onBack }) => {
             {/* Contact Info */}
             <div className="relative">
                 {session.contact?.avatar ? (
-                    <img src={session.contact.avatar} alt="" className="w-10 h-10 rounded-full object-cover" />
+                    <div className="relative w-10 h-10 rounded-full overflow-hidden">
+                        <Image
+                            src={session.contact.avatar}
+                            alt={session.contact.name || "Contact avatar"}
+                            fill
+                            className="object-cover"
+                            sizes="40px"
+                        />
+                    </div>
                 ) : (
                     <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400">
                         <User className="w-5 h-5" />
