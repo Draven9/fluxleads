@@ -114,17 +114,29 @@ export function useChatMessages(sessionId: string | null) {
             const toastId = toast.loading('Enviando mídia...');
             try {
                 // Get extension from original file name if possible, otherwise fallback
-                const originalName = (media.file as File).name;
+                const fileObj = media.file as File;
+                const originalName = fileObj.name;
                 const fileExt = originalName ? originalName.split('.').pop() : (media.type === 'image' ? 'jpg' : media.type === 'audio' ? 'webm' : 'bin');
 
-                // Construct a path that keeps the extension
-                const fileName = `${organizationId}/${sessionId}/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+                // Determine MIME type
+                const mimeType = fileObj.type || (media.type === 'image' ? 'image/jpeg' : media.type === 'audio' ? 'audio/webm' : 'application/octet-stream');
+
+                // Sanitize filename to be URL-safe but readable
+                // Remove special chars, spaces to underscores, keep alphanumeric and dots/hyphens
+                const safeName = originalName
+                    ? originalName.replace(/[^a-zA-Z0-9._-]/g, '_')
+                    : `file.${fileExt}`;
+
+                // Construct a path that includes the sanitized original name
+                // e.g., organization/session/timestamp_My_Contract.pdf
+                const fileName = `${organizationId}/${sessionId}/${Date.now()}_${safeName}`;
 
                 const { data, error: uploadError } = await supabase.storage
                     .from('chat-media')
                     .upload(fileName, media.file, {
                         cacheControl: '3600',
-                        upsert: false
+                        upsert: false,
+                        contentType: mimeType // Explicitly set content type
                     });
 
                 if (uploadError) throw uploadError;
