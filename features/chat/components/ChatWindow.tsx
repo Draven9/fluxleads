@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import { ChatSession, Message } from '../types';
 import { useChatMessages } from '../hooks/useChatMessages';
 import { useGroupParticipants } from '../hooks/useGroupParticipants';
@@ -102,12 +103,16 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ session, onBack }) => {
             }
         } catch (error) {
             console.error('Failed to send', error);
+            throw error;
         }
     };
+
+
 
     const handleForwardToSession = async (targetSessionId: string) => {
         if (!forwardingMessage || !organizationId) return;
 
+        const toastId = toast.loading('Encaminhando mensagem...');
         try {
             const { error } = await supabase.functions.invoke('chat-out', {
                 body: {
@@ -123,10 +128,10 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ session, onBack }) => {
 
             if (error) throw error;
             setForwardingMessage(null);
-            alert('Mensagem encaminhada com sucesso!');
+            toast.success('Mensagem encaminhada!', { id: toastId });
         } catch (error) {
             console.error('Error forwarding:', error);
-            alert('Erro ao encaminhar mensagem.');
+            toast.error('Erro ao encaminhar mensagem.', { id: toastId });
         }
     };
 

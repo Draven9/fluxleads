@@ -53,11 +53,16 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             .map(m => m.jid);
         const uniqueMentions = [...new Set(activeMentions)];
 
-        await onSend(newMessage, attachment, uniqueMentions.length > 0 ? uniqueMentions : undefined);
+        try {
+            await onSend(newMessage, attachment, uniqueMentions.length > 0 ? uniqueMentions : undefined);
 
-        setNewMessage('');
-        setAttachment(null);
-        setMentionQuery(null);
+            setNewMessage('');
+            setAttachment(null);
+            setMentionQuery(null);
+        } catch (error) {
+            console.error('Error sending message:', error);
+            // Input is NOT cleared, so user can try again
+        }
     };
 
     const handleAudioRecorded = async (audioBlob: Blob) => {

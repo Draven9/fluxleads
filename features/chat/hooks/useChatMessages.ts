@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { Message } from '../types';
+import { toast } from 'react-hot-toast';
 
 const MESSAGES_PER_PAGE = 50;
 
@@ -27,6 +28,7 @@ export function useChatMessages(sessionId: string | null) {
 
             if (error) {
                 console.error('Error fetching messages:', error);
+                toast.error('Erro ao carregar mensagens.');
             } else {
                 // Reverse to display chronologically (oldest at top)
                 setMessages((data as Message[]).reverse());
@@ -89,6 +91,7 @@ export function useChatMessages(sessionId: string | null) {
 
         if (error) {
             console.error('Error loading more messages:', error);
+            toast.error('Erro ao carregar mensagens antigas.');
         } else {
             if (data.length > 0) {
                 const olderMessages = (data as Message[]).reverse();
@@ -110,6 +113,7 @@ export function useChatMessages(sessionId: string | null) {
 
         // 1. Upload Media if present
         if (media) {
+            const toastId = toast.loading('Enviando mídia...');
             try {
                 const fileExt = media.type === 'image' ? 'jpg' : media.type === 'audio' ? 'webm' : 'bin';
                 const fileName = `${organizationId}/${sessionId}/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
@@ -129,8 +133,10 @@ export function useChatMessages(sessionId: string | null) {
 
                 mediaUrl = publicUrl;
                 messageType = media.type;
+                toast.dismiss(toastId);
             } catch (error) {
                 console.error('Error uploading media:', error);
+                toast.error('Erro ao enviar mídia.', { id: toastId });
                 throw new Error('Failed to upload media');
             }
         }
@@ -179,12 +185,17 @@ export function useChatMessages(sessionId: string | null) {
 
         if (error) {
             console.error('Error sending message:', error);
+            toast.error('Erro ao enviar mensagem.');
+            // Remove optimistic message on error? Or mark as failed?
+            // Ideally mark as failed, but for now let's keep it simple.
+            setMessages(prev => prev.filter(m => m.id !== tempId));
             throw error;
         }
     }, [sessionId, organizationId, profile]);
 
     const deleteMessage = useCallback(async (messageId: string) => {
         // Optimistic Update
+        const previousMessages = [...messages];
         setMessages((prev) => prev.filter((msg) => msg.id !== messageId));
 
         const { error } = await supabase
@@ -194,8 +205,12 @@ export function useChatMessages(sessionId: string | null) {
 
         if (error) {
             console.error('Error deleting message:', error);
+            toast.error('Erro ao apagar mensagem.');
+            setMessages(previousMessages); // Rollback
+        } else {
+            toast.success('Mensagem apagada.');
         }
-    }, []);
+    }, [messages]);
 
     return { messages, loading, sendMessage, deleteMessage, loadMore, hasMore };
 }
