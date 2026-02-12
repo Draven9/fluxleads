@@ -38,3 +38,6 @@ supabase/.branches
 
 # References (Downloaded repos)
 /references
+
+# Agent tools
+.agent/
