@@ -40,4 +40,8 @@ supabase/.branches
 /references
 
 # Agent tools
-.agent/
+# Agent tools
+.agent/*
+!.agent/tools/
+.agent/tools/*
+!.agent/tools/n8n-mcp-client/

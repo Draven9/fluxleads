@@ -1,0 +1,16 @@
+{
+    "name": "n8n-mcp-client",
+    "version": "1.0.0",
+    "description": "Lightweight MCP server to connect to n8n API",
+    "main": "index.js",
+    "type": "module",
+    "scripts": {
+        "start": "node index.js"
+    },
+    "dependencies": {
+        "@modelcontextprotocol/sdk": "^1.0.1",
+        "axios": "^1.6.0",
+        "dotenv": "^16.4.0",
+        "zod": "^3.22.0"
+    }
+}
