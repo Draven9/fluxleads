@@ -192,6 +192,7 @@ export function useChatMessages(sessionId: string | null) {
                 content: finalContent,
                 media_url: mediaUrl,
                 media_name: (media?.file as File).name, // Pass original filename
+                media_mimetype: media?.file?.type || (messageType === 'image' ? 'image/jpeg' : messageType === 'audio' ? 'audio/webm' : 'application/octet-stream'),
                 message_type: messageType,
                 reply_to_message_id: replyToId,
                 mentions: mentions

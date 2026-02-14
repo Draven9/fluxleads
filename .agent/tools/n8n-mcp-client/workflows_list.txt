@@ -1,0 +1,10 @@
+Found 9 workflows:
+- [hBTPXz2zcuMKRvWd84vRb] Fluxo RAG - COMPLETO (Active: false)
+- [Ju6BkUM9H6wbKOB_2jDi0] 🤖[EA] OutboundIA - Gerador de Oportunidades (Active: true)
+- [hT28R2ykPvYDeyQKX15Uo] Agentes Minerador + BDR + SDR (Active: false)
+- [3LZLdfmHmP4xb8tOPcnuJ] Flux Leads 2 (Active: true)
+- [4kMV3Cx_63lMN87pMipyi] Flux Lead (Active: false)
+- [MOMOePv2yWlvnk6Zb8LV8] Prospecção (Active: false)
+- [qTdcLVKw-wLhuj_H_QgZj] OFERTAS DO DIA MERCADO LIVRE MULTIGRUPOS (Active: false)
+- [NFf_7Bwszb0M-SY9gF3D7] Agentes Minerador + BDR + SDR *** (Active: true)
+- [cBe_yJDMZ0_C-DiiOF1Fj] Receber Whatsapp Flux Leads (Active: true)
