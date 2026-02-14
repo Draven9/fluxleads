@@ -81,7 +81,35 @@ Deno.serve(async (req) => {
         if (action === 'fetchParticipants') {
             if (!groupJid) throw new Error('Missing groupJid for fetchParticipants');
 
-            // Evolution API endpoint for participants
+            // Try to get rich group info first (includes participant names)
+            // Fallback to basic participants endpoint if that fails
+            try {
+                const infoUrl = `${apiUrl}/group/findGroupInfos/${instanceName}?groupJid=${groupJid}`;
+                console.log(`Fetching group info from: ${infoUrl}`);
+
+                const infoResponse = await fetch(infoUrl, {
+                    headers: { 'apikey': apiKey, 'Content-Type': 'application/json' }
+                });
+
+                if (infoResponse.ok) {
+                    const groupInfo = await infoResponse.json();
+                    // findGroupInfos returns participants with names (pushName/name)
+                    // Structure: { id, subject, participants: [{ id, admin, name? }] }
+                    if (groupInfo?.participants || (Array.isArray(groupInfo) && groupInfo[0]?.participants)) {
+                        const info = Array.isArray(groupInfo) ? groupInfo[0] : groupInfo;
+                        return new Response(JSON.stringify({
+                            participants: info.participants || [],
+                            groupName: info.subject || info.name || null,
+                        }), {
+                            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+                        });
+                    }
+                }
+            } catch (e) {
+                console.log('findGroupInfos failed, falling back to participants endpoint:', e);
+            }
+
+            // Fallback: basic participants endpoint (JIDs only)
             const url = `${apiUrl}/group/participants/${instanceName}?groupJid=${groupJid}`;
             console.log(`Fetching participants from: ${url}`);
 
@@ -91,15 +119,10 @@ Deno.serve(async (req) => {
 
             if (!response.ok) {
                 const errText = await response.text();
-                // If specific 404/400, handle gracefully? For now throw.
                 throw new Error(`Erro na API Evolution: ${errText}`);
             }
 
             const data = await response.json();
-            // Data structure usually contains 'participants' array inside, or is the array itself.
-            // Evolution v2: returns { participants: [...] } or just array depending on version.
-            // Let's return the raw data and handle formatting in frontend/lib.
-
             return new Response(JSON.stringify(data), {
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' }
             });
