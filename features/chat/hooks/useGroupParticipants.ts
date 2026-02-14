@@ -12,18 +12,23 @@ export function useGroupParticipants(groupJid: string | undefined, isGroup: bool
     const [fetched, setFetched] = useState(false);
 
     const fetchParticipants = useCallback(async () => {
-        if (!groupJid || !isGroup || fetched || loading) return;
+        if (!groupJid || !isGroup || fetched || loading) {
+            console.log('[Mentions] Skip fetch:', { groupJid, isGroup, fetched, loading });
+            return;
+        }
 
+        console.log('[Mentions] Fetching participants for:', groupJid);
         setLoading(true);
         const { data, error } = await whatsappService.fetchParticipants(groupJid);
 
         if (!error && data) {
+            console.log('[Mentions] Participants loaded:', data.length, data);
             // Map Evolution API format to simple Participant interface
             // Evolution usually returns { id: '...', admin: '...' }
             setParticipants(data);
             setFetched(true);
         } else {
-            console.error('Error fetching participants:', error);
+            console.error('[Mentions] Error fetching participants:', error);
         }
         setLoading(false);
     }, [groupJid, isGroup, fetched, loading]);

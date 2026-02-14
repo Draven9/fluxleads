@@ -26,7 +26,11 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ session, onBack }) => {
 
     // Group Mentions State
     const isGroup = session.contact?.source === 'whatsapp_group';
-    const { participants, fetchParticipants } = useGroupParticipants(session.provider_id, isGroup);
+    // Construct group JID from contact phone (provider_id may not exist in DB)
+    const groupJid = isGroup && session.contact?.phone
+        ? (session.contact.phone.includes('@') ? session.contact.phone : `${session.contact.phone}@g.us`)
+        : session.provider_id;
+    const { participants, fetchParticipants } = useGroupParticipants(groupJid, isGroup);
 
     // Fetch participants on load if group
     useEffect(() => {
