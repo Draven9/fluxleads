@@ -108,6 +108,7 @@ export function useChatMessages(sessionId: string | null) {
 
         let mediaUrl: string | null = null;
         let messageType = 'text';
+        let mediaName: string | undefined = undefined;
 
         // 1. Upload Media if present
         if (media) {
@@ -116,10 +117,17 @@ export function useChatMessages(sessionId: string | null) {
                 // Get extension from original file name if possible, otherwise fallback
                 const fileObj = media.file as File;
                 const originalName = fileObj.name;
+                mediaName = originalName; // Capture original name for display
+
                 const fileExt = originalName ? originalName.split('.').pop() : (media.type === 'image' ? 'jpg' : media.type === 'audio' ? 'webm' : 'bin');
 
                 // Determine MIME type
                 const mimeType = fileObj.type || (media.type === 'image' ? 'image/jpeg' : media.type === 'audio' ? 'audio/webm' : 'application/octet-stream');
+
+                // If no name found (e.g. Blob), generate one based on type
+                if (!mediaName) {
+                    mediaName = `file.${fileExt}`;
+                }
 
                 // Sanitize filename to be URL-safe but readable
                 // Remove special chars, spaces to underscores, keep alphanumeric and dots/hyphens
@@ -191,7 +199,7 @@ export function useChatMessages(sessionId: string | null) {
                 session_id: sessionId,
                 content: finalContent,
                 media_url: mediaUrl,
-                media_name: (media?.file as File).name, // Pass original filename
+                media_name: mediaName, // Pass captured original filename
                 media_mimetype: media?.file?.type || (messageType === 'image' ? 'image/jpeg' : messageType === 'audio' ? 'audio/webm' : 'application/octet-stream'),
                 message_type: messageType,
                 reply_to_message_id: replyToId,
