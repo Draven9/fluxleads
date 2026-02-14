@@ -52,6 +52,25 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
 
     const mediaSrc = getMediaSrc(message);
 
+    const getFileName = (url: string) => {
+        try {
+            const decodedUrl = decodeURIComponent(url);
+            const parts = decodedUrl.split('/');
+            const fullName = parts[parts.length - 1];
+
+            // Pattern: 13 digits timestamp + underscore
+            // e.g. 1771095420206_filename.pdf
+            const timestampRegex = /^\d{13}_/;
+            if (timestampRegex.test(fullName)) {
+                return fullName.replace(timestampRegex, '');
+            }
+
+            return fullName;
+        } catch (e) {
+            return 'Documento';
+        }
+    };
+
     const handleDelete = async () => {
         if (window.confirm('Tem certeza que deseja apagar esta mensagem? Esta ação não pode ser desfeita.')) {
             onDelete(message.id);
@@ -111,7 +130,9 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
                         )}
                         {(message.message_type === 'document' || message.message_type === 'documentMessage') && (
                             <a href={mediaSrc} target="_blank" rel="noopener noreferrer" className={`flex items-center space-x-2 p-2 rounded-lg ${isOutbound ? 'bg-primary-700/50' : 'bg-slate-100 dark:bg-slate-700'}`}>
-                                <span className="underline truncate max-w-[200px]">Abrir Documento</span>
+                                <span className="underline truncate max-w-[200px]" title={getFileName(mediaSrc)}>
+                                    {getFileName(mediaSrc)}
+                                </span>
                             </a>
                         )}
                     </div>
