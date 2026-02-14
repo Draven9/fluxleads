@@ -51,16 +51,17 @@ export function useGroupParticipants(groupJid: string | undefined, isGroup: bool
             // The proxy may return:
             // 1. { participants: [...], groupName } (from findGroupInfos - with names)
             // 2. Raw array of { id, admin } (from basic participants endpoint)
+            const response = rawData as any;
             let rawParticipants: any[] = [];
 
-            if (rawData.participants && Array.isArray(rawData.participants)) {
+            if (response.participants && Array.isArray(response.participants)) {
                 // Rich format from findGroupInfos
-                rawParticipants = rawData.participants;
-            } else if (Array.isArray(rawData)) {
-                rawParticipants = rawData;
+                rawParticipants = response.participants;
+            } else if (Array.isArray(response)) {
+                rawParticipants = response;
             } else {
                 // Try to extract participants from any nested structure
-                rawParticipants = rawData.participants || rawData.data || [];
+                rawParticipants = response.participants || response.data || [];
             }
 
             // Build enriched list
