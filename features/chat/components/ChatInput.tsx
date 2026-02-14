@@ -4,6 +4,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { Send, Paperclip, Mic, X } from 'lucide-react';
 import { AudioRecorder } from './AudioRecorder';
 import { Message, ChatSession } from '../types';
+import type { Participant } from '../hooks/useGroupParticipants';
 
 interface ChatInputProps {
     onSend: (content: string, attachment?: File | null, mentions?: string[]) => Promise<void>;
@@ -11,7 +12,7 @@ interface ChatInputProps {
     onCancelReply: () => void;
     session: ChatSession;
     isGroup: boolean;
-    participants: { id: string, admin?: string | null }[];
+    participants: Participant[];
 }
 
 export const ChatInput: React.FC<ChatInputProps> = ({
@@ -107,42 +108,84 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             )}
 
             {/* Mention Popover */}
-            {mentionQuery !== null && participants.length > 0 && (
-                <div className="mx-4 mb-2 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 max-h-48 overflow-y-auto z-50 animate-fade-in absolute bottom-16 w-[90%] md:w-[60%] lg:w-[40%]">
-                    {participants
-                        .filter(p => !mentionQuery || (p.id || '').toLowerCase().includes(mentionQuery.toLowerCase()) || (p.admin || '').includes(mentionQuery))
-                        .map((participant) => {
-                            const displayName = participant.id.split('@')[0];
+            {mentionQuery !== null && participants.length > 0 && (() => {
+                const query = (mentionQuery || '').toLowerCase();
+                const filtered = participants.filter(p =>
+                    !query ||
+                    (p.name || '').toLowerCase().includes(query) ||
+                    (p.phone || '').includes(query) ||
+                    (p.id || '').toLowerCase().includes(query)
+                );
+                if (filtered.length === 0) return null;
+
+                // Color palette for avatar initials
+                const avatarColors = [
+                    'bg-blue-500', 'bg-emerald-500', 'bg-violet-500',
+                    'bg-amber-500', 'bg-rose-500', 'bg-cyan-500',
+                    'bg-fuchsia-500', 'bg-teal-500', 'bg-orange-500',
+                ];
+
+                return (
+                    <div className="mx-4 mb-2 bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 max-h-56 overflow-y-auto z-50 animate-fade-in absolute bottom-16 left-4 right-4 md:right-auto md:w-[380px]">
+                        <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-700">
+                            <span className="text-xs font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider">Mencionar participante</span>
+                        </div>
+                        {filtered.map((participant, idx) => {
+                            const displayName = participant.name || participant.phone || participant.id.split('@')[0];
+                            const phoneNumber = participant.phone || participant.id.split('@')[0];
+                            const hasRealName = participant.name && participant.name !== phoneNumber && !participant.name.startsWith('+');
+                            const initials = hasRealName
+                                ? participant.name!.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
+                                : (phoneNumber.slice(-2) || '?');
+                            const colorClass = avatarColors[idx % avatarColors.length];
+
                             return (
                                 <button
                                     key={participant.id}
-                                    className="w-full text-left px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-between group"
+                                    className="w-full text-left px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-700/60 flex items-center gap-3 transition-colors"
                                     onClick={() => {
                                         const lastAtPos = newMessage.lastIndexOf('@');
                                         const prefix = newMessage.substring(0, lastAtPos);
                                         const suffix = newMessage.substring(lastAtPos + 1 + (mentionQuery || '').length);
 
-                                        const insertName = displayName;
-
-                                        setNewMessage(`${prefix}@${insertName} ${suffix}`);
-                                        setTrackedMentions(prev => [...prev, { jid: participant.id, name: insertName }]);
+                                        setNewMessage(`${prefix}@${displayName} ${suffix}`);
+                                        setTrackedMentions(prev => [...prev, { jid: participant.id, name: displayName }]);
                                         setMentionQuery(null);
                                         inputRef.current?.focus();
                                     }}
                                 >
-                                    <span className="text-sm text-slate-700 dark:text-slate-200 flex-1">
-                                        {displayName}
-                                    </span>
+                                    {/* Avatar */}
+                                    <div className={`w-9 h-9 rounded-full ${colorClass} flex items-center justify-center text-white text-xs font-bold shrink-0`}>
+                                        {initials}
+                                    </div>
+
+                                    {/* Name + Phone */}
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">
+                                            {displayName}
+                                        </p>
+                                        {hasRealName && (
+                                            <p className="text-xs text-slate-400 dark:text-slate-500 truncate">
+                                                {phoneNumber}
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    {/* Admin Badge */}
                                     {participant.admin && (
-                                        <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded capitalize">
-                                            {participant.admin}
+                                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${participant.admin === 'superadmin'
+                                                ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                                                : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                                            }`}>
+                                            {participant.admin === 'superadmin' ? 'Dono' : 'Admin'}
                                         </span>
                                     )}
                                 </button>
                             );
                         })}
-                </div>
-            )}
+                    </div>
+                );
+            })()}
 
             <div className="p-4 relative">
                 {isRecording ? (
