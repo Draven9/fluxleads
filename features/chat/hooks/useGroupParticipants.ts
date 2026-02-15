@@ -48,6 +48,7 @@ export function useGroupParticipants(groupJid: string | undefined, isGroup: bool
         const { data: rawData, error } = await whatsappService.fetchParticipants(groupJid);
 
         if (!error && rawData) {
+            console.log('[Mentions] RAW API Response:', JSON.stringify(rawData, null, 2));
             // The proxy may return:
             // 1. { participants: [...], groupName } (from findGroupInfos - with names)
             // 2. Raw array of { id, admin } (from basic participants endpoint)
