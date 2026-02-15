@@ -66,17 +66,27 @@ export function useGroupParticipants(groupJid: string | undefined, isGroup: bool
             }
 
             // Build enriched list
-            const enriched: Participant[] = rawParticipants.map((p: any) => {
-                const phone = (p.id || '').split('@')[0];
-                // Evolution API returns name/pushName/notify in different fields
-                const apiName = p.name || p.pushName || p.notify || p.verifiedName || null;
-                return {
-                    id: p.id || '',
-                    admin: p.admin || null,
-                    phone,
-                    name: apiName || undefined,
-                };
-            });
+            // Evolution API returns: { id: "LID@lid", phoneNumber: "5535...@s.whatsapp.net", admin }
+            // The `id` is a Linked ID (NOT the phone), `phoneNumber` has the real number
+            const enriched: Participant[] = rawParticipants
+                .filter((p: any) => {
+                    // Filter out entries that are group JIDs (not real participants)
+                    const pid = p.id || '';
+                    return !pid.endsWith('@g.us');
+                })
+                .map((p: any) => {
+                    // Prefer phoneNumber field (real phone), fallback to id
+                    const phoneJid = p.phoneNumber || p.id || '';
+                    const phone = phoneJid.split('@')[0];
+                    // Evolution API may return name/pushName/notify
+                    const apiName = p.name || p.pushName || p.notify || p.verifiedName || null;
+                    return {
+                        id: p.phoneNumber || p.id || '', // Use real phone JID for mentions
+                        admin: p.admin || null,
+                        phone,
+                        name: apiName || undefined,
+                    };
+                });
 
             // For participants without names from API, try matching our contacts table
             const unnamed = enriched.filter(p => !p.name && p.phone);
