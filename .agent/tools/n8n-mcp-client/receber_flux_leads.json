@@ -1,0 +1,296 @@
+{
+  "updatedAt": "2026-02-26T11:25:30.487Z",
+  "createdAt": "2026-02-04T22:12:07.693Z",
+  "id": "cBe_yJDMZ0_C-DiiOF1Fj",
+  "name": "Receber Whatsapp Flux Leads",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "webhook-uazapi-in",
+        "options": {}
+      },
+      "id": "34beeb71-c219-45e5-b814-247b181f2eb3",
+      "name": "Webhook (UazAPI)",
+      "position": [
+        -192,
+        608
+      ],
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "webhookId": "925df25e-ada0-4747-bec2-a4d7e89c0834"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://coymhtpjshntpexcfzjh.supabase.co/functions/v1/webhook-in/bf52ba07-a186-43c1-b766-59a1cafa6320",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "X-Webhook-Secret",
+              "value": "hbkexKR5I4q8Kt4IsFf-OB_fc7ht5tc4"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "source",
+              "value": "whatsapp"
+            },
+            {
+              "name": "name",
+              "value": "={{ $json.body.data.pushName || $json.body.data.senderName || '' }}"
+            },
+            {
+              "name": "phone",
+              "value": "={{ ($json.body.data.from || $json.body.data.key?.remoteJid || '').replace('@s.whatsapp.net', '').replace('@g.us', '') }}"
+            },
+            {
+              "name": "notes",
+              "value": "={{ $json.body.data.body || $json.body.data.message?.conversation || $json.body.data.message?.extendedTextMessage?.text || $json.body.data.message?.imageMessage?.caption || '' }}"
+            },
+            {
+              "name": "media_url",
+              "value": "={{ $json.body.data.mediaUrl || $json.body.data.media?.url || $json.body.data.message?.base64 || $json.body.data.message?.imageMessage?.url || $json.body.data.message?.audioMessage?.url || $json.body.data.message?.videoMessage?.url || $json.body.data.message?.documentMessage?.url || '' }}"
+            },
+            {
+              "name": "message_type",
+              "value": "={{ $json.body.data.messageType || $json.body.data.type || 'text' }}"
+            },
+            {
+              "name": "external_event_id",
+              "value": "={{ $json.body.data.id || $json.body.data.messageId || $json.body.data.key?.id || '' }}"
+            },
+            {
+              "name": "is_group",
+              "value": "={{ !!$json.body.data.isGroup || ($json.body.data.from || $json.body.data.key?.remoteJid || '').includes('@g.us') }}"
+            },
+            {
+              "name": "group_id",
+              "value": "={{ $json.body.data.chatId || ($json.body.data.isGroup ? $json.body.data.from : '') || $json.body.data.key?.remoteJid || '' }}"
+            },
+            {
+              "name": "participant",
+              "value": "={{ ($json.body.data.participant || $json.body.data.key?.participant || '').split('@')[0] }}"
+            },
+            {
+              "name": "pushName",
+              "value": "={{ $json.body.data.pushName || $json.body.data.senderName || '' }}"
+            },
+            {
+              "name": "from_me",
+              "value": "={{ $json.body.data.fromMe || $json.body.data.key?.fromMe || false }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "9f7c5e18-c2c5-4250-b852-05c96bb6fc7b",
+      "name": "Enviar p/ Flux Leads",
+      "position": [
+        48,
+        608
+      ],
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1
+    }
+  ],
+  "connections": {
+    "Webhook (UazAPI)": {
+      "main": [
+        [
+          {
+            "node": "Enviar p/ Flux Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar p/ Flux Leads": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "71fe1cc4-43cb-4536-bb86-854253beec1e",
+  "activeVersionId": "71fe1cc4-43cb-4536-bb86-854253beec1e",
+  "versionCounter": 121,
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-02-04T22:12:07.693Z",
+      "createdAt": "2026-02-04T22:12:07.693Z",
+      "role": "workflow:owner",
+      "workflowId": "cBe_yJDMZ0_C-DiiOF1Fj",
+      "projectId": "nYzlUJ44ScOBZj3a",
+      "project": {
+        "updatedAt": "2026-01-15T00:33:54.733Z",
+        "createdAt": "2026-01-15T00:31:23.392Z",
+        "id": "nYzlUJ44ScOBZj3a",
+        "name": "Eric Azevedo <contato@fluxcomunicacao.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "creatorId": "d753896b-c9f2-4dfa-95ff-8af2fa821e95"
+      }
+    }
+  ],
+  "tags": [],
+  "activeVersion": {
+    "updatedAt": "2026-02-26T11:25:32.374Z",
+    "createdAt": "2026-02-26T11:25:30.489Z",
+    "versionId": "71fe1cc4-43cb-4536-bb86-854253beec1e",
+    "workflowId": "cBe_yJDMZ0_C-DiiOF1Fj",
+    "nodes": [
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "webhook-uazapi-in",
+          "options": {}
+        },
+        "id": "34beeb71-c219-45e5-b814-247b181f2eb3",
+        "name": "Webhook (UazAPI)",
+        "position": [
+          -192,
+          608
+        ],
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 1,
+        "webhookId": "925df25e-ada0-4747-bec2-a4d7e89c0834"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://coymhtpjshntpexcfzjh.supabase.co/functions/v1/webhook-in/bf52ba07-a186-43c1-b766-59a1cafa6320",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "name": "X-Webhook-Secret",
+                "value": "hbkexKR5I4q8Kt4IsFf-OB_fc7ht5tc4"
+              }
+            ]
+          },
+          "sendBody": true,
+          "bodyParameters": {
+            "parameters": [
+              {
+                "name": "source",
+                "value": "whatsapp"
+              },
+              {
+                "name": "name",
+                "value": "={{ $json.body.data.pushName || $json.body.data.senderName || '' }}"
+              },
+              {
+                "name": "phone",
+                "value": "={{ ($json.body.data.from || $json.body.data.key?.remoteJid || '').replace('@s.whatsapp.net', '').replace('@g.us', '') }}"
+              },
+              {
+                "name": "notes",
+                "value": "={{ $json.body.data.body || $json.body.data.message?.conversation || $json.body.data.message?.extendedTextMessage?.text || $json.body.data.message?.imageMessage?.caption || '' }}"
+              },
+              {
+                "name": "media_url",
+                "value": "={{ $json.body.data.mediaUrl || $json.body.data.media?.url || $json.body.data.message?.base64 || $json.body.data.message?.imageMessage?.url || $json.body.data.message?.audioMessage?.url || $json.body.data.message?.videoMessage?.url || $json.body.data.message?.documentMessage?.url || '' }}"
+              },
+              {
+                "name": "message_type",
+                "value": "={{ $json.body.data.messageType || $json.body.data.type || 'text' }}"
+              },
+              {
+                "name": "external_event_id",
+                "value": "={{ $json.body.data.id || $json.body.data.messageId || $json.body.data.key?.id || '' }}"
+              },
+              {
+                "name": "is_group",
+                "value": "={{ !!$json.body.data.isGroup || ($json.body.data.from || $json.body.data.key?.remoteJid || '').includes('@g.us') }}"
+              },
+              {
+                "name": "group_id",
+                "value": "={{ $json.body.data.chatId || ($json.body.data.isGroup ? $json.body.data.from : '') || $json.body.data.key?.remoteJid || '' }}"
+              },
+              {
+                "name": "participant",
+                "value": "={{ ($json.body.data.participant || $json.body.data.key?.participant || '').split('@')[0] }}"
+              },
+              {
+                "name": "pushName",
+                "value": "={{ $json.body.data.pushName || $json.body.data.senderName || '' }}"
+              },
+              {
+                "name": "from_me",
+                "value": "={{ $json.body.data.fromMe || $json.body.data.key?.fromMe || false }}"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "id": "9f7c5e18-c2c5-4250-b852-05c96bb6fc7b",
+        "name": "Enviar p/ Flux Leads",
+        "position": [
+          48,
+          608
+        ],
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.1
+      }
+    ],
+    "connections": {
+      "Webhook (UazAPI)": {
+        "main": [
+          [
+            {
+              "node": "Enviar p/ Flux Leads",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Enviar p/ Flux Leads": {
+        "main": [
+          []
+        ]
+      }
+    },
+    "authors": "Eric Azevedo",
+    "name": "Version 71fe1cc4",
+    "description": "",
+    "autosaved": true,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-02-26T11:25:32.372Z",
+        "id": 148,
+        "workflowId": "cBe_yJDMZ0_C-DiiOF1Fj",
+        "versionId": "71fe1cc4-43cb-4536-bb86-854253beec1e",
+        "event": "activated",
+        "userId": "d753896b-c9f2-4dfa-95ff-8af2fa821e95"
+      }
+    ]
+  }
+}
