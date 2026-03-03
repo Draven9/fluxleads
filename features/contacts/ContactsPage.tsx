@@ -12,6 +12,7 @@ import { CompanyFormModal } from './components/CompanyFormModal';
 import { SelectBoardModal } from './components/SelectBoardModal';
 import { PaginationControls } from './components/PaginationControls';
 import { ContactsImportExportModal } from './components/ContactsImportExportModal';
+import { ContactSidePanel } from './components/ContactSidePanel'; // TASK-05
 import ConfirmModal from '@/components/ConfirmModal';
 
 /**
@@ -40,6 +41,17 @@ export const ContactsPage: React.FC = () => {
                 setIsFilterOpen={controller.setIsFilterOpen}
                 openCreateModal={controller.openCreateModal}
                 openImportExportModal={() => setIsImportExportOpen(true)}
+            />
+
+            {/* TASK-05: Painel Lateral do Cliente */}
+            <ContactSidePanel
+                contactId={controller.selectedContactIdForPanel}
+                isOpen={!!controller.selectedContactIdForPanel}
+                onClose={() => controller.setSelectedContactIdForPanel(null)}
+                onEdit={(contact) => {
+                    controller.openEditModal(contact);
+                }}
+                getCompanyName={controller.getCompanyName}
             />
 
             <ContactsImportExportModal
@@ -115,6 +127,7 @@ export const ContactsPage: React.FC = () => {
                 updateContact={controller.updateContact}
                 convertContactToDeal={controller.convertContactToDeal}
                 openEditModal={controller.openEditModal}
+                onRowClick={(contact) => controller.setSelectedContactIdForPanel(contact.id)} // TASK-05
                 setDeleteId={controller.setDeleteId}
                 openEditCompanyModal={controller.openEditCompanyModal}
                 setDeleteCompanyId={controller.setDeleteCompanyId}

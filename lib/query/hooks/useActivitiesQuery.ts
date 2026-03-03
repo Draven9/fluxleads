@@ -17,6 +17,7 @@ import type { Activity } from '@/types';
 
 export interface ActivitiesFilters {
   dealId?: string;
+  contactId?: string; // TASK-05
   type?: Activity['type'];
   completed?: boolean;
   dateFrom?: string;
@@ -56,12 +57,27 @@ export const useActivitiesByDeal = (dealId: string | undefined) => {
   return useQuery({
     queryKey: queryKeys.activities.byDeal(dealId || ''),
     queryFn: async () => {
-      const { data, error } = await activitiesService.getAll();
+      const { data, error } = await activitiesService.getAll({ dealId });
       if (error) throw error;
-      const filtered = (data || []).filter(a => a.dealId === dealId);
-      return sortActivitiesSmart(filtered);
+      return data || [];
     },
     enabled: !authLoading && !!user && !!dealId,
+  });
+};
+
+/**
+ * Hook to fetch activities for a specific contact (TASK-05)
+ */
+export const useActivitiesByContact = (contactId: string | undefined) => {
+  const { user, loading: authLoading } = useAuth();
+  return useQuery({
+    queryKey: [...queryKeys.activities.lists(), { contactId }],
+    queryFn: async () => {
+      const { data, error } = await activitiesService.getAll({ contactId });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !authLoading && !!user && !!contactId,
   });
 };
 

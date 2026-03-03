@@ -121,6 +121,7 @@ export const activitiesService = {
    */
   async getAll(filters?: {
     dealId?: string;
+    contactId?: string; // TASK-05
     type?: Activity['type'];
     completed?: boolean;
     dateFrom?: string;
@@ -143,6 +144,7 @@ export const activitiesService = {
       // Apply Filters
       if (filters) {
         if (filters.dealId) query = query.eq('deal_id', filters.dealId);
+        if (filters.contactId) query = query.eq('contact_id', filters.contactId); // TASK-05
         if (filters.type) query = query.eq('type', filters.type);
         if (filters.completed !== undefined) query = query.eq('completed', filters.completed);
         if (filters.dateFrom) query = query.gte('date', filters.dateFrom);

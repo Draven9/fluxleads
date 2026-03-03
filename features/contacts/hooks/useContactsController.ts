@@ -146,6 +146,9 @@ export const useContactsController = () => {
   // Selection State
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
+  // Side Panel State (TASK-05)
+  const [selectedContactIdForPanel, setSelectedContactIdForPanel] = useState<string | null>(null);
+
   // CRUD State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
@@ -329,15 +332,15 @@ export const useContactsController = () => {
     let successCount = 0;
     let errorCount = 0;
 
-      try {
-        if (viewMode === 'companies') {
+    try {
+      if (viewMode === 'companies') {
         const result = await bulkDeleteCompaniesMutation.mutateAsync({
           ids,
           concurrency: 2,
         });
         successCount = result.successCount;
         errorCount = result.errorCount;
-        } else {
+      } else {
         const result = await bulkDeleteContactsMutation.mutateAsync({
           ids,
           forceDeleteDeals: true,
@@ -686,6 +689,10 @@ export const useContactsController = () => {
     toggleSelect,
     toggleSelectAll,
     clearSelection,
+
+    // Side Panel (TASK-05)
+    selectedContactIdForPanel,
+    setSelectedContactIdForPanel,
 
     // Sorting
     sortBy,

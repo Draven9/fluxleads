@@ -86,6 +86,7 @@ interface ContactsListProps {
     setDeleteId: (id: string) => void;
     openEditCompanyModal?: (company: Company) => void;
     setDeleteCompanyId?: (id: string) => void;
+    onRowClick?: (contact: Contact) => void; // TASK-05
     // Sorting props
     sortBy?: ContactSortableColumn;
     sortOrder?: 'asc' | 'desc';
@@ -145,6 +146,7 @@ export const ContactsList: React.FC<ContactsListProps> = ({
     setDeleteId,
     openEditCompanyModal,
     setDeleteCompanyId,
+    onRowClick, // TASK-05
     sortBy = 'created_at',
     sortOrder = 'desc',
     onSort,
@@ -227,15 +229,20 @@ export const ContactsList: React.FC<ContactsListProps> = ({
                                         <div className="flex items-center gap-3">
                                             <button
                                                 type="button"
-                                                onClick={() => openEditModal(contact)}
+                                                onClick={() => onRowClick?.(contact) || openEditModal(contact)} // TASK-05
                                                 className="w-9 h-9 rounded-full bg-gradient-to-br from-primary-100 to-primary-200 dark:from-primary-900 dark:to-primary-800 text-primary-700 dark:text-primary-200 flex items-center justify-center font-bold text-sm shadow-sm ring-2 ring-white dark:ring-white/5 hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-dark-card"
-                                                aria-label={`Editar contato: ${contact.name || 'Sem nome'}`}
+                                                aria-label={`Ver contato: ${contact.name || 'Sem nome'}`}
                                                 title={contact.name || 'Sem nome'}
                                             >
                                                 {(contact.name || '?').charAt(0)}
                                             </button>
                                             <div>
-                                                <span className="font-semibold text-slate-900 dark:text-white block">{contact.name}</span>
+                                                <button
+                                                    onClick={() => onRowClick?.(contact)} // TASK-05
+                                                    className="font-semibold text-slate-900 dark:text-white block hover:text-primary-600 dark:hover:text-primary-400 text-left"
+                                                >
+                                                    {contact.name}
+                                                </button>
                                             </div>
                                         </div>
                                     </td>
@@ -426,10 +433,10 @@ export const ContactsList: React.FC<ContactsListProps> = ({
                                                 <button
                                                     key={c.id}
                                                     type="button"
-                                                    onClick={() => openEditModal(c)}
+                                                    onClick={() => onRowClick?.(c) || openEditModal(c)} // TASK-05
                                                     className="h-6 w-6 rounded-full ring-2 ring-white dark:ring-dark-card bg-primary-100 dark:bg-primary-900 flex items-center justify-center text-[10px] font-bold text-primary-700 dark:text-primary-300 hover:bg-primary-200 dark:hover:bg-primary-800 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-dark-card"
                                                     title={c.name || 'Sem nome'}
-                                                    aria-label={`Editar contato: ${c.name || 'Sem nome'}`}
+                                                    aria-label={`Ver contato: ${c.name || 'Sem nome'}`}
                                                 >
                                                     {(c.name || '?').charAt(0)}
                                                 </button>
