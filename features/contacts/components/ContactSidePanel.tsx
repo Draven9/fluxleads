@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { X, User, Phone, Mail, Building2, Calendar, FileText, Activity as ActivityIcon, Settings2, Clock } from 'lucide-react';
 import { Contact } from '@/types';
 import { useActivitiesByContact } from '@/lib/query/hooks/useActivitiesQuery';
+import { useContactCustomFields, useContactCustomValues } from '@/lib/query/hooks/useContactCustomFields';
+import { useContacts } from '@/lib/query/hooks/useContactsQuery';
+import { triggerN8nWebhook } from '@/app/actions/triggerN8n';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -26,11 +29,58 @@ export const ContactSidePanel: React.FC<ContactSidePanelProps> = ({
     // or pass the entire `Contact` object from the list.
     // Since we only passed `contactId` to the panel to keep a clean URL/state,
     // let's use a query hook to get the contact, or we could just use the `useContacts` cache.
-    import { useContacts } from '@/lib/query/hooks/useContactsQuery';
     const { data: contacts = [] } = useContacts();
     const contact = contacts.find(c => c.id === contactId);
 
     const { data: activities = [], isLoading: loadingActivities } = useActivitiesByContact(contactId || undefined);
+
+    // Sprint 3: Custom Fields Hooks
+    const { fields, isLoading: loadingFields } = useContactCustomFields();
+    const { values, isLoading: loadingValues, upsertValues, isMutating: savingValues } = useContactCustomValues(contactId || '');
+
+    // State for Custom Fields Editing
+    const [localValues, setLocalValues] = useState<Record<string, string | null>>({});
+    const [isEditingFields, setIsEditingFields] = useState(false);
+
+    const handleEditFields = () => {
+        const currentVals: Record<string, string | null> = {};
+        values.forEach(v => {
+            currentVals[v.fieldId] = v.value;
+        });
+        setLocalValues(currentVals);
+        setIsEditingFields(true);
+    };
+
+    const handleSaveFields = async () => {
+        await upsertValues(localValues);
+
+        // Trigger webhooks for changed fields
+        if (contactId) {
+            for (const field of fields) {
+                if (field.triggerAction) {
+                    const originalValue = values.find(v => v.fieldId === field.id)?.value || null;
+                    const newValue = localValues[field.id] !== undefined ? localValues[field.id] : originalValue;
+
+                    if (originalValue !== newValue) {
+                        // O campo tem um webhook E o valor mudou
+                        triggerN8nWebhook({
+                            contactId,
+                            fieldId: field.id,
+                            fieldName: field.name,
+                            triggerUrl: field.triggerAction,
+                            value: newValue
+                        }).catch(err => console.error("Webhook trigger falhou invisivelmente:", err));
+                    }
+                }
+            }
+        }
+
+        setIsEditingFields(false);
+    };
+
+    const handleLocalValueChange = (fieldId: string, val: string | null) => {
+        setLocalValues(prev => ({ ...prev, [fieldId]: val }));
+    };
 
     if (!isOpen) return null;
 
@@ -86,8 +136,8 @@ export const ContactSidePanel: React.FC<ContactSidePanelProps> = ({
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id as any)}
                                 className={`flex items-center gap-2 py-4 px-4 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${isActive
-                                        ? 'border-primary-500 text-primary-600 dark:text-primary-400'
-                                        : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700'
+                                    ? 'border-primary-500 text-primary-600 dark:text-primary-400'
+                                    : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700'
                                     }`}
                             >
                                 <Icon size={16} />
@@ -162,8 +212,8 @@ export const ContactSidePanel: React.FC<ContactSidePanelProps> = ({
                                                         {format(new Date(activity.date), "dd/MM 'às' HH:mm", { locale: ptBR })}
                                                     </span>
                                                 </div>
-                                                {activity.formatedType && (
-                                                    <span className="text-xs font-medium text-slate-500 uppercase">{activity.formatedType}</span>
+                                                {activity.type && (
+                                                    <span className="text-xs font-medium text-slate-500 uppercase">{activity.type}</span>
                                                 )}
                                                 {activity.description && (
                                                     <p className="text-xs text-slate-600 dark:text-slate-400 mt-2 line-clamp-2">
@@ -184,17 +234,119 @@ export const ContactSidePanel: React.FC<ContactSidePanelProps> = ({
                     )}
 
                     {contact && activeTab === 'campos' && (
-                        <div className="animate-in slide-in-from-right-4 duration-300 text-center py-12 px-4">
-                            <div className="w-16 h-16 bg-gradient-to-br from-primary-100 to-primary-200 dark:from-primary-900 dark:to-primary-800 text-primary-500 rounded-2xl mx-auto flex items-center justify-center mb-4">
-                                <Settings2 size={32} />
+                        <div className="space-y-4 animate-in slide-in-from-right-4 duration-300">
+                            <div className="flex justify-between items-center mb-4">
+                                <div className="flex items-center gap-2">
+                                    <Settings2 size={18} className="text-slate-500" />
+                                    <h3 className="font-semibold text-slate-900 dark:text-white text-sm">Campos Personalizados</h3>
+                                </div>
+                                {!isEditingFields ? (
+                                    <button
+                                        onClick={handleEditFields}
+                                        className="text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 text-sm font-medium"
+                                        disabled={loadingFields || loadingValues}
+                                    >
+                                        Editar Valores
+                                    </button>
+                                ) : (
+                                    <div className="flex gap-3">
+                                        <button
+                                            onClick={() => setIsEditingFields(false)}
+                                            className="text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 text-sm font-medium"
+                                        >
+                                            Cancelar
+                                        </button>
+                                        <button
+                                            onClick={handleSaveFields}
+                                            disabled={savingValues}
+                                            className="text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 text-sm font-bold flex items-center gap-1"
+                                        >
+                                            {savingValues ? 'Salvando...' : 'Salvar'}
+                                        </button>
+                                    </div>
+                                )}
                             </div>
-                            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Campos Personalizados</h3>
-                            <p className="text-sm text-slate-500 mb-6">
-                                Em breve você poderá customizar campos exclusivos (Data de Aniversário, Origem etc.) para segmentar seus clientes e criar automações via N8N.
-                            </p>
-                            <div className="inline-block px-3 py-1 bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400 text-xs font-bold uppercase tracking-wider rounded-full border border-amber-200 dark:border-amber-500/20">
-                                Em Construção (TASK-07)
-                            </div>
+
+                            {loadingFields || loadingValues ? (
+                                <div className="text-center py-8 text-slate-500 text-sm animate-pulse">Carregando campos...</div>
+                            ) : fields.length === 0 ? (
+                                <div className="text-center py-8 text-slate-500 flex flex-col items-center gap-3 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5">
+                                    <Settings2 size={32} className="opacity-20" />
+                                    <p className="text-sm">Nenhum campo personalizado configurado pelo administrador.</p>
+                                </div>
+                            ) : (
+                                <div className="bg-slate-50 dark:bg-white/5 p-4 rounded-xl border border-slate-100 dark:border-white/5 flex flex-col gap-4">
+                                    {fields.map(field => {
+                                        const dbValue = values.find(v => v.fieldId === field.id)?.value;
+                                        const currentValue = isEditingFields ? (localValues[field.id] !== undefined ? localValues[field.id] : dbValue) : dbValue;
+
+                                        return (
+                                            <div key={field.id} className="border-b border-slate-200 dark:border-white/10 pb-4 last:border-0 last:pb-0">
+                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1 flex items-center justify-between">
+                                                    {field.name}
+                                                    {field.triggerAction && (
+                                                        <span className="text-[10px] bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 px-1.5 py-0.5 rounded flex items-center gap-1" title="Alterar este campo dispara uma automação no N8n.">
+                                                            ⚡ Gatilho Ativo
+                                                        </span>
+                                                    )}
+                                                </label>
+                                                {!isEditingFields ? (
+                                                    <p className="text-sm font-medium dark:text-slate-200 mt-1">
+                                                        {field.fieldType === 'boolean'
+                                                            ? (dbValue === 'true' ? 'Sim' : dbValue === 'false' ? 'Não' : '—')
+                                                            : (dbValue || '—')}
+                                                    </p>
+                                                ) : (
+                                                    <div className="mt-2">
+                                                        {field.fieldType === 'boolean' && (
+                                                            <div className="flex items-center gap-4">
+                                                                <label className="flex items-center gap-2 text-sm cursor-pointer text-slate-700 dark:text-slate-300">
+                                                                    <input type="radio" checked={currentValue === 'true'} onChange={() => handleLocalValueChange(field.id, 'true')} className="accent-primary-500 w-4 h-4" />
+                                                                    Sim
+                                                                </label>
+                                                                <label className="flex items-center gap-2 text-sm cursor-pointer text-slate-700 dark:text-slate-300">
+                                                                    <input type="radio" checked={currentValue === 'false'} onChange={() => handleLocalValueChange(field.id, 'false')} className="accent-primary-500 w-4 h-4" />
+                                                                    Não
+                                                                </label>
+                                                                <button type="button" onClick={() => handleLocalValueChange(field.id, null)} className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 underline ml-2">Limpar</button>
+                                                            </div>
+                                                        )}
+                                                        {field.fieldType === 'text' && (
+                                                            <input
+                                                                type="text"
+                                                                value={currentValue || ''}
+                                                                onChange={e => handleLocalValueChange(field.id, e.target.value || null)}
+                                                                placeholder="Digite um valor..."
+                                                                className="w-full bg-white dark:bg-black/30 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-500 dark:text-white"
+                                                            />
+                                                        )}
+                                                        {field.fieldType === 'date' && (
+                                                            <input
+                                                                type="date"
+                                                                value={currentValue || ''}
+                                                                onChange={e => handleLocalValueChange(field.id, e.target.value || null)}
+                                                                className="w-full bg-white dark:bg-black/30 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-500 dark:text-white"
+                                                            />
+                                                        )}
+                                                        {field.fieldType === 'select' && (
+                                                            <select
+                                                                value={currentValue || ''}
+                                                                onChange={e => handleLocalValueChange(field.id, e.target.value || null)}
+                                                                className="w-full bg-white dark:bg-black/30 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-500 dark:text-white"
+                                                            >
+                                                                <option value="">Selecione...</option>
+                                                                {field.options?.map(opt => (
+                                                                    <option key={opt} value={opt}>{opt}</option>
+                                                                ))}
+                                                            </select>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
                         </div>
                     )}
 

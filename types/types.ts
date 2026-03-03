@@ -256,6 +256,49 @@ export interface DealView extends Deal {
   companyName?: string;
 }
 
+// =============================================================================
+// CONTACT CUSTOM FIELDS (Sprint 3)
+// =============================================================================
+
+export type ContactCustomFieldType = 'text' | 'boolean' | 'date' | 'select';
+
+export interface ContactCustomField {
+  id: string;
+  organizationId: string;
+  name: string;
+  fieldType: ContactCustomFieldType;
+  options?: string[]; // Array of strings for 'select' type
+  triggerAction?: string | null; // Webhook URL for automations
+  createdAt: string;
+}
+
+export interface ContactCustomValue {
+  id: string;
+  contactId: string;
+  fieldId: string;
+  value: string | null;
+  updatedAt: string;
+}
+
+// Db Types for Contact Custom Fields
+export interface DbContactCustomField {
+  id: string;
+  organization_id: string;
+  name: string;
+  field_type: string;
+  options: string[] | null;
+  trigger_action: string | null;
+  created_at: string;
+}
+
+export interface DbContactCustomValue {
+  id: string;
+  contact_id: string;
+  field_id: string;
+  value: string | null;
+  updated_at: string;
+}
+
 export interface Activity {
   id: string;
   organizationId?: OrganizationId; // Tenant FK (for RLS) - optional during migration
