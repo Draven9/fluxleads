@@ -64,7 +64,8 @@ export const useActivitiesController = () => {
     time: '09:00',
     description: '',
     dealId: '',
-    assigneeId: '', // Added assigneeId to form data
+    contactId: '',  // TASK-04: campo independente de seleção de cliente
+    assigneeId: '',
   });
 
   // Calculate Query Filters (Server-Side)
@@ -147,6 +148,7 @@ export const useActivitiesController = () => {
       time: '09:00',
       description: '',
       dealId: '',
+      contactId: '',
       assigneeId: '',
     });
     setIsModalOpen(true);
@@ -171,6 +173,7 @@ export const useActivitiesController = () => {
       time: `${hours}:${minutes}`,
       description: activity.description || '',
       dealId: activity.dealId,
+      contactId: activity.contactId || '',  // TASK-04: preserva contactId ao editar
       assigneeId: (activity as any).assigneeId || '',
     });
     setIsModalOpen(true);
@@ -248,9 +251,16 @@ export const useActivitiesController = () => {
       Number(hoursStr),
       Number(minutesStr)
     );
+    // TASK-04: contactId agora é independente do deal
+    // Se o usuário selecionou um contato diretamente, usa ele.
+    // Caso contrário, tenta derivar do deal selecionado (retrocompat).
     const selectedDeal = formData.dealId ? dealsById.get(formData.dealId) : undefined;
-    const selectedContact = selectedDeal?.contactId ? contactsById.get(selectedDeal.contactId) : undefined;
-    const clientCompanyId = selectedDeal?.clientCompanyId || selectedContact?.clientCompanyId || undefined;
+    const resolvedContactId = formData.contactId
+      || (selectedDeal?.contactId ?? '');
+    const selectedContact = resolvedContactId ? contactsById.get(resolvedContactId) : undefined;
+    const clientCompanyId = selectedContact?.clientCompanyId
+      || selectedDeal?.clientCompanyId
+      || undefined;
     const participantContactIds = selectedContact?.id ? [selectedContact.id] : [];
 
     if (editingActivity) {

@@ -106,24 +106,24 @@ export async function PUT(req: Request, ctx: { params: Promise<{ id: string }> }
     updates.last_name = body.name.split(' ').slice(1).join(' ') || '';
   }
 
-  // Update Profile
-  const { error: updateError } = await admin
-    .from('profiles')
-    .update(updates)
-    .eq('id', id);
+  // Update Profile (only if there are changes to avoid empty-payload error)
+  if (Object.keys(updates).length > 0) {
+    const { error: updateError } = await admin
+      .from('profiles')
+      .update(updates)
+      .eq('id', id);
 
-  if (updateError) return json({ error: updateError.message }, 500);
+    if (updateError) return json({ error: updateError.message }, 500);
+  }
 
-  // Update Auth Metadata (for consistency)
-  const authUpdates: any = {
-    user_metadata: {}
-  };
+  // Update Auth (name metadata and/or password)
+  const authUpdates: any = {};
+  if (body.name) authUpdates.user_metadata = { name: body.name };
+  if (body.password && body.password.trim() !== '') authUpdates.password = body.password;
 
-  if (body.name) authUpdates.user_metadata.name = body.name;
-  if (body.password) authUpdates.password = body.password;
-
-  if (Object.keys(authUpdates.user_metadata).length > 0 || authUpdates.password) {
-    await admin.auth.admin.updateUserById(id, authUpdates);
+  if (Object.keys(authUpdates).length > 0) {
+    const { error: authError } = await admin.auth.admin.updateUserById(id, authUpdates);
+    if (authError) return json({ error: authError.message }, 500);
   }
 
   return json({ success: true });

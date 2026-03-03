@@ -282,10 +282,10 @@ export const contactsService = {
 
       // Apply filters
       if (filters) {
-        // T007: Search filter (name OR email)
+        // T007: Search filter (name OR email OR phone)
         if (filters.search && filters.search.trim()) {
           const searchTerm = filters.search.trim();
-          query = query.or(`name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
+          query = query.or(`name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%`);
         }
 
         // T008: Stage filter
@@ -367,7 +367,7 @@ export const contactsService = {
         email: sanitizeText(contact.email),
         phone: sanitizeText(phoneE164),
         role: sanitizeText(contact.role),
-        client_company_id: sanitizeUUID(contact.clientCompanyId || contact.companyId),
+        client_company_id: sanitizeUUID(contact.clientCompanyId || contact.companyId) || null,
         avatar: sanitizeText(contact.avatar),
         notes: sanitizeText(contact.notes),
         status: contact.status || 'ACTIVE',

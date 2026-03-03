@@ -19,7 +19,8 @@ function matchesContactsServerFilters(contact: Contact, filters?: ContactsServer
     const q = filters.search.trim().toLowerCase();
     const nameOk = (contact.name || '').toLowerCase().includes(q);
     const emailOk = (contact.email || '').toLowerCase().includes(q);
-    if (!nameOk && !emailOk) return false;
+    const phoneOk = (contact.phone || '').toLowerCase().includes(q);
+    if (!nameOk && !emailOk && !phoneOk) return false;
   }
 
   if (filters.stage && filters.stage !== 'ALL') {

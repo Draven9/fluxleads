@@ -1,6 +1,6 @@
 import React from 'react';
 import { X } from 'lucide-react';
-import { Activity, Deal } from '@/types';
+import { Activity, Contact, Deal } from '@/types';
 import { Profile } from '@/lib/supabase/profiles';
 
 interface ActivityFormData {
@@ -10,6 +10,7 @@ interface ActivityFormData {
   time: string;
   description: string;
   dealId: string;
+  contactId: string;  // TASK-04: seleção independente de cliente
   assigneeId: string;
   priority: 'low' | 'medium' | 'high';
 }
@@ -22,6 +23,7 @@ interface ActivityFormModalProps {
   setFormData: (data: ActivityFormData) => void;
   editingActivity: Activity | null;
   deals: Deal[];
+  contacts: Contact[];  // TASK-04: lista de contatos para seleção independente
   profiles: Profile[];
 }
 
@@ -55,6 +57,7 @@ export const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
   setFormData,
   editingActivity,
   deals,
+  contacts,
   profiles,
 }) => {
   React.useEffect(() => {
@@ -137,6 +140,25 @@ export const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
                 ))}
               </select>
             </div>
+          </div>
+
+          {/* TASK-04: Campo independente de seleção de Cliente */}
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">
+              Cliente (Opcional)
+            </label>
+            <select
+              className="w-full bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-primary-500"
+              value={formData.contactId}
+              onChange={e => setFormData({ ...formData, contactId: e.target.value })}
+            >
+              <option value="">Selecione um cliente (opcional)...</option>
+              {contacts.map(contact => (
+                <option key={contact.id} value={contact.id}>
+                  {contact.name}{contact.phone ? ` — ${contact.phone}` : ''}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div>

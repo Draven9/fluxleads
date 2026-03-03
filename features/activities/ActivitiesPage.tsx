@@ -144,6 +144,7 @@ export const ActivitiesPage: React.FC = () => {
                 setFormData={setFormData}
                 editingActivity={editingActivity}
                 deals={deals}
+                contacts={contacts}
                 profiles={profiles}
             />
 
