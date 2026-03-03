@@ -48,6 +48,7 @@ import {
   PanelLeftOpen,
   Book,
   MessageSquare,
+  MessageCircle,
   Briefcase,
 } from 'lucide-react';
 import { useCRM } from '../context/CRMContext';
@@ -277,6 +278,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             {[
               { to: '/inbox', icon: Inbox, label: 'Inbox', prefetch: 'inbox' as const },
               { to: '/chat', icon: MessageSquare, label: 'Mensagens', prefetch: 'chat' as const },
+              { to: '/comments', icon: MessageCircle, label: 'Engajamento', prefetch: 'comments' as const },
               { to: '/dashboard', icon: LayoutDashboard, label: 'Visão Geral', prefetch: 'dashboard' as const },
               { to: '/boards', icon: KanbanSquare, label: 'Boards', prefetch: 'boards' as const },
               { to: '/companies', icon: Briefcase, label: 'Carteira', prefetch: 'companies' as const },

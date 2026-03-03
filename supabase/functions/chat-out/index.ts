@@ -141,7 +141,110 @@ Deno.serve(async (req: Request) => {
         phone: contactPhone
     };
 
-    // 5. Send to External Webhook (n8n/Evolution)
+    // --- META DIRECT INTEGRATION ---
+    if (session.provider === 'instagram' || session.provider === 'facebook') {
+        const { data: metaConfig } = await supabase
+            .from('organization_meta_configs')
+            .select('access_token, page_id, ig_user_id')
+            .eq('organization_id', organization_id)
+            .eq('is_active', true)
+            .single();
+
+        if (!metaConfig || !metaConfig.access_token) {
+            return json(400, { error: 'Meta configuration not found or access token missing.' });
+        }
+
+        const senderId = session.provider === 'instagram' ? metaConfig.ig_user_id : metaConfig.page_id;
+
+        if (!senderId) {
+            return json(400, { error: `Meta Configuration missing ${session.provider === 'instagram' ? 'Instagram User ID' : 'Facebook Page ID'}` });
+        }
+
+        const url = `https://graph.facebook.com/v19.0/${senderId}/messages`;
+
+        // Build Graph API Payload
+        let messagePayload: any = {};
+
+        if (content && !media_url) {
+            messagePayload = { text: content };
+        } else if (media_url) {
+            // Media map: supabase uses image, video, audio, document
+            const fbTypeMap: Record<string, string> = {
+                'image': 'image',
+                'video': 'video',
+                'audio': 'audio',
+                'document': 'file',
+                'file': 'file'
+            };
+            const mappedType = fbTypeMap[message_type] || 'file';
+
+            messagePayload = {
+                attachment: {
+                    type: mappedType,
+                    payload: {
+                        url: media_url,
+                        is_reusable: true
+                    }
+                }
+            };
+            // Graph API (especially Instagram) often doesn't allow caption with attachments natively in a single message easily
+            // We'll send just the attachment for now. If content exists, it would require a second message.
+        }
+
+        const fbReqBody = {
+            recipient: { id: session.provider_id },
+            message: messagePayload
+        };
+
+        try {
+            const fbRes = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${metaConfig.access_token}`
+                },
+                body: JSON.stringify(fbReqBody)
+            });
+
+            const fbData = await fbRes.json();
+
+            if (!fbRes.ok) {
+                console.error("Meta Graph API delivery failed:", fbData);
+                // We'll return 200 to UI but log the error so we don't crash the UI optimistic update completely
+                // In a perfect world, we'd update message status to 'failed'
+                await supabase.from('messages').update({ status: 'failed' }).eq('id', message.id);
+                return json(400, { error: 'Failed to send via Meta Graph API', details: fbData });
+            }
+
+            // Successfully sent via Graph API
+            await supabase.from('messages').update({ status: 'delivered', external_id: fbData.message_id }).eq('id', message.id);
+
+            // If we had text + media, send the text separately
+            if (content && media_url) {
+                const fbReqBodyText = {
+                    recipient: { id: session.provider_id },
+                    message: { text: content }
+                };
+                await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${metaConfig.access_token}`
+                    },
+                    body: JSON.stringify(fbReqBodyText)
+                });
+            }
+
+            return json(200, { ok: true, message: "Message sent via Meta Graph API directly" });
+        } catch (err) {
+            console.error("Meta Graph API fetch error:", err);
+            await supabase.from('messages').update({ status: 'failed' }).eq('id', message.id);
+            return json(500, { error: 'Internal server error while calling Meta Graph API' });
+        }
+    }
+    // --- END META DIRECT INTEGRATION ---
+
+    // 5. Send to External Webhook (n8n/Evolution) para WhatsApp
     const payload = {
         event: "chat.new_message",
         data: {

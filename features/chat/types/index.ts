@@ -5,7 +5,7 @@ export interface ChatSession {
     organization_id: string;
     contact_id: string;
     deal_id?: string;
-    provider: 'whatsapp' | 'instagram' | 'email';
+    provider: 'whatsapp' | 'instagram' | 'facebook' | 'email';
     provider_id: string; // remoteJid
     last_message_at: string;
     unread_count: number;
