@@ -557,3 +557,49 @@ export interface ContactsServerFilters {
 
 /** Colunas ordenáveis na tabela de contatos. */
 export type ContactSortableColumn = 'name' | 'created_at' | 'updated_at' | 'stage';
+
+// ============================================================
+// Sprint 4 - TASK-12: Agendamento de Mensagens
+// ============================================================
+
+export type ScheduledMessageStatus = 'pending' | 'sent' | 'failed' | 'cancelled';
+
+export interface ScheduledMessage {
+  id: string;
+  organizationId: string;
+  sessionId: string;
+  contactId?: string | null;
+  createdBy?: string | null;
+  content: string;
+  hasVariables: boolean;
+  scheduledAt: string;
+  status: ScheduledMessageStatus;
+  sentAt?: string | null;
+  errorMessage?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DbScheduledMessage {
+  id: string;
+  organization_id: string;
+  session_id: string;
+  contact_id: string | null;
+  created_by: string | null;
+  content: string;
+  has_variables: boolean;
+  scheduled_at: string;
+  status: ScheduledMessageStatus;
+  sent_at: string | null;
+  error_message: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateScheduledMessagePayload {
+  sessionId: string;
+  content: string;
+  scheduledAt: string;
+  contactId?: string;
+}
+

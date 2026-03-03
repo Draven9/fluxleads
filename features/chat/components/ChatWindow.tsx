@@ -8,10 +8,12 @@ import { useChatMessages } from '../hooks/useChatMessages';
 import { useGroupParticipants } from '../hooks/useGroupParticipants';
 import { useAuth } from '@/context/AuthContext';
 import { ForwardModal } from './ForwardModal';
+import { ScheduleMessageModal } from './ScheduleMessageModal';
 import { supabase } from '@/lib/supabase';
 import { ChatHeader } from './ChatHeader';
 import { MessageBubble } from './MessageBubble';
 import { ChatInput } from './ChatInput';
+import { useScheduledMessages } from '@/lib/query/hooks/useScheduledMessages';
 
 interface ChatWindowProps {
     session: ChatSession;
@@ -23,6 +25,15 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ session, onBack }) => {
     const { profile, organizationId } = useAuth();
     const [replyingTo, setReplyingTo] = useState<Message | null>(null);
     const [forwardingMessage, setForwardingMessage] = useState<Message | null>(null);
+    const [showScheduleModal, setShowScheduleModal] = useState(false);
+
+    // Sprint 4: Schedule Messages
+    const {
+        scheduledMessages,
+        createScheduledMessage,
+        cancelScheduledMessage,
+        isCreating: isScheduling,
+    } = useScheduledMessages(session.id);
 
     // Group Mentions State
     const isGroup = session.contact?.source === 'whatsapp_group';
@@ -190,12 +201,42 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ session, onBack }) => {
                 session={session}
                 isGroup={isGroup}
                 participants={participants}
+                scheduledMessages={scheduledMessages}
+                onScheduleMessage={async (content, scheduledAt) => {
+                    await createScheduledMessage({
+                        sessionId: session.id,
+                        content,
+                        scheduledAt,
+                        contactId: session.contact?.id,
+                    });
+                    setShowScheduleModal(false);
+                }}
+                onCancelSchedule={cancelScheduledMessage}
+                isScheduling={isScheduling}
             />
 
             <ForwardModal
                 isOpen={!!forwardingMessage}
                 onClose={() => setForwardingMessage(null)}
                 onForward={handleForwardToSession}
+            />
+
+            <ScheduleMessageModal
+                isOpen={showScheduleModal}
+                onClose={() => setShowScheduleModal(false)}
+                sessionId={session.id}
+                contactName={session.contact?.name}
+                scheduledMessages={scheduledMessages}
+                onSchedule={async (content, scheduledAt) => {
+                    await createScheduledMessage({
+                        sessionId: session.id,
+                        content,
+                        scheduledAt,
+                        contactId: session.contact?.id,
+                    });
+                }}
+                onCancel={cancelScheduledMessage}
+                isCreating={isScheduling}
             />
         </div>
     );

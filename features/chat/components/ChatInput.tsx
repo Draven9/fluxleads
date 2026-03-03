@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useRef, useState, useEffect } from 'react';
-import { Send, Paperclip, Mic, X } from 'lucide-react';
+import { Send, Paperclip, Mic, X, Clock } from 'lucide-react';
 import { AudioRecorder } from './AudioRecorder';
+import { ScheduleMessageModal } from './ScheduleMessageModal';
 import { Message, ChatSession } from '../types';
 import type { Participant } from '../hooks/useGroupParticipants';
 
@@ -13,6 +14,10 @@ interface ChatInputProps {
     session: ChatSession;
     isGroup: boolean;
     participants: Participant[];
+    scheduledMessages?: import('@/types').ScheduledMessage[];
+    onScheduleMessage?: (content: string, scheduledAt: string) => Promise<void>;
+    onCancelSchedule?: (id: string) => Promise<void>;
+    isScheduling?: boolean;
 }
 
 export const ChatInput: React.FC<ChatInputProps> = ({
@@ -22,12 +27,17 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     session,
     isGroup,
     participants,
+    scheduledMessages = [],
+    onScheduleMessage,
+    onCancelSchedule,
+    isScheduling = false,
 }) => {
     const [newMessage, setNewMessage] = useState('');
     const [isRecording, setIsRecording] = useState(false);
     const [attachment, setAttachment] = useState<File | null>(null);
     const [mentionQuery, setMentionQuery] = useState<string | null>(null);
     const [trackedMentions, setTrackedMentions] = useState<{ jid: string, name: string }[]>([]);
+    const [showScheduleModal, setShowScheduleModal] = useState(false);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -174,8 +184,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                                     {/* Admin Badge */}
                                     {participant.admin && (
                                         <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${participant.admin === 'superadmin'
-                                                ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
-                                                : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                                            ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                                            : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
                                             }`}>
                                             {participant.admin === 'superadmin' ? 'Dono' : 'Admin'}
                                         </span>
@@ -216,6 +226,22 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                             >
                                 <Paperclip className="w-5 h-5" />
                             </button>
+
+                            {onScheduleMessage && (
+                                <button
+                                    onClick={() => setShowScheduleModal(true)}
+                                    title="Agendar mensagem"
+                                    className={`p-3 rounded-xl transition-colors h-[44px] w-[44px] flex items-center justify-center relative ${scheduledMessages.filter(m => m.status === 'pending').length > 0
+                                            ? 'bg-amber-100 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400'
+                                            : 'bg-slate-100 dark:bg-white/5 text-slate-500 hover:bg-slate-200 dark:hover:bg-white/10'
+                                        }`}
+                                >
+                                    <Clock className="w-5 h-5" />
+                                    {scheduledMessages.filter(m => m.status === 'pending').length > 0 && (
+                                        <span className="absolute top-1 right-1 w-2 h-2 bg-amber-500 rounded-full" />
+                                    )}
+                                </button>
+                            )}
 
                             <textarea
                                 ref={inputRef}
@@ -277,3 +303,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         </div>
     );
 };
+
+// NOTE: ScheduleMessageModal is rendered from ChatWindow level
+// and the modal is shown conditionally via the showScheduleModal state
+// exposed via the component's API when `onScheduleMessage` prop is provided.
