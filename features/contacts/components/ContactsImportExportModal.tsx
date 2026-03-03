@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Download, Upload, FileDown } from 'lucide-react';
+import { Download, Upload, FileDown, FileSpreadsheet } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { useToast } from '@/context/ToastContext';
 import { stringifyCsv, withUtf8Bom, type CsvDelimiter } from '@/lib/utils/csv';
@@ -68,6 +68,7 @@ export function ContactsImportExportModal(props: {
 
   // Export state
   const [isExporting, setIsExporting] = useState(false);
+  const [exportFormat, setExportFormat] = useState<'csv' | 'xlsx'>('csv');
 
   const templateCsv = useMemo(() => {
     const d: CsvDelimiter = delimiter === 'auto' ? ';' : delimiter;
@@ -97,7 +98,7 @@ export function ContactsImportExportModal(props: {
     downloadText('import-erros-contatos.csv', withUtf8Bom(stringifyCsv(rows, d)), 'text/csv;charset=utf-8');
   };
 
-  const buildExportUrl = () => {
+  const buildExportUrl = (format: 'csv' | 'xlsx' = 'csv') => {
     const sp = new URLSearchParams();
     if (exportParams.search) sp.set('search', exportParams.search);
     if (exportParams.stage && exportParams.stage !== 'ALL') sp.set('stage', exportParams.stage);
@@ -106,14 +107,15 @@ export function ContactsImportExportModal(props: {
     if (exportParams.dateEnd) sp.set('dateEnd', exportParams.dateEnd);
     if (exportParams.sortBy) sp.set('sortBy', exportParams.sortBy);
     if (exportParams.sortOrder) sp.set('sortOrder', exportParams.sortOrder);
-    if (delimiter !== 'auto') sp.set('delimiter', delimiter);
+    if (format === 'csv' && delimiter !== 'auto') sp.set('delimiter', delimiter);
+    sp.set('format', format);
     return `/api/contacts/export?${sp.toString()}`;
   };
 
-  const handleExport = async () => {
+  const handleExport = async (format: 'csv' | 'xlsx' = exportFormat) => {
     setIsExporting(true);
     try {
-      const url = buildExportUrl();
+      const url = buildExportUrl(format);
       const res = await fetch(url, { method: 'GET' });
       if (!res.ok) {
         const body = await res.json().catch(() => null);
@@ -121,10 +123,27 @@ export function ContactsImportExportModal(props: {
       }
 
       const disposition = res.headers.get('Content-Disposition');
-      const filename = parseFilenameFromDisposition(disposition) || 'contatos.csv';
-      const text = await res.text();
-      downloadText(filename, text, 'text/csv;charset=utf-8');
-      toast?.('Export iniciado.', 'success');
+      const defaultFilename = `contatos.${format}`;
+      const filename = parseFilenameFromDisposition(disposition) || defaultFilename;
+
+      if (format === 'xlsx') {
+        // XLSX é binário — download via Blob
+        const blob = await res.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = filename;
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
+      } else {
+        const text = await res.text();
+        downloadText(filename, text, 'text/csv;charset=utf-8');
+      }
+
+      toast?.(`Export ${format.toUpperCase()} iniciado.`, 'success');
     } catch (e) {
       toast?.((e as Error)?.message || 'Erro ao exportar.', 'error');
     } finally {
@@ -177,22 +196,20 @@ export function ContactsImportExportModal(props: {
           <button
             type="button"
             onClick={() => setPanel('export')}
-            className={`px-3 py-2 rounded-lg text-sm font-semibold border transition-colors ${
-              panel === 'export'
-                ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-slate-900 dark:border-white'
-                : 'bg-white dark:bg-white/5 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/10'
-            }`}
+            className={`px-3 py-2 rounded-lg text-sm font-semibold border transition-colors ${panel === 'export'
+              ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-slate-900 dark:border-white'
+              : 'bg-white dark:bg-white/5 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/10'
+              }`}
           >
             Exportar
           </button>
           <button
             type="button"
             onClick={() => setPanel('import')}
-            className={`px-3 py-2 rounded-lg text-sm font-semibold border transition-colors ${
-              panel === 'import'
-                ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-slate-900 dark:border-white'
-                : 'bg-white dark:bg-white/5 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/10'
-            }`}
+            className={`px-3 py-2 rounded-lg text-sm font-semibold border transition-colors ${panel === 'import'
+              ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-slate-900 dark:border-white'
+              : 'bg-white dark:bg-white/5 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/10'
+              }`}
           >
             Importar CSV
           </button>
@@ -216,13 +233,13 @@ export function ContactsImportExportModal(props: {
       </div>
 
       {panel === 'export' && (
-        <div className="rounded-xl border border-slate-200 dark:border-white/10 p-4 bg-slate-50/50 dark:bg-white/5 space-y-3">
+        <div className="rounded-xl border border-slate-200 dark:border-white/10 p-4 bg-slate-50/50 dark:bg-white/5 space-y-4">
           <div>
             <div className="text-sm font-bold text-slate-900 dark:text-white">
-              Exportar contatos (CSV)
+              Exportar contatos
             </div>
             <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              Padrão de mercado: exportar a lista respeitando filtros/pesquisa/ordenação atuais.
+              Exporta a lista respeitando filtros, pesquisa e ordenação atuais.
             </div>
           </div>
 
@@ -230,17 +247,55 @@ export function ContactsImportExportModal(props: {
             <b>Campos exportados:</b> name, email, phone, role, company, status, stage, notes, created_at, updated_at.
           </div>
 
+          {/* Seleção de formato */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">Formato:</span>
+            <button
+              type="button"
+              onClick={() => setExportFormat('csv')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${exportFormat === 'csv'
+                ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-slate-900 dark:border-white'
+                : 'bg-white dark:bg-white/5 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-white/10 hover:bg-slate-50'
+                }`}
+            >
+              <FileDown size={13} /> CSV
+            </button>
+            <button
+              type="button"
+              onClick={() => setExportFormat('xlsx')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${exportFormat === 'xlsx'
+                ? 'bg-emerald-600 text-white border-emerald-600'
+                : 'bg-white dark:bg-white/5 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-white/10 hover:bg-slate-50'
+                }`}
+            >
+              <FileSpreadsheet size={13} /> XLSX (Excel)
+            </button>
+          </div>
+
+          {exportFormat === 'csv' && (
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Compatível com qualquer planilha. Use o delimitador acima para ajustar separadores.
+            </p>
+          )}
+          {exportFormat === 'xlsx' && (
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Arquivo <code className="px-1 rounded bg-slate-200/60 dark:bg-white/10">.xlsx</code> com cabeçalhos em negrito e largura de colunas automática. Abre diretamente no Excel e Google Sheets.
+            </p>
+          )}
+
           <button
             type="button"
-            onClick={() => void handleExport()}
+            onClick={() => void handleExport(exportFormat)}
             disabled={isExporting}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 ${
-              isExporting
-                ? 'bg-slate-200 dark:bg-white/10 text-slate-400 cursor-not-allowed'
+            className={`px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 ${isExporting
+              ? 'bg-slate-200 dark:bg-white/10 text-slate-400 cursor-not-allowed'
+              : exportFormat === 'xlsx'
+                ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
                 : 'bg-primary-600 hover:bg-primary-700 text-white'
-            }`}
+              }`}
           >
-            <FileDown size={16} /> {isExporting ? 'Gerando…' : 'Exportar CSV'}
+            {exportFormat === 'xlsx' ? <FileSpreadsheet size={16} /> : <FileDown size={16} />}
+            {isExporting ? 'Gerando…' : `Exportar ${exportFormat.toUpperCase()}`}
           </button>
         </div>
       )}
@@ -314,23 +369,23 @@ export function ContactsImportExportModal(props: {
           </div>
 
           <div className="space-y-1">
-          <label className="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-200">
-            <input
-              type="checkbox"
-              checked={createCompanies}
-              onChange={e => setCreateCompanies(e.target.checked)}
-              className="mt-1"
-            />
-            <span>
-              Criar empresas automaticamente a partir da coluna{' '}
-              <code className="px-1.5 py-0.5 rounded bg-slate-200/60 dark:bg-white/10">company</code>
-            </span>
-          </label>
-          <div className="text-xs text-slate-500 dark:text-slate-400 pl-7">
-            Quando marcado: se o CSV vier com o nome da empresa e ela ainda não existir no CRM, nós criamos a empresa e vinculamos o contato.
-            <br />
-            Quando desmarcado: não criamos empresas — se a empresa não existir, o contato entra <b>sem vínculo</b> de empresa.
-          </div>
+            <label className="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-200">
+              <input
+                type="checkbox"
+                checked={createCompanies}
+                onChange={e => setCreateCompanies(e.target.checked)}
+                className="mt-1"
+              />
+              <span>
+                Criar empresas automaticamente a partir da coluna{' '}
+                <code className="px-1.5 py-0.5 rounded bg-slate-200/60 dark:bg-white/10">company</code>
+              </span>
+            </label>
+            <div className="text-xs text-slate-500 dark:text-slate-400 pl-7">
+              Quando marcado: se o CSV vier com o nome da empresa e ela ainda não existir no CRM, nós criamos a empresa e vinculamos o contato.
+              <br />
+              Quando desmarcado: não criamos empresas — se a empresa não existir, o contato entra <b>sem vínculo</b> de empresa.
+            </div>
           </div>
 
           <div className="flex items-center gap-2">
@@ -338,11 +393,10 @@ export function ContactsImportExportModal(props: {
               type="button"
               onClick={() => void handleImport()}
               disabled={!file || isImporting}
-              className={`px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 ${
-                !file || isImporting
-                  ? 'bg-slate-200 dark:bg-white/10 text-slate-400 cursor-not-allowed'
-                  : 'bg-primary-600 hover:bg-primary-700 text-white'
-              }`}
+              className={`px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 ${!file || isImporting
+                ? 'bg-slate-200 dark:bg-white/10 text-slate-400 cursor-not-allowed'
+                : 'bg-primary-600 hover:bg-primary-700 text-white'
+                }`}
             >
               <Upload size={16} /> {isImporting ? 'Importando…' : 'Importar'}
             </button>

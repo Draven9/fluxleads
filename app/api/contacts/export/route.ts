@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { stringifyCsv, withUtf8Bom, type CsvDelimiter } from '@/lib/utils/csv';
+import * as XLSX from 'xlsx';
 
 type SortBy = 'name' | 'created_at' | 'updated_at' | 'stage';
 type SortOrder = 'asc' | 'desc';
@@ -38,6 +39,7 @@ export async function GET(req: Request) {
     const delimiter = (getParam(sp, 'delimiter') as CsvDelimiter | undefined) || undefined;
     const sortBy = parseSortBy(getParam(sp, 'sortBy'));
     const sortOrder = parseSortOrder(getParam(sp, 'sortOrder'));
+    const format = (getParam(sp, 'format') || 'csv') as 'csv' | 'xlsx';
 
     const supabase = await createClient();
 
@@ -142,10 +144,55 @@ export async function GET(req: Request) {
       c.updated_at || '',
     ]);
 
+    const today = new Date().toISOString().slice(0, 10);
+
+    // ── XLSX ──────────────────────────────────────────────────────────
+    if (format === 'xlsx') {
+      const worksheetData = [header, ...dataRows];
+      const ws = XLSX.utils.aoa_to_sheet(worksheetData);
+
+      // Bold header row
+      const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+      for (let col = range.s.c; col <= range.e.c; col++) {
+        const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
+        if (ws[cellAddress]) {
+          ws[cellAddress].s = { font: { bold: true } };
+        }
+      }
+
+      // Auto column widths based on content
+      const colWidths = header.map((h, colIdx) => {
+        const maxLen = Math.max(
+          h.length,
+          ...dataRows.map(row => String(row[colIdx] || '').length)
+        );
+        return { wch: Math.min(Math.max(maxLen + 2, 12), 50) };
+      });
+      ws['!cols'] = colWidths;
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Contatos');
+
+      const rawBuffer: Uint8Array = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+      // Cria cópia com ArrayBuffer garantido (não SharedArrayBuffer)
+      const xlsxBytes = new Uint8Array(rawBuffer.length);
+      xlsxBytes.set(rawBuffer);
+      const xlsxArrayBuffer: ArrayBuffer = xlsxBytes.buffer;
+      const filename = `contatos-${today}.xlsx`;
+
+      return new NextResponse(xlsxArrayBuffer, {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          'Content-Disposition': `attachment; filename="${filename}"`,
+          'Cache-Control': 'no-store',
+        },
+      });
+    }
+
+    // ── CSV (default) ─────────────────────────────────────────────────
     const d: CsvDelimiter = delimiter === ';' || delimiter === '\t' || delimiter === ',' ? delimiter : ',';
     const csv = withUtf8Bom(stringifyCsv([header, ...dataRows], d));
-
-    const today = new Date().toISOString().slice(0, 10);
     const filename = `contatos-${today}.csv`;
 
     return new NextResponse(csv, {
