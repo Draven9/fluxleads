@@ -267,6 +267,7 @@ export const useDashboardMetrics = (period: PeriodFilter = 'this_month', boardId
   const dealsChange = calculateChange(activeDealsInPeriod.length, previousActiveDeals.length);
   const winRateChange = calculateChange(winRate, previousWinRate);
   const revenueChange = calculateChange(wonRevenue, previousWonRevenue);
+  const contactsChange = calculateChange(contacts.length, previousContacts.length);
 
   // Top Deals (Highest Value) - Mostra do Snapshot (Ativos grandes) ou do Período?
   // Geralmente num dashboard queremos ver as maiores oportunidades ABERTAS agora.
@@ -478,12 +479,14 @@ export const useDashboardMetrics = (period: PeriodFilter = 'this_month', boardId
     lostDeals,
     topLossReasons,
     wonDealsWithDates,
+    contactsCount: contacts.length,
     // Variações percentuais para comparação
     changes: {
       pipeline: pipelineChange,
       deals: dealsChange,
       winRate: winRateChange,
       revenue: revenueChange,
+      contacts: contactsChange,
     },
     activeSnapshotDeals, // Exposing full active pipeline for alerts
   };

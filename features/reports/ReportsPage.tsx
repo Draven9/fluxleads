@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { TrendingUp, Clock, Target, DollarSign, Trophy, Users, Download, Settings } from 'lucide-react';
+import { TrendingUp, Clock, Target, DollarSign, Trophy, Users, Download, Settings, UserPlus, Filter, AlertTriangle } from 'lucide-react';
 import { useDashboardMetrics, PeriodFilter, COMPARISON_LABELS } from '../dashboard/hooks/useDashboardMetrics';
 import { PeriodFilterSelect } from '@/components/filters/PeriodFilterSelect';
 import { LazyRevenueTrendChart, ChartWrapper } from '@/components/charts';
@@ -55,6 +55,7 @@ const ReportsPage: React.FC = () => {
     deals,
     changes,
     funnelData,
+    contactsCount,
   } = useDashboardMetrics(period, selectedBoardId);
 
   // Extrair meta do board selecionado
@@ -276,7 +277,23 @@ const ReportsPage: React.FC = () => {
       )}
 
       {/* KPI Cards Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 shrink-0">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 shrink-0">
+        {/* Novos Leads - FEATURE TASK-10 */}
+        <div className="glass p-4 rounded-xl border border-slate-200 dark:border-white/5 shadow-sm">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="p-2 rounded-lg bg-indigo-500/10">
+              <UserPlus className="text-indigo-500" size={18} />
+            </div>
+            <span className="text-xs text-slate-500">Novos Leads</span>
+          </div>
+          <p className="text-2xl font-bold text-slate-900 dark:text-white">{contactsCount}</p>
+          {changes.contacts !== undefined && (
+            <p className={`text-xs ${changes.contacts >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+              {changes.contacts > 0 ? '+' : ''}{changes.contacts.toFixed(1)}% {COMPARISON_LABELS[period]}
+            </p>
+          )}
+        </div>
+
         {/* Pipeline Value - FEATURE #2 */}
         <div className="glass p-4 rounded-xl border border-slate-200 dark:border-white/5 shadow-sm">
           <div className="flex items-center gap-2 mb-2">
@@ -402,6 +419,109 @@ const ReportsPage: React.FC = () => {
               <div className="flex flex-col items-center justify-center h-full text-slate-500 py-6">
                 <Users size={32} className="mb-2 opacity-50" />
                 <p className="text-sm">Nenhum deal fechado no período.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Terceira Linha: Funil e Motivos de Perda */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 min-h-[250px] pb-4">
+        {/* Funil de Conversão */}
+        <div className="glass p-5 rounded-xl border border-slate-200 dark:border-white/5 shadow-sm flex flex-col h-full overflow-hidden">
+          <div className="flex justify-between items-center mb-3 shrink-0">
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white font-display flex items-center gap-2">
+              <Filter className="text-blue-500" size={20} />
+              Funil de Conversão (Snapshot Atual)
+            </h2>
+          </div>
+          <div className="flex-1 overflow-y-auto min-h-0 space-y-4 pr-2">
+            {funnelData.length > 0 ? (
+              funnelData.map((stage, idx) => {
+                const maxCount = Math.max(...funnelData.map(s => s.count), 1);
+                const widthPercent = (stage.count / maxCount) * 100;
+
+                // Conversão em relação à etapa anterior
+                let conversionRate: number | null = null;
+                if (idx > 0) {
+                  const prevCount = funnelData[idx - 1].count;
+                  conversionRate = prevCount > 0 ? Math.round((stage.count / prevCount) * 100) : 0;
+                }
+
+                return (
+                  <div key={stage.name} className="relative">
+                    {idx > 0 && conversionRate !== null && (
+                      <div className="absolute -top-3 left-6 text-[10px] sm:text-xs text-slate-400 font-medium bg-slate-50 dark:bg-slate-800 px-1 rounded z-10 border border-slate-200 dark:border-slate-700">
+                        ↳ {conversionRate}% conv.
+                      </div>
+                    )}
+                    <div className="flex items-center gap-3">
+                      <div className="w-24 sm:w-32 truncate text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300" title={stage.name}>
+                        {stage.name}
+                      </div>
+                      <div className="flex-1 h-6 sm:h-8 bg-slate-100 dark:bg-slate-800 rounded-lg overflow-hidden flex items-center relative">
+                        <div
+                          className="h-full rounded-lg transition-all duration-500 min-w-[4px] absolute left-0 top-0"
+                          style={{ width: `${widthPercent}%`, backgroundColor: stage.fill || '#3b82f6' }}
+                        />
+                        <span className="relative z-10 ml-2 text-xs sm:text-sm font-bold text-slate-900 dark:text-white drop-shadow-md">
+                          {stage.count}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full text-slate-500">
+                <Filter size={32} className="mb-2 opacity-50" />
+                <p className="text-sm">Nenhum dado no funil.</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Motivos de Perda */}
+        <div className="glass p-5 rounded-xl border border-slate-200 dark:border-white/5 shadow-sm flex flex-col h-full overflow-hidden">
+          <div className="flex justify-between items-center mb-3 shrink-0">
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white font-display flex items-center gap-2">
+              <AlertTriangle className="text-red-500" size={20} />
+              Por que perdemos? (Top Motivos)
+            </h2>
+            <span className="text-xs text-slate-500 bg-slate-100 dark:bg-white/5 px-2 py-1 rounded">
+              {lostDeals.length} perdas
+            </span>
+          </div>
+          <div className="flex-1 overflow-y-auto min-h-0 space-y-3 pr-2">
+            {topLossReasons.length > 0 ? (
+              topLossReasons.map(([reason, count], index) => {
+                const totalLostCount = lostDeals.length || 1;
+                const percent = Math.round((count / totalLostCount) * 100);
+
+                return (
+                  <div key={reason} className="space-y-1">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-medium text-slate-700 dark:text-slate-200 flex items-center gap-2">
+                        <span className="w-5 text-center text-xs font-bold text-slate-400">{index + 1}º</span>
+                        {reason}
+                      </span>
+                      <span className="font-bold text-slate-900 dark:text-white">
+                        {count} <span className="text-slate-400 font-normal text-xs">({percent}%)</span>
+                      </span>
+                    </div>
+                    <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2">
+                      <div
+                        className="bg-red-500 h-2 rounded-full"
+                        style={{ width: `${percent}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full text-slate-500">
+                <AlertTriangle size={32} className="mb-2 opacity-50" />
+                <p className="text-sm">Nenhum deal perdido no período.</p>
               </div>
             )}
           </div>
