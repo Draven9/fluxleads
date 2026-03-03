@@ -68,6 +68,7 @@ export const useContactsController = () => {
   const [stageFilter, setStageFilter] = useState<ContactStage | 'ALL'>(
     (searchParams?.get('stage') as ContactStage) || 'ALL'
   );
+  const [sourceFilter, setSourceFilter] = useState<Contact['source'] | 'ALL'>('ALL'); // TASK-06
   const [viewMode, setViewMode] = useState<'people' | 'companies'>('people');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [dateRange, setDateRange] = useState({ start: '', end: '' });
@@ -100,6 +101,9 @@ export const useContactsController = () => {
     if (stageFilter !== 'ALL') {
       filters.stage = stageFilter;
     }
+    if (sourceFilter !== 'ALL') {
+      filters.source = sourceFilter; // TASK-06
+    }
     if (statusFilter !== 'ALL') {
       filters.status = statusFilter;
     }
@@ -116,11 +120,11 @@ export const useContactsController = () => {
 
     // Return filters (always has at least sorting)
     return filters;
-  }, [search, stageFilter, statusFilter, dateRange, sortBy, sortOrder]);
+  }, [search, stageFilter, statusFilter, dateRange, sortBy, sortOrder, sourceFilter]);
 
   // T029: Track filter changes to reset pagination synchronously
   // This prevents 416 errors when filters change while on a high page number
-  const filterKey = `${search}-${stageFilter}-${statusFilter}-${dateRange.start}-${dateRange.end}`;
+  const filterKey = `${search}-${stageFilter}-${statusFilter}-${dateRange.start}-${dateRange.end}-${sourceFilter}`;
   const prevFilterKeyRef = React.useRef<string>(filterKey);
 
   // Reset to first page when filters change (safe: inside effect)
@@ -650,6 +654,8 @@ export const useContactsController = () => {
     setStatusFilter,
     stageFilter,
     setStageFilter,
+    sourceFilter,
+    setSourceFilter,
     stageCounts,
     viewMode,
     setViewMode,

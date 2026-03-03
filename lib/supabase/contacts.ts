@@ -293,6 +293,11 @@ export const contactsService = {
           query = query.eq('stage', filters.stage);
         }
 
+        // Tnew: Source filter
+        if (filters.source && filters.source !== 'ALL') {
+          query = query.eq('source', filters.source);
+        }
+
         // T009 & T010: Status filter (including RISK logic)
         if (filters.status && filters.status !== 'ALL') {
           if (filters.status === 'RISK') {

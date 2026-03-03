@@ -498,6 +498,8 @@ export interface ContactsServerFilters {
   stage?: string | 'ALL';
   /** Filtro por status. */
   status?: 'ALL' | 'ACTIVE' | 'INACTIVE' | 'CHURNED' | 'RISK';
+  /** Filtro por origem (TASK-06). */
+  source?: Contact['source'] | 'ALL';
   /** Data de início (created_at >= dateStart). */
   dateStart?: string;
   /** Data de fim (created_at <= dateEnd). */

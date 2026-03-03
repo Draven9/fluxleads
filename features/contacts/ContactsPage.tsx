@@ -72,6 +72,8 @@ export const ContactsPage: React.FC = () => {
                 <ContactsFilters
                     dateRange={controller.dateRange}
                     setDateRange={controller.setDateRange}
+                    sourceFilter={controller.sourceFilter}
+                    setSourceFilter={controller.setSourceFilter}
                 />
             )}
 

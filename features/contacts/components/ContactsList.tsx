@@ -230,19 +230,26 @@ export const ContactsList: React.FC<ContactsListProps> = ({
                                             <button
                                                 type="button"
                                                 onClick={() => onRowClick?.(contact) || openEditModal(contact)} // TASK-05
-                                                className="w-9 h-9 rounded-full bg-gradient-to-br from-primary-100 to-primary-200 dark:from-primary-900 dark:to-primary-800 text-primary-700 dark:text-primary-200 flex items-center justify-center font-bold text-sm shadow-sm ring-2 ring-white dark:ring-white/5 hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-dark-card"
+                                                className="w-9 h-9 rounded-full overflow-hidden bg-gradient-to-br from-primary-100 to-primary-200 dark:from-primary-900 dark:to-primary-800 text-primary-700 dark:text-primary-200 flex items-center justify-center font-bold text-sm shadow-sm ring-2 ring-white dark:ring-white/5 hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-dark-card"
                                                 aria-label={`Ver contato: ${contact.name || 'Sem nome'}`}
                                                 title={contact.name || 'Sem nome'}
                                             >
-                                                {(contact.name || '?').charAt(0)}
+                                                {contact.avatar ? (
+                                                    <img src={contact.avatar} alt={contact.name || 'Avatar'} className="w-full h-full object-cover" />
+                                                ) : (
+                                                    (contact.name || '?').charAt(0)
+                                                )}
                                             </button>
                                             <div>
                                                 <button
                                                     onClick={() => onRowClick?.(contact)} // TASK-05
                                                     className="font-semibold text-slate-900 dark:text-white block hover:text-primary-600 dark:hover:text-primary-400 text-left"
                                                 >
-                                                    {contact.name}
+                                                    {contact.name || 'Sem nome'}
                                                 </button>
+                                                {contact.source && (
+                                                    <span className="text-[10px] uppercase font-bold text-slate-500 mt-0.5 block">{contact.source}</span>
+                                                )}
                                             </div>
                                         </div>
                                     </td>
