@@ -7,7 +7,6 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-    // Handle CORS
     if (req.method === 'OPTIONS') {
         return new Response('ok', { headers: corsHeaders });
     }
@@ -15,65 +14,55 @@ serve(async (req) => {
     try {
         const url = new URL(req.url);
 
-        // 1. Validating the Webhook (GET request from Meta Graph API)
+        // 1. Validando o Webhook (GET request da Meta)
         if (req.method === 'GET') {
             const mode = url.searchParams.get('hub.mode');
-            const token = url.searchParams.get('hub.verify_token');
             const challenge = url.searchParams.get('hub.challenge');
 
-            // Em produção real, poderíamos forçar que o token bata com o env: Deno.env.get('META_VERIFY_TOKEN')
-            // Mas para plataformas SaaS onde cada cliente tem a sua, costumamos aceitar desde que o challenge bata
-            // ou varrer a tabela organization_meta_configs. Para simplificar o teste, aceitaremos o token fixo ou qualquer um por agora.
-            const verifyToken = Deno.env.get('META_VERIFY_TOKEN') || 'fluxleads_meta_integration_token_secure';
-
-            if (mode === 'subscribe' && token === verifyToken) {
+            if (mode === 'subscribe') {
                 console.log('WEBHOOK_VERIFIED');
                 return new Response(challenge, { status: 200 });
-            } else if (mode === 'subscribe') {
-                console.log('WEBHOOK_VERIFIED (Token fallback allowed)');
-                return new Response(challenge, { status: 200 });
-            } else {
-                return new Response('Forbidden', { status: 403 });
             }
+            return new Response('Forbidden', { status: 403 });
         }
 
-        // 2. Receiving Events (POST request from Meta Graph API)
+        // 2. Recebendo Eventos (POST request da Meta)
         if (req.method === 'POST') {
             const body = await req.json();
 
-            console.log('Received Meta Webhook Payload:', JSON.stringify(body, null, 2));
+            // TEMPORARY DEBUG LOG FOR FACEBOOK COMMENTS FORMAT
+            console.log('RAW WEBHOOK PAYLOAD:', JSON.stringify(body, null, 2));
 
-            // Inicializar o cliente Supabase com a Service Role Key para ignorar RLS na inserção backend
+            // Cliente Supabase com Service Role para ignorar RLS e inserir no back-end
             const supabaseAdmin = createClient(
                 Deno.env.get('SUPABASE_URL') ?? '',
                 Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
             );
 
-            // Facebook Graph API envia dados neste formato "object: page | instagram"
             if (body.object === 'page' || body.object === 'instagram') {
                 for (const entry of body.entry) {
+                    const pageIdOrAccountId = entry.id; // PSID/IG ID que engatilhou
 
-                    const pageIdOrAccountId = entry.id; // PSID ou IG Account ID que engatilhou
-
-                    // Identificar a organização atrelada a esta página/IG
-                    // Busca baseada no Facebook Page ID ou Instagram Account ID
+                    // Buscar organização atrelada a essa página ou perfil
                     const { data: orgConfig } = await supabaseAdmin
                         .from('organization_meta_configs')
-                        .select('organization_id')
+                        .select('organization_id, facebook_access_token')
                         .or(`facebook_page_id.eq.${pageIdOrAccountId},instagram_account_id.eq.${pageIdOrAccountId}`)
                         .eq('active', true)
                         .maybeSingle();
 
-                    const organizationId = orgConfig?.organization_id || "fallback-org-id-for-dev"; // Idealmente não inserir sem org
+                    // Se não tiver org correspondente, cai no fallback pra não perder a mensagem no teste
+                    const organizationId = orgConfig?.organization_id || "fallback-org-id-for-dev";
+                    const accessToken = orgConfig?.facebook_access_token;
 
-                    // Se for Mensagem em Direct/Messenger
+                    // Mensagens (Direct/Messenger)
                     if (entry.messaging) {
                         for (const event of entry.messaging) {
-                            await handleMessagingEvent(supabaseAdmin, event, organizationId, body.object);
+                            await handleMessagingEvent(supabaseAdmin, event, organizationId, body.object, accessToken);
                         }
                     }
 
-                    // Se for Comentário em Feed/Reels
+                    // Comentários (Feed)
                     if (entry.changes) {
                         for (const change of entry.changes) {
                             await handleChangeEvent(supabaseAdmin, change, organizationId, body.object);
@@ -82,7 +71,7 @@ serve(async (req) => {
                 }
             }
 
-            // Meta requires a 200 OK fast to acknowledge receipt
+            // Meta exige 200 OK rápido
             return new Response('EVENT_RECEIVED', { status: 200, headers: corsHeaders });
         }
 
@@ -98,55 +87,180 @@ serve(async (req) => {
     }
 });
 
-/**
- * Handle Direct Messages (Instagram Direct / Facebook Messenger)
- */
-async function handleMessagingEvent(supabase: any, event: any, organizationId: string, objectType: string) {
+async function handleMessagingEvent(supabase: any, event: any, organizationId: string, objectType: string, accessToken?: string) {
     const senderId = event.sender?.id;
     const recipientId = event.recipient?.id;
-    const provider = objectType === 'instagram' ? 'instagram' : 'facebook'; // fallback
+    const provider = objectType === 'instagram' ? 'instagram' : 'facebook';
+    const messageText = event.message?.text || '';
 
     if (event.message && !event.message.is_echo) {
-        console.log(`Nova mensagem de [${provider}] psid: ${senderId}: ${event.message.text}`);
+        console.log(`Nova mensagem de [${provider}] psid: ${senderId}: ${messageText}`);
 
-        // Fluxo básico Omnichannel Inbox:
-        // 1. Achar/Criar Contact no Supabase
-        // 2. Achar/Criar Chat_Session no Supabase (onde provider_id = senderId)
-        // 3. Inserir a message nova lá dentro.
-        // Esta parte foi comentada para garantir que passamos na fase 1. Os dados chegam perfeitamente e 
-        // podem ser loggados usando `supabase db logs`.
+        if (!organizationId || organizationId === 'fallback-org-id-for-dev') {
+            console.warn(`[AVISO] Organização não encontrada para este PSID/IGID. Configure 'organization_meta_configs' no banco de dados. Mensagem recebida, mas não salva no banco.`);
+            return;
+        }
+
+        try {
+            // 1. Procurar ou Criar Contato
+            let { data: contact, error: contactError } = await supabase
+                .from('contacts')
+                .select('*')
+                .eq('phone', senderId)
+                .eq('organization_id', organizationId)
+                .maybeSingle();
+
+            if (contactError) throw contactError;
+
+            if (!contact) {
+                let contactName = `Lead via ${provider}`;
+
+                // Tentar buscar o nome real na Graph API se tivermos o token
+                if (accessToken) {
+                    try {
+                        let graphUrl = `https://graph.facebook.com/v25.0/${senderId}?access_token=${accessToken}`;
+                        if (provider === 'instagram') {
+                            graphUrl += `&fields=name,username,profile_pic`;
+                        } else {
+                            graphUrl += `&fields=first_name,last_name,name,profile_pic`;
+                        }
+
+                        const profileResponse = await fetch(graphUrl);
+                        const profileData = await profileResponse.json();
+
+                        if (profileData.name) {
+                            contactName = profileData.name;
+                        } else if (profileData.username) {
+                            contactName = profileData.username;
+                        } else if (profileData.first_name) {
+                            contactName = `${profileData.first_name} ${profileData.last_name || ''}`.trim();
+                        }
+                    } catch (apiErr) {
+                        console.error("Erro ao buscar perfil na Graph API:", apiErr);
+                    }
+                }
+
+                const { data: newContact, error: insertError } = await supabase
+                    .from('contacts')
+                    .insert({
+                        name: contactName,
+                        phone: senderId,
+                        source: provider,
+                        organization_id: organizationId
+                    })
+                    .select()
+                    .single();
+
+                if (insertError) throw insertError;
+                contact = newContact;
+            }
+
+            // 2. Procurar ou Criar Chat Session
+            let { data: session, error: sessionError } = await supabase
+                .from('chat_sessions')
+                .select('*')
+                .eq('contact_id', contact.id)
+                .maybeSingle();
+
+            if (sessionError) throw sessionError;
+
+            if (!session) {
+                // CORREÇÃO CRÍTICA AQUI: A tabela chat_sessions não aceita o campo 'status' atualmente.
+                // Inserir com provider e sem o status para não causar erro 500 no Supabase.
+                const { data: newSession, error: newSessionError } = await supabase
+                    .from('chat_sessions')
+                    .insert({
+                        contact_id: contact.id,
+                        organization_id: organizationId,
+                        provider: provider,
+                        provider_id: recipientId
+                    })
+                    .select()
+                    .single();
+
+                if (newSessionError) throw newSessionError;
+                session = newSession;
+            }
+
+            // 3. Inserir a Mensagem
+            const { data: newMessage, error: messageError } = await supabase
+                .from('messages')
+                .insert({
+                    organization_id: organizationId,
+                    session_id: session.id,
+                    content: messageText,
+                    direction: 'inbound',
+                    status: 'received'
+                })
+                .select()
+                .single();
+
+            if (messageError) throw messageError;
+
+            // 4. Atualizar Data e Unread Count da Sessão
+            await supabase
+                .from('chat_sessions')
+                .update({
+                    last_message_at: new Date().toISOString(),
+                    unread_count: (session.unread_count || 0) + 1,
+                    is_marked_unread: true
+                })
+                .eq('id', session.id);
+
+            console.log("Mensagem salva na tabela messages com sucesso!");
+
+        } catch (dbError) {
+            console.error("Erro inserindo no banco de dados:", dbError);
+        }
     }
 }
 
-/**
- * Handle Feed Comments (Instagram / Facebook posts)
- */
 async function handleChangeEvent(supabase: any, change: any, organizationId: string, objectType: string) {
-    // Comentários no Instagram ou FB
-    if (change.field === 'comments') {
-        const comment = change.value;
+    if (change.field === 'comments' || change.field === 'feed') {
+        const value = change.value;
         const provider = objectType === 'instagram' ? 'instagram' : 'facebook';
 
-        // Identificar a ação. Pode ser "add", "edit", "remove"
-        if (change.value.item === 'comment' && change.value.verb === 'add') {
-            console.log(`Novo comentário de ${comment.from?.name}: ${comment.message}`);
+        let externalCommentId, externalPostId, externalFromId, fromName, content;
 
-            if (organizationId && organizationId !== 'fallback-org-id-for-dev') {
-                // Insere no banco Desacoplado de Comentários para o menu "Engajamento"
-                const { error } = await supabase.from('social_comments').insert({
-                    organization_id: organizationId,
-                    provider: provider,
-                    external_comment_id: comment.comment_id,
-                    external_post_id: comment.post_id || comment.media_id,
-                    external_from_id: comment.from?.id,
-                    from_name: comment.from?.name || 'Usuário Meta',
-                    content: comment.message,
-                    status: 'unread'
-                });
+        if (change.field === 'feed' && value.item === 'comment' && value.verb === 'add') {
+            // Facebook Pages comment structure
+            externalCommentId = value.comment_id;
+            externalPostId = value.post_id;
+            externalFromId = value.from?.id || 'unknown';
+            fromName = value.from?.name || 'Usuário Facebook';
+            content = value.message;
+        } else if (change.field === 'comments') {
+            // Instagram comment structure
+            // Para instagram, muitas vezes vem delete ou hide no text, checar se não é verb diferente
+            // se tiver apenas 'id' e 'text' já é um comentário criado.
+            if (!value.id || !value.text) return; // ignora se não for criação de comment válido
+            externalCommentId = value.id;
+            externalPostId = value.media?.id || value.media_id || 'unknown';
+            externalFromId = value.from?.id || 'unknown';
+            fromName = value.from?.username || value.from?.name || 'Usuário Instagram';
+            content = value.text;
+        } else {
+            return; // Outro tipo de evento feed/comments (edição, curtir, etc)
+        }
 
-                if (error) {
-                    console.error("Falha inserindo comment:", error);
-                }
+        console.log(`Novo comentário de ${fromName}: ${content}`);
+
+        if (organizationId && organizationId !== 'fallback-org-id-for-dev') {
+            const { error } = await supabase.from('social_comments').insert({
+                organization_id: organizationId,
+                provider: provider,
+                external_comment_id: externalCommentId,
+                external_post_id: externalPostId,
+                external_from_id: externalFromId,
+                from_name: fromName,
+                content: content,
+                status: 'unread'
+            });
+
+            if (error) {
+                console.error("Falha inserindo comment:", error);
+            } else {
+                console.log("Comentário salvo em social_comments com sucesso!");
             }
         }
     }

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
-import { MessageCircle, ExternalLink, Check, MessageSquareReply, EyeOff, UserPlus } from 'lucide-react';
+import { MessageCircle, ExternalLink, Check, MessageSquareReply, EyeOff, UserPlus, X, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import toast from 'react-hot-toast';
 
@@ -24,6 +24,11 @@ export default function CommentsPage() {
     const { organizationId } = useAuth();
     const [comments, setComments] = useState<SocialComment[]>([]);
     const [loading, setLoading] = useState(true);
+
+    // Modal state
+    const [replyingTo, setReplyingTo] = useState<SocialComment | null>(null);
+    const [replyContent, setReplyContent] = useState('');
+    const [isSubmittingReply, setIsSubmittingReply] = useState(false);
 
     useEffect(() => {
         if (!organizationId) return;
@@ -78,7 +83,7 @@ export default function CommentsPage() {
         }
     };
 
-    const updateStatus = async (id: string, newStatus: SocialComment['status']) => {
+    const updateStatus = async (id: string, newStatus: SocialComment['status'], showToast = true) => {
         try {
             const { error } = await supabase
                 .from('social_comments')
@@ -86,10 +91,40 @@ export default function CommentsPage() {
                 .eq('id', id);
 
             if (error) throw error;
-            toast.success('Status atualizado');
+            if (showToast) toast.success('Status atualizado');
         } catch (err) {
             console.error('Error updating status:', err);
-            toast.error('Erro ao atualizar comentário');
+            if (showToast) toast.error('Erro ao atualizar comentário');
+        }
+    };
+
+    const handleSendReply = async () => {
+        if (!replyingTo || !replyContent.trim()) return;
+
+        setIsSubmittingReply(true);
+        try {
+            const { data, error } = await supabase.functions.invoke('meta-reply-comment', {
+                body: {
+                    comment_id: replyingTo.external_comment_id,
+                    provider: replyingTo.provider,
+                    content: replyContent,
+                    organization_id: organizationId
+                }
+            });
+
+            if (error) throw error;
+            if (data?.error) throw new Error(data.error);
+
+            toast.success('Resposta enviada com sucesso!');
+            // Atualiza status localmente e limpa modal
+            await updateStatus(replyingTo.id, 'replied', false);
+            setReplyingTo(null);
+            setReplyContent('');
+        } catch (err: any) {
+            console.error('Error replying to comment:', err);
+            toast.error(err.message || 'Erro ao enviar a resposta. Tente novamente.');
+        } finally {
+            setIsSubmittingReply(false);
         }
     };
 
@@ -166,7 +201,7 @@ export default function CommentsPage() {
                                         <div className="mt-4 flex flex-wrap items-center gap-2">
                                             <button
                                                 className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-primary-50 text-primary-700 hover:bg-primary-100 dark:bg-primary-900/20 dark:text-primary-400 dark:hover:bg-primary-900/40 transition-colors"
-                                                onClick={() => alert('Abrir modal de Resposta Publica Graph API (Em breve)')}
+                                                onClick={() => setReplyingTo(comment)}
                                             >
                                                 <MessageSquareReply size={14} /> Responder
                                             </button>
@@ -204,6 +239,66 @@ export default function CommentsPage() {
                     </div>
                 )}
             </div>
+
+            {/* Modal de Resposta */}
+            {replyingTo && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+                    <div className="bg-white dark:bg-slate-900 rounded-xl max-w-lg w-full shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-200">
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800">
+                            <h3 className="font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                                <MessageSquareReply size={18} className="text-primary-500" />
+                                Responder {replyingTo.provider === 'instagram' ? 'no Instagram' : 'no Facebook'}
+                            </h3>
+                            <button
+                                onClick={() => setReplyingTo(null)}
+                                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                                disabled={isSubmittingReply}
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <div className="p-6">
+                            <div className="bg-slate-50 dark:bg-slate-800/50 p-3 text-sm rounded-lg mb-4 text-slate-600 dark:text-slate-400 border border-slate-100 dark:border-slate-800/80">
+                                <span className="font-medium text-slate-900 dark:text-slate-200">{replyingTo.from_name}:</span> {replyingTo.content}
+                            </div>
+
+                            <textarea
+                                className="w-full resize-none bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 text-slate-900 dark:text-white placeholder:text-slate-400"
+                                rows={4}
+                                placeholder="Escreva uma resposta pública..."
+                                value={replyContent}
+                                onChange={(e) => setReplyContent(e.target.value)}
+                                disabled={isSubmittingReply}
+                                autoFocus
+                            />
+                        </div>
+
+                        <div className="px-6 py-4 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3">
+                            <button
+                                onClick={() => setReplyingTo(null)}
+                                className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition-colors"
+                                disabled={isSubmittingReply}
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={handleSendReply}
+                                disabled={!replyContent.trim() || isSubmittingReply}
+                                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg shadow-sm transition-all"
+                            >
+                                {isSubmittingReply ? (
+                                    <>
+                                        <Loader2 size={16} className="animate-spin" /> Enviando...
+                                    </>
+                                ) : (
+                                    'Publicar Resposta'
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

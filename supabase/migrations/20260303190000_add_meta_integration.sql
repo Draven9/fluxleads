@@ -53,13 +53,13 @@ ALTER TABLE public.social_comments ENABLE ROW LEVEL SECURITY;
 
 -- Allow regular users to interact with comments from their org
 CREATE POLICY "Users can view social comments in their org" ON public.social_comments
-  FOR SELECT USING (organization_id::text = (auth.jwt() ->> 'organization_id'));
+  FOR SELECT USING (organization_id IN (SELECT organization_id FROM public.profiles WHERE id = auth.uid()));
 
 CREATE POLICY "Users can insert social comments in their org" ON public.social_comments
-  FOR INSERT WITH CHECK (organization_id::text = (auth.jwt() ->> 'organization_id'));
+  FOR INSERT WITH CHECK (organization_id IN (SELECT organization_id FROM public.profiles WHERE id = auth.uid()));
 
 CREATE POLICY "Users can update social comments in their org" ON public.social_comments
-  FOR UPDATE USING (organization_id::text = (auth.jwt() ->> 'organization_id'));
+  FOR UPDATE USING (organization_id IN (SELECT organization_id FROM public.profiles WHERE id = auth.uid()));
 
 -- Enable realtime for comments
 ALTER PUBLICATION supabase_realtime ADD TABLE public.social_comments;

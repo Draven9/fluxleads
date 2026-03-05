@@ -21,13 +21,13 @@ CREATE TABLE IF NOT EXISTS public.chat_sessions (
 ALTER TABLE public.chat_sessions ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Users can view sessions in their org" ON public.chat_sessions
-  FOR SELECT USING (organization_id = (auth.jwt() ->> 'organization_id'));
+  FOR SELECT USING (organization_id = (SELECT organization_id::text FROM public.profiles WHERE id = auth.uid()));
 
 CREATE POLICY "Users can insert sessions in their org" ON public.chat_sessions
-  FOR INSERT WITH CHECK (organization_id = (auth.jwt() ->> 'organization_id'));
+  FOR INSERT WITH CHECK (organization_id = (SELECT organization_id::text FROM public.profiles WHERE id = auth.uid()));
 
 CREATE POLICY "Users can update sessions in their org" ON public.chat_sessions
-  FOR UPDATE USING (organization_id = (auth.jwt() ->> 'organization_id'));
+  FOR UPDATE USING (organization_id = (SELECT organization_id::text FROM public.profiles WHERE id = auth.uid()));
 
 -- 2. MESSAGES (Mensagens)
 CREATE TABLE IF NOT EXISTS public.messages (
@@ -50,13 +50,13 @@ CREATE TABLE IF NOT EXISTS public.messages (
 ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Users can view messages in their org" ON public.messages
-  FOR SELECT USING (organization_id = (auth.jwt() ->> 'organization_id'));
+  FOR SELECT USING (organization_id = (SELECT organization_id::text FROM public.profiles WHERE id = auth.uid()));
 
 CREATE POLICY "Users can insert messages in their org" ON public.messages
-  FOR INSERT WITH CHECK (organization_id = (auth.jwt() ->> 'organization_id'));
+  FOR INSERT WITH CHECK (organization_id = (SELECT organization_id::text FROM public.profiles WHERE id = auth.uid()));
 
 CREATE POLICY "Users can update messages in their org" ON public.messages
-  FOR UPDATE USING (organization_id = (auth.jwt() ->> 'organization_id'));
+  FOR UPDATE USING (organization_id = (SELECT organization_id::text FROM public.profiles WHERE id = auth.uid()));
 
 -- 3. REALTIME PUBLICATION
 -- Enable Realtime for messages so UI updates instantly
