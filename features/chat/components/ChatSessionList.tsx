@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Search, Clock, CheckCircle2, MoreVertical, Archive, ArchiveRestore, Filter, MessageSquare, Plus, Bell, Hand, Trash2, Tag, ArrowUpRight, Facebook, Instagram, User } from 'lucide-react';
 import Image from 'next/image';
 import { ChatSession } from '../types';
@@ -17,8 +17,21 @@ interface ChatSessionListProps {
 export const ChatSessionList: React.FC<ChatSessionListProps> = ({ selectedSessionId, onSelectSession }) => {
     const { sessions, loading, deleteSession, toggleMarkUnread } = useChatSessions();
     const { profile } = useAuth();
+    const [searchQuery, setSearchQuery] = useState('');
 
     const isAdmin = profile?.role === 'admin' || profile?.role === 'owner';
+
+    // Filter sessions by contact name, phone, or provider ID
+    const filteredSessions = searchQuery.trim()
+        ? sessions.filter(s => {
+            const q = searchQuery.toLowerCase();
+            return (
+                s.contact?.name?.toLowerCase().includes(q) ||
+                s.contact?.phone?.toLowerCase().includes(q) ||
+                s.provider_id?.toLowerCase().includes(q)
+            );
+        })
+        : sessions;
 
     // Format date utility
     const formatTime = (dateStr: string) => {
@@ -71,6 +84,8 @@ export const ChatSessionList: React.FC<ChatSessionListProps> = ({ selectedSessio
                     <input
                         type="text"
                         placeholder="Buscar..."
+                        value={searchQuery}
+                        onChange={e => setSearchQuery(e.target.value)}
                         className="w-full pl-9 pr-4 py-2 bg-slate-100 dark:bg-white/5 border-none rounded-lg text-sm focus:ring-2 focus:ring-primary-500 text-slate-900 dark:text-white placeholder-slate-500 focus:bg-white dark:focus:bg-slate-800 transition-all"
                     />
                 </div>
@@ -80,13 +95,13 @@ export const ChatSessionList: React.FC<ChatSessionListProps> = ({ selectedSessio
             <div className="flex-1 overflow-y-auto">
                 {loading ? (
                     <div className="p-4 text-center text-slate-400 text-sm">Carregando...</div>
-                ) : sessions.length === 0 ? (
+                ) : filteredSessions.length === 0 ? (
                     <div className="p-4 text-center text-sm text-slate-500">
-                        Nenhuma conversa encontrada.
+                        {searchQuery ? 'Nenhuma conversa encontrada para essa busca.' : 'Nenhuma conversa encontrada.'}
                     </div>
                 ) : (
                     <div className="divide-y divide-slate-50 dark:divide-white/5">
-                        {sessions.map((session) => {
+                        {filteredSessions.map((session) => {
                             const isUnread = session.unread_count > 0 || session.is_marked_unread;
 
                             return (
