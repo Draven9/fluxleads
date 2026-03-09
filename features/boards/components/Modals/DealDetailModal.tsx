@@ -418,7 +418,7 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({ dealId, isOpen
                     setEditTitle(deal.title);
                     setIsEditingTitle(true);
                   }}
-                  className="text-2xl font-bold text-slate-900 dark:text-white font-display leading-tight cursor-pointer hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-2 group transition-colors"
+                  className="text-2xl font-bold text-slate-900 dark:text-white font-display leading-tight cursor-pointer hover:text-primary-600 dark:hover:text-primary-400 inline-flex items-center gap-2 group transition-colors w-fit"
                   title="Clique para editar"
                 >
                   {deal.title}
@@ -448,16 +448,16 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({ dealId, isOpen
                     setEditValue(deal.value.toString());
                     setIsEditingValue(true);
                   }}
-                  className="text-lg text-primary-600 dark:text-primary-400 font-mono font-bold cursor-pointer hover:underline decoration-dashed underline-offset-4"
+                  className="text-lg text-primary-600 dark:text-primary-400 font-mono font-bold cursor-pointer hover:underline decoration-dashed underline-offset-4 w-fit"
                   title="Clique para editar valor"
                 >
                   ${deal.value.toLocaleString()}
                 </p>
               )}
             </div>
-            <div className="flex gap-3 items-center">
+            <div className="flex gap-3 items-center flex-shrink-0">
 
-              {/* Botão de Chat sempre visível no Header */}
+              {/* Botão de Chat — navega para tela de mensagens com o lead */}
               <button
                 type="button"
                 onClick={() => {
@@ -468,11 +468,8 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({ dealId, isOpen
                     addToast('Este negócio não possui um contato vinculado.', 'warning');
                   }
                 }}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg font-bold text-sm shadow-sm transition-all border ${deal.contactId
-                    ? 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-green-300 dark:hover:border-green-700 hover:text-green-600 dark:hover:text-green-400'
-                    : 'bg-transparent border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed opacity-60'
-                  }`}
-                title={deal.contactId ? 'Iniciar ou continuar conversa com o lead' : 'Nenhum contato vinculado'}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg font-bold text-sm shadow-sm transition-all border bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-green-400 dark:hover:border-green-600 hover:text-green-600 dark:hover:text-green-400"
+                title="Iniciar ou continuar conversa com o lead"
                 aria-label="Ir para mensagens com o lead"
               >
                 <MessageCircle size={16} />
