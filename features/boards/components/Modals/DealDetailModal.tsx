@@ -637,20 +637,25 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({ dealId, isOpen
                     </div>
                   </div>
 
-                  {deal.contactId && (
-                    <button
-                      type="button"
-                      onClick={() => {
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (deal.contactId) {
                         onClose();
                         router.push(`/chat?contactId=${deal.contactId}`);
-                      }}
-                      className="p-2 -mr-2 rounded-full text-slate-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/40 dark:hover:text-green-400 transition-all opacity-70 hover:opacity-100"
-                      title="Ir para mensagens com o lead"
-                      aria-label="Ir para mensagens com o lead"
-                    >
-                      <MessageCircle size={20} />
-                    </button>
-                  )}
+                      } else {
+                        addToast('Este negócio não possui um contato vinculado.', 'warning');
+                      }
+                    }}
+                    className={`p-2 -mr-2 rounded-full transition-all ${deal.contactId
+                        ? 'text-slate-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/40 dark:hover:text-green-400 opacity-70 hover:opacity-100'
+                        : 'text-slate-300 dark:text-slate-700 cursor-not-allowed opacity-50'
+                      }`}
+                    title={deal.contactId ? 'Ir para mensagens com o lead' : 'Nenhum contato vinculado'}
+                    aria-label="Ir para mensagens com o lead"
+                  >
+                    <MessageCircle size={20} />
+                  </button>
                 </div>
               </div>
 
