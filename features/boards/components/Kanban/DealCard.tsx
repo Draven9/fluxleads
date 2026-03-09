@@ -1,12 +1,10 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import { DealView } from '@/types';
-import { Building2, Hourglass, Trophy, XCircle } from 'lucide-react';
+import { Building2, Hourglass, Trophy, XCircle, MessageCircle } from 'lucide-react';
 import { ActivityStatusIcon } from './ActivityStatusIcon';
 import { DealChecklist } from '../DealChecklist';
-
-// ... (existing imports, but replace_file_content requires me to target specific blocks. I will do 2 chunks)
-
+import { useRouter } from 'next/navigation';
 import { priorityAriaLabelPtBr } from '@/lib/utils/priority';
 
 interface DealCardProps {
@@ -62,6 +60,7 @@ const DealCardComponent: React.FC<DealCardProps> = ({
   setLastMouseDownDealId,
   onMoveToStage,
 }) => {
+  const router = useRouter();
   const [localDragging, setLocalDragging] = useState(false);
   const isClosed = isDealClosed(deal);
 
@@ -268,6 +267,21 @@ const DealCardComponent: React.FC<DealCardProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            className="p-1.5 rounded text-slate-400 hover:text-cyan-600 hover:bg-cyan-50 dark:hover:bg-cyan-900/30 dark:hover:text-cyan-400 transition-colors"
+            title="Iniciar Conversa"
+            aria-label="Iniciar Conversa"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (deal.contactId) {
+                router.push(`/chat?contactId=${deal.contactId}`);
+              }
+            }}
+          >
+            <MessageCircle size={16} aria-hidden="true" />
+          </button>
+
           <div onClick={(e) => e.stopPropagation()}>
             <DealChecklist
               dealId={deal.id}

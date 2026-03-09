@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useId, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { useCRM } from '@/context/CRMContext';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
@@ -35,6 +36,7 @@ import {
   Bot,
   Tag as TagIcon,
   Plus,
+  MessageCircle,
 } from 'lucide-react';
 import { StageProgressBar } from '../StageProgressBar';
 import { ActivityRow } from '@/features/activities/components/ActivityRow';
@@ -58,6 +60,7 @@ const PT_BR_DATE_FORMATTER = new Intl.DateTimeFormat('pt-BR');
 export const DealDetailModal: React.FC<DealDetailModalProps> = ({ dealId, isOpen, onClose }) => {
   // Accessibility: Unique ID for ARIA labelling
   const headingId = useId();
+  const router = useRouter();
 
   // Accessibility: Return focus to trigger element when modal closes
   useFocusReturn({ enabled: isOpen });
@@ -603,34 +606,51 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({ dealId, isOpen
                 <h3 className="text-xs font-bold text-slate-400 uppercase mb-2 flex items-center gap-2">
                   <User size={14} /> Contato Principal
                 </h3>
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-xs font-bold">
-                    {(deal.contactName || '?').charAt(0)}
-                  </div>
-                  <div>
-                    <p className="text-slate-900 dark:text-white font-medium text-sm flex items-center gap-2">
-                      {deal.contactName || 'Sem contato'}
-                      {contact?.stage &&
-                        (() => {
-                          const stage = lifecycleStageById.get(contact.stage);
-                          if (!stage) return null;
+                <div className="flex items-center justify-between group">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-xs font-bold">
+                      {(deal.contactName || '?').charAt(0)}
+                    </div>
+                    <div>
+                      <p className="text-slate-900 dark:text-white font-medium text-sm flex items-center gap-2">
+                        {deal.contactName || 'Sem contato'}
+                        {contact?.stage &&
+                          (() => {
+                            const stage = lifecycleStageById.get(contact.stage);
+                            if (!stage) return null;
 
-                          // Extract base color name (e.g. 'blue' from 'bg-blue-500')
-                          const colorClass = stage.color; // e.g. bg-blue-500
-                          // We need to construct text and ring classes dynamically or just use inline styles/safe list
-                          // For now, let's just use the background color provided and white text
+                            // Extract base color name (e.g. 'blue' from 'bg-blue-500')
+                            const colorClass = stage.color; // e.g. bg-blue-500
+                            // We need to construct text and ring classes dynamically or just use inline styles/safe list
+                            // For now, let's just use the background color provided and white text
 
-                          return (
-                            <span
-                              className={`text-[10px] font-black px-2 py-0.5 rounded shadow-sm uppercase tracking-wider flex items-center gap-1 text-white ${colorClass}`}
-                            >
-                              {stage.name}
-                            </span>
-                          );
-                        })()}
-                    </p>
-                    <p className="text-slate-500 text-xs">{deal.contactEmail}</p>
+                            return (
+                              <span
+                                className={`text-[10px] font-black px-2 py-0.5 rounded shadow-sm uppercase tracking-wider flex items-center gap-1 text-white ${colorClass}`}
+                              >
+                                {stage.name}
+                              </span>
+                            );
+                          })()}
+                      </p>
+                      <p className="text-slate-500 text-xs">{deal.contactEmail}</p>
+                    </div>
                   </div>
+
+                  {deal.contactId && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onClose();
+                        router.push(`/chat?contactId=${deal.contactId}`);
+                      }}
+                      className="p-2 -mr-2 rounded-full text-slate-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/40 dark:hover:text-green-400 transition-all opacity-70 hover:opacity-100"
+                      title="Ir para mensagens com o lead"
+                      aria-label="Ir para mensagens com o lead"
+                    >
+                      <MessageCircle size={20} />
+                    </button>
+                  )}
                 </div>
               </div>
 
