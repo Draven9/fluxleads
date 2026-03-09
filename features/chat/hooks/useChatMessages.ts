@@ -13,9 +13,19 @@ export function useChatMessages(sessionId: string | null) {
     const [hasMore, setHasMore] = useState(true);
     const [page, setPage] = useState(0);
 
+    // Track pending optimistic message IDs so we can replace them
+    // when the real INSERT event arrives from Supabase Realtime.
+    const pendingTempIds = useRef<Set<string>>(new Set());
+
     // Fetch Messages (Initial Load)
     useEffect(() => {
         if (!sessionId || !organizationId) return;
+
+        // Reset state on session change
+        setMessages([]);
+        setHasMore(true);
+        setPage(0);
+        pendingTempIds.current.clear();
 
         const fetchInitialMessages = async () => {
             setLoading(true);
@@ -58,10 +68,19 @@ export function useChatMessages(sessionId: string | null) {
                     filter: `session_id=eq.${sessionId}`,
                 },
                 (payload) => {
-                    // Start Optimistic UI handled by sendMessage, but for incoming:
                     const newMsg = payload.new as Message;
                     setMessages((prev) => {
-                        // Avoid duplicates if optimistic update already added it
+                        // If we have a pending optimistic message, replace it
+                        // with the confirmed real message from the DB.
+                        if (pendingTempIds.current.size > 0) {
+                            const tempId = pendingTempIds.current.values().next().value;
+                            if (tempId) {
+                                pendingTempIds.current.delete(tempId);
+                                return prev.map(m => m.id === tempId ? newMsg : m);
+                            }
+                        }
+
+                        // Avoid duplicates from other event sources
                         if (prev.some(m => m.id === newMsg.id)) return prev;
                         return [...prev, newMsg];
                     });
@@ -130,13 +149,10 @@ export function useChatMessages(sessionId: string | null) {
                 }
 
                 // Sanitize filename to be URL-safe but readable
-                // Remove special chars, spaces to underscores, keep alphanumeric and dots/hyphens
                 const safeName = originalName
                     ? originalName.replace(/[^a-zA-Z0-9._-]/g, '_')
                     : `file.${fileExt}`;
 
-                // Construct a path that includes the sanitized original name
-                // e.g., organization/session/timestamp_My_Contract.pdf
                 const fileName = `${organizationId}/${sessionId}/${Date.now()}_${safeName}`;
 
                 const { data, error: uploadError } = await supabase.storage
@@ -144,7 +160,7 @@ export function useChatMessages(sessionId: string | null) {
                     .upload(fileName, media.file, {
                         cacheControl: '3600',
                         upsert: false,
-                        contentType: mimeType // Explicitly set content type
+                        contentType: mimeType
                     });
 
                 if (uploadError) throw uploadError;
@@ -176,7 +192,7 @@ export function useChatMessages(sessionId: string | null) {
             finalContent = `*[${senderName}]:* ${content}`;
         }
 
-        // Optimistic UI Update
+        // Optimistic UI Update — track tempId so Realtime can replace it
         const tempId = crypto.randomUUID();
         const optimisticMessage: Message = {
             id: tempId,
@@ -190,6 +206,9 @@ export function useChatMessages(sessionId: string | null) {
             created_at: new Date().toISOString(),
             reply_to_message_id: replyToId
         };
+
+        // Register tempId BEFORE adding to state so Realtime handler sees it
+        pendingTempIds.current.add(tempId);
         setMessages((prev) => [...prev, optimisticMessage]);
 
         // Send via Edge Function (saves to DB + triggers webhook)
@@ -199,7 +218,7 @@ export function useChatMessages(sessionId: string | null) {
                 session_id: sessionId,
                 content: finalContent,
                 media_url: mediaUrl,
-                media_name: mediaName, // Pass captured original filename
+                media_name: mediaName,
                 media_mimetype: media?.file?.type || (messageType === 'image' ? 'image/jpeg' : messageType === 'audio' ? 'audio/webm' : 'application/octet-stream'),
                 message_type: messageType,
                 reply_to_message_id: replyToId,
@@ -210,8 +229,8 @@ export function useChatMessages(sessionId: string | null) {
         if (error) {
             console.error('Error sending message:', error);
             toast.error('Erro ao enviar mensagem.');
-            // Remove optimistic message on error? Or mark as failed?
-            // Ideally mark as failed, but for now let's keep it simple.
+            // Remove the optimistic message on error
+            pendingTempIds.current.delete(tempId);
             setMessages(prev => prev.filter(m => m.id !== tempId));
             throw error;
         }

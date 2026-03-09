@@ -30,9 +30,9 @@ export function useChatSessions() {
 
         fetchSessions();
 
-        // Realtime Subscription
+        // Realtime Subscription — canal único por organização para evitar colisão
         const channel = supabase
-            .channel('chat_sessions_list')
+            .channel(`chat_sessions_list_${organizationId}`)
             .on(
                 'postgres_changes',
                 {
@@ -51,18 +51,19 @@ export function useChatSessions() {
                             .single();
 
                         if (data) {
-                            setSessions((prev) => [data as ChatSession, ...prev]);
+                            setSessions((prev) => {
+                                // Avoid duplicates
+                                if (prev.some(s => s.id === data.id)) return prev;
+                                return [data as ChatSession, ...prev];
+                            });
                         }
                     } else if (payload.eventType === 'UPDATE') {
                         setSessions((prev) => {
                             const updatedSession = payload.new as ChatSession;
                             const existing = prev.find(s => s.id === updatedSession.id);
 
-                            // Preserve the contact info if not fetched again (simplified)
-                            // Ideally we might want to re-fetch if relations change, but for unread count updates/timestamp this is faster
                             const merged = existing ? { ...existing, ...updatedSession } : updatedSession;
 
-                            // Re-sort
                             const newList = prev.map(s => s.id === merged.id ? merged : s);
                             return newList.sort((a, b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime());
                         });
