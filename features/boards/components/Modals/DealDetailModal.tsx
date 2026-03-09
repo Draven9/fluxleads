@@ -456,6 +456,29 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({ dealId, isOpen
               )}
             </div>
             <div className="flex gap-3 items-center">
+
+              {/* Botão de Chat sempre visível no Header */}
+              <button
+                type="button"
+                onClick={() => {
+                  if (deal.contactId) {
+                    onClose();
+                    router.push(`/chat?contactId=${deal.contactId}`);
+                  } else {
+                    addToast('Este negócio não possui um contato vinculado.', 'warning');
+                  }
+                }}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg font-bold text-sm shadow-sm transition-all border ${deal.contactId
+                    ? 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-green-300 dark:hover:border-green-700 hover:text-green-600 dark:hover:text-green-400'
+                    : 'bg-transparent border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed opacity-60'
+                  }`}
+                title={deal.contactId ? 'Iniciar ou continuar conversa com o lead' : 'Nenhum contato vinculado'}
+                aria-label="Ir para mensagens com o lead"
+              >
+                <MessageCircle size={16} />
+                <span>Conversar</span>
+              </button>
+
               {/* Se fechado: mostra badge + botão Reabrir */}
               {(deal.isWon || deal.isLost) ? (
                 <>
@@ -636,26 +659,6 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({ dealId, isOpen
                       <p className="text-slate-500 text-xs">{deal.contactEmail}</p>
                     </div>
                   </div>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (deal.contactId) {
-                        onClose();
-                        router.push(`/chat?contactId=${deal.contactId}`);
-                      } else {
-                        addToast('Este negócio não possui um contato vinculado.', 'warning');
-                      }
-                    }}
-                    className={`p-2 -mr-2 rounded-full transition-all ${deal.contactId
-                        ? 'text-slate-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/40 dark:hover:text-green-400 opacity-70 hover:opacity-100'
-                        : 'text-slate-300 dark:text-slate-700 cursor-not-allowed opacity-50'
-                      }`}
-                    title={deal.contactId ? 'Ir para mensagens com o lead' : 'Nenhum contato vinculado'}
-                    aria-label="Ir para mensagens com o lead"
-                  >
-                    <MessageCircle size={20} />
-                  </button>
                 </div>
               </div>
 
