@@ -47,6 +47,15 @@ import type { OrganizationId } from '../types';
  * @property {string | null} [avatar_url] - URL do avatar
  * @property {string} [created_at] - Data de criação
  */
+export type UserPermission =
+    | 'can_delete_deals'
+    | 'can_export_data'
+    | 'can_view_all_deals'
+    | 'can_manage_automations'
+    | 'can_view_reports'
+    | 'can_manage_tags'
+    | 'can_manage_products';
+
 interface Profile {
     id: string;
     email: string;
@@ -58,6 +67,7 @@ interface Profile {
     phone?: string | null;
     avatar_url?: string | null;
     created_at?: string;
+    permissions?: Partial<Record<UserPermission, boolean>>;
 }
 
 /**
@@ -84,6 +94,11 @@ interface AuthContextType {
     signOut: () => Promise<void>;
     /** Recarrega dados do perfil */
     refreshProfile: () => Promise<void>;
+    /**
+     * Verifica se o usuário atual tem uma permissão específica.
+     * Admins têm todas as permissões automaticamente.
+     */
+    hasPermission: (permission: UserPermission) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -210,6 +225,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(null);
     };
 
+    const hasPermission = (permission: UserPermission): boolean => {
+        if (!profile) return false;
+        // Admin e owner têm tudo liberado
+        if (profile.role === 'admin' || profile.role === 'owner') return true;
+        return profile.permissions?.[permission] ?? false;
+    };
+
     const value = {
         session,
         user,
@@ -220,6 +242,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         checkInitialization,
         signOut,
         refreshProfile,
+        hasPermission,
     };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
