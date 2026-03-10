@@ -3,7 +3,7 @@ import { Plus, Search, LayoutGrid, Table as TableIcon, User, Settings, Lightbulb
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Board } from '@/types';
 import { BoardSelector } from '../BoardSelector';
-
+import { FilterBar, FilterDefinition, ActiveFilter } from '@/components/ui/FilterBar';
 interface KanbanHeaderProps {
     // Boards
     boards: Board[];
@@ -23,6 +23,7 @@ interface KanbanHeaderProps {
     statusFilter: 'open' | 'won' | 'lost' | 'all';
     setStatusFilter: (filter: 'open' | 'won' | 'lost' | 'all') => void;
     onNewDeal: () => void;
+    onExportDeals?: () => void;
 }
 
 /**
@@ -69,8 +70,58 @@ export const KanbanHeader: React.FC<KanbanHeaderProps> = ({
     searchTerm, setSearchTerm,
     ownerFilter, setOwnerFilter,
     statusFilter, setStatusFilter,
-    onNewDeal
+    onNewDeal,
+    onExportDeals
 }) => {
+    const filterDefinitions: FilterDefinition[] = [
+        {
+            id: 'status',
+            label: 'Status',
+            type: 'select',
+            options: [
+                { label: 'Em Aberto', value: 'open' },
+                { label: 'Ganhos', value: 'won' },
+                { label: 'Perdidos', value: 'lost' },
+                { label: 'Todos', value: 'all' },
+            ]
+        },
+        {
+            id: 'owner',
+            label: 'Dono',
+            type: 'select',
+            options: [
+                { label: 'Todos', value: 'all' },
+                { label: 'Meus Negócios', value: 'mine' },
+            ]
+        }
+    ];
+
+    const activeFilters: ActiveFilter[] = [];
+    if (statusFilter && statusFilter !== 'open') {
+        const label = filterDefinitions[0].options?.find(o => o.value === statusFilter)?.label;
+        activeFilters.push({ id: 'status', value: statusFilter, labelDisplay: label });
+    }
+    if (ownerFilter && ownerFilter !== 'all') {
+        const label = filterDefinitions[1].options?.find(o => o.value === ownerFilter)?.label;
+        activeFilters.push({ id: 'owner', value: ownerFilter, labelDisplay: label });
+    }
+
+    const handleAddFilter = (f: ActiveFilter) => {
+        if (f.id === 'status') setStatusFilter(f.value);
+        if (f.id === 'owner') setOwnerFilter(f.value);
+    };
+
+    const handleRemoveFilter = (id: string) => {
+        if (id === 'status') setStatusFilter('open');
+        if (id === 'owner') setOwnerFilter('all');
+    };
+
+    const handleClearFilters = () => {
+        setStatusFilter('open');
+        setOwnerFilter('all');
+        setSearchTerm('');
+    };
+
     return (
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
             <div className="flex items-center gap-4 w-full sm:w-auto flex-wrap">
@@ -163,51 +214,32 @@ export const KanbanHeader: React.FC<KanbanHeaderProps> = ({
                 </div>
 
                 <div className="h-8 w-px bg-slate-200 dark:bg-white/10 mx-2 hidden sm:block"></div>
-                <div className="relative flex-1 sm:w-64">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                    <input
-                        type="text"
-                        placeholder="Filtrar negócios ou empresas..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-white/5 text-sm outline-none focus:ring-2 focus:ring-primary-500 dark:text-white backdrop-blur-sm"
-                    />
-                </div>
-                <div className="relative">
-                    <select
-                        value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value as any)}
-                        aria-label="Filtrar por status"
-                        className="pl-3 pr-8 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-white/5 text-sm outline-none focus:ring-2 focus:ring-primary-500 dark:text-white backdrop-blur-sm appearance-none cursor-pointer"
-                    >
-                        <option value="open">Em Aberto</option>
-                        <option value="won">Ganhos</option>
-                        <option value="lost">Perdidos</option>
-                        <option value="all">Todos</option>
-                    </select>
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                        <div className={`w-2 h-2 rounded-full ${statusFilter === 'open' ? 'bg-blue-500' :
-                            statusFilter === 'won' ? 'bg-green-500' :
-                                statusFilter === 'lost' ? 'bg-red-500' : 'bg-slate-400'
-                            }`} />
-                    </div>
-                </div>
 
-                <div className="relative">
-                    <select
-                        value={ownerFilter}
-                        onChange={(e) => setOwnerFilter(e.target.value as 'all' | 'mine')}
-                        aria-label="Filtrar negócios por proprietário"
-                        className="pl-3 pr-8 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-white/5 text-sm outline-none focus:ring-2 focus:ring-primary-500 dark:text-white backdrop-blur-sm appearance-none cursor-pointer"
-                    >
-                        <option value="all">Todos os Donos</option>
-                        <option value="mine">Meus Negócios</option>
-                    </select>
-                    <User className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={14} />
+                <div className="flex-1 w-full min-w-[280px]">
+                    <FilterBar
+                        definitions={filterDefinitions}
+                        activeFilters={activeFilters}
+                        onAddFilter={handleAddFilter}
+                        onRemoveFilter={handleRemoveFilter}
+                        onClearFilters={handleClearFilters}
+                        searchTerm={searchTerm}
+                        onSearchChange={setSearchTerm}
+                        searchPlaceholder="Filtrar negócios ou empresas..."
+                    />
                 </div>
             </div>
 
             <div className="flex gap-3">
+                {onExportDeals && (
+                    <button
+                        type="button"
+                        onClick={onExportDeals}
+                        title="Exportar negócios visíveis"
+                        className="p-2 bg-white dark:bg-white/5 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-white/10 text-slate-600 dark:text-slate-400 transition-colors"
+                    >
+                        <Download size={20} aria-hidden="true" />
+                    </button>
+                )}
                 <button
                     onClick={onNewDeal}
                     className="bg-primary-700 hover:bg-primary-600 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all shadow-lg shadow-primary-700/20"

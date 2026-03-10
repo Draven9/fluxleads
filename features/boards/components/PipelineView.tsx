@@ -13,6 +13,7 @@ import { DealView, CustomFieldDefinition, Board, BoardStage } from '@/types';
 import { ExportTemplateModal } from './Modals/ExportTemplateModal';
 import { useAuth } from '@/context/AuthContext';
 import PageLoader from '@/components/PageLoader';
+import { exportToXLSX } from '@/lib/utils/export';
 
 interface PipelineViewProps {
   // Boards
@@ -253,6 +254,21 @@ export const PipelineView: React.FC<PipelineViewProps> = ({
     handleUpdateBoard({ ...activeBoard, stages: newStages });
   };
 
+  const handleExportDeals = () => {
+    if (!filteredDeals || filteredDeals.length === 0) return;
+    const dataToExport = filteredDeals.map(deal => ({
+      Nome: deal.title,
+      Valor: deal.value,
+      Status: deal.isWon ? 'Ganho' : deal.isLost ? 'Perdido' : 'Em Aberto',
+      Etapa: deal.stageLabel,
+      Contato: deal.contactName || 'Não vinculado',
+      'E-mail Contato': deal.contactEmail || '',
+      Empresa: deal.clientCompanyName || deal.companyName || 'Não vinculada',
+      'Data de Criação': new Date(deal.createdAt || '').toLocaleDateString('pt-BR'),
+    }));
+    exportToXLSX(dataToExport, `negocios_${activeBoard?.name || 'pipeline'}`);
+  };
+
   if (isLoading) {
     return (
       <div className="h-full">
@@ -326,6 +342,7 @@ export const PipelineView: React.FC<PipelineViewProps> = ({
             statusFilter={statusFilter}
             setStatusFilter={setStatusFilter}
             onNewDeal={() => setIsCreateModalOpen(true)}
+            onExportDeals={handleExportDeals}
           />
 
           <BoardStrategyHeader board={activeBoard} />

@@ -59,6 +59,7 @@ import { isDebugMode, enableDebugMode, disableDebugMode } from '@/lib/debug';
 import { SkipLink } from '@/lib/a11y';
 import { useResponsiveMode } from '@/hooks/useResponsiveMode';
 import { BottomNav, MoreMenuSheet, NavigationRail } from '@/components/navigation';
+import { GlobalSearch } from '@/components/navigation/GlobalSearch';
 
 // Lazy load AI Assistant (deprecated - using UIChat now)
 // const AIAssistant = lazy(() => import('./AIAssistant'));
@@ -438,7 +439,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           </div>
 
           {/* Header */}
-          <header className="h-16 glass border-b border-[var(--color-border-subtle)] flex items-center justify-end px-6 z-40 shrink-0" role="banner">
+          <header className="h-16 glass border-b border-[var(--color-border-subtle)] flex items-center justify-between px-6 z-40 shrink-0" role="banner">
+            <div className="flex-1 max-w-xl mr-6">
+              <GlobalSearch />
+            </div>
+
             <div className="flex items-center gap-4">
               <button
                 type="button"

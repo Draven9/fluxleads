@@ -14,6 +14,7 @@ import { ChatHeader } from './ChatHeader';
 import { MessageBubble } from './MessageBubble';
 import { ChatInput } from './ChatInput';
 import { useScheduledMessages } from '@/lib/query/hooks/useScheduledMessages';
+import { ContactSidePanel } from './ContactSidePanel';
 
 interface ChatWindowProps {
     session: ChatSession;
@@ -26,6 +27,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ session, onBack }) => {
     const [replyingTo, setReplyingTo] = useState<Message | null>(null);
     const [forwardingMessage, setForwardingMessage] = useState<Message | null>(null);
     const [showScheduleModal, setShowScheduleModal] = useState(false);
+    const [isPanelOpen, setIsPanelOpen] = useState(false);
 
     // Sprint 4: Schedule Messages
     const {
@@ -152,92 +154,108 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ session, onBack }) => {
 
     return (
         <div className="flex flex-col h-full bg-white dark:bg-slate-900">
-            <ChatHeader session={session} onBack={onBack} />
-
-            {/* Messages Area */}
-            <div
-                ref={scrollContainerRef}
-                onScroll={handleScroll}
-                className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50 dark:bg-black/20"
-            >
-                {loading && hasMore && (
-                    <div className="flex justify-center p-2">
-                        <Loader2 className="w-5 h-5 text-slate-400 animate-spin" />
-                    </div>
-                )}
-                {loading && !hasMore && messages.length === 0 && (
-                    <div className="flex justify-center p-4">
-                        <span className="text-slate-400 text-sm">Carregando mensagens...</span>
-                    </div>
-                )}
-
-                {messages.map((msg) => {
-                    const isOutbound = msg.direction === 'outbound';
-                    const quotedMsg = msg.reply_to_message_id
-                        ? messages.find(m => m.id === msg.reply_to_message_id)
-                        : null;
-
-                    return (
-                        <MessageBubble
-                            key={msg.id}
-                            message={msg}
-                            session={session}
-                            isOutbound={isOutbound}
-                            isAdmin={isAdmin}
-                            onReply={setReplyingTo}
-                            onForward={setForwardingMessage}
-                            onDelete={deleteMessage}
-                            quotedMessage={quotedMsg}
-                        />
-                    );
-                })}
-                <div ref={messagesEndRef} />
-            </div>
-
-            <ChatInput
-                onSend={handleSend}
-                replyingTo={replyingTo}
-                onCancelReply={() => setReplyingTo(null)}
+            <ChatHeader
                 session={session}
-                isGroup={isGroup}
-                participants={participants}
-                scheduledMessages={scheduledMessages}
-                onScheduleMessage={async (content, scheduledAt) => {
-                    await createScheduledMessage({
-                        sessionId: session.id,
-                        content,
-                        scheduledAt,
-                        contactId: session.contact?.id,
-                    });
-                    setShowScheduleModal(false);
-                }}
-                onCancelSchedule={cancelScheduledMessage}
-                isScheduling={isScheduling}
+                onBack={onBack}
+                onTogglePanel={() => setIsPanelOpen(!isPanelOpen)}
             />
 
-            <ForwardModal
-                isOpen={!!forwardingMessage}
-                onClose={() => setForwardingMessage(null)}
-                onForward={handleForwardToSession}
-            />
+            <div className="flex flex-1 overflow-hidden">
+                {/* Main Chat Area */}
+                <div className="flex flex-col flex-1 min-w-0">
+                    {/* Messages Area */}
+                    <div
+                        ref={scrollContainerRef}
+                        onScroll={handleScroll}
+                        className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50 dark:bg-black/20"
+                    >
+                        {loading && hasMore && (
+                            <div className="flex justify-center p-2">
+                                <Loader2 className="w-5 h-5 text-slate-400 animate-spin" />
+                            </div>
+                        )}
+                        {loading && !hasMore && messages.length === 0 && (
+                            <div className="flex justify-center p-4">
+                                <span className="text-slate-400 text-sm">Carregando mensagens...</span>
+                            </div>
+                        )}
 
-            <ScheduleMessageModal
-                isOpen={showScheduleModal}
-                onClose={() => setShowScheduleModal(false)}
-                sessionId={session.id}
-                contactName={session.contact?.name}
-                scheduledMessages={scheduledMessages}
-                onSchedule={async (content, scheduledAt) => {
-                    await createScheduledMessage({
-                        sessionId: session.id,
-                        content,
-                        scheduledAt,
-                        contactId: session.contact?.id,
-                    });
-                }}
-                onCancel={cancelScheduledMessage}
-                isCreating={isScheduling}
-            />
+                        {messages.map((msg) => {
+                            const isOutbound = msg.direction === 'outbound';
+                            const quotedMsg = msg.reply_to_message_id
+                                ? messages.find(m => m.id === msg.reply_to_message_id)
+                                : null;
+
+                            return (
+                                <MessageBubble
+                                    key={msg.id}
+                                    message={msg}
+                                    session={session}
+                                    isOutbound={isOutbound}
+                                    isAdmin={isAdmin}
+                                    onReply={setReplyingTo}
+                                    onForward={setForwardingMessage}
+                                    onDelete={deleteMessage}
+                                    quotedMessage={quotedMsg}
+                                />
+                            );
+                        })}
+                        <div ref={messagesEndRef} />
+                    </div>
+
+                    <ChatInput
+                        onSend={handleSend}
+                        replyingTo={replyingTo}
+                        onCancelReply={() => setReplyingTo(null)}
+                        session={session}
+                        isGroup={isGroup}
+                        participants={participants}
+                        scheduledMessages={scheduledMessages}
+                        onScheduleMessage={async (content, scheduledAt) => {
+                            await createScheduledMessage({
+                                sessionId: session.id,
+                                content,
+                                scheduledAt,
+                                contactId: session.contact?.id,
+                            });
+                            setShowScheduleModal(false);
+                        }}
+                        onCancelSchedule={cancelScheduledMessage}
+                        isScheduling={isScheduling}
+                    />
+
+                    <ForwardModal
+                        isOpen={!!forwardingMessage}
+                        onClose={() => setForwardingMessage(null)}
+                        onForward={handleForwardToSession}
+                    />
+
+                    <ScheduleMessageModal
+                        isOpen={showScheduleModal}
+                        onClose={() => setShowScheduleModal(false)}
+                        sessionId={session.id}
+                        contactName={session.contact?.name}
+                        scheduledMessages={scheduledMessages}
+                        onSchedule={async (content, scheduledAt) => {
+                            await createScheduledMessage({
+                                sessionId: session.id,
+                                content,
+                                scheduledAt,
+                                contactId: session.contact?.id,
+                            });
+                        }}
+                        onCancel={cancelScheduledMessage}
+                        isCreating={isScheduling}
+                    />
+                </div>
+
+                {/* Side Panel */}
+                <ContactSidePanel
+                    session={session}
+                    isOpen={isPanelOpen}
+                    onClose={() => setIsPanelOpen(false)}
+                />
+            </div>
         </div>
     );
 };

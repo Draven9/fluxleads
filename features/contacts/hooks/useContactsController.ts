@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useToast } from '@/context/ToastContext';
 import { Contact, Company, ContactStage, PaginationState, ContactsServerFilters, DEFAULT_PAGE_SIZE, ContactSortableColumn } from '@/types';
 import {
@@ -54,12 +54,13 @@ export const useContactsController = () => {
 
   const { addToast, showToast } = useToast();
   const searchParams = useSearchParams();
+  const router = useRouter();
 
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(searchParams?.get('search') || '');
   const [statusFilter, setStatusFilter] = useState<
     'ALL' | 'ACTIVE' | 'INACTIVE' | 'CHURNED' | 'RISK'
   >(() => {
-    const filter = searchParams?.get('filter');
+    const filter = searchParams?.get('filter') || searchParams?.get('status');
     const validFilters = ['ALL', 'ACTIVE', 'INACTIVE', 'CHURNED', 'RISK'] as const;
     return validFilters.includes(filter as (typeof validFilters)[number])
       ? (filter as (typeof validFilters)[number])
@@ -68,14 +69,57 @@ export const useContactsController = () => {
   const [stageFilter, setStageFilter] = useState<ContactStage | 'ALL'>(
     (searchParams?.get('stage') as ContactStage) || 'ALL'
   );
-  const [sourceFilter, setSourceFilter] = useState<Contact['source'] | 'ALL'>('ALL'); // TASK-06
+  const [sourceFilter, setSourceFilter] = useState<Contact['source'] | 'ALL'>((searchParams?.get('source') as Contact['source']) || 'ALL'); // TASK-06
   const [viewMode, setViewMode] = useState<'people' | 'companies'>('people');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [dateRange, setDateRange] = useState({ start: '', end: '' });
+  const [dateRange, setDateRange] = useState({
+    start: searchParams?.get('dateStart') || '',
+    end: searchParams?.get('dateEnd') || ''
+  });
 
   // Sorting state
   const [sortBy, setSortBy] = useState<ContactSortableColumn>('created_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
+  // Sync to URL
+  const isInitialMount = React.useRef(true);
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
+    const currentParams = new URLSearchParams(Array.from(searchParams?.entries() || []));
+    let hasChanges = false;
+
+    if (search) {
+      if (currentParams.get('search') !== search) { currentParams.set('search', search); hasChanges = true; }
+    } else if (currentParams.has('search')) { currentParams.delete('search'); hasChanges = true; }
+
+    if (statusFilter && statusFilter !== 'ALL') {
+      if (currentParams.get('status') !== statusFilter) { currentParams.set('status', statusFilter); hasChanges = true; }
+    } else if (currentParams.has('status')) { currentParams.delete('status'); hasChanges = true; }
+
+    if (stageFilter && stageFilter !== 'ALL') {
+      if (currentParams.get('stage') !== stageFilter) { currentParams.set('stage', stageFilter); hasChanges = true; }
+    } else if (currentParams.has('stage')) { currentParams.delete('stage'); hasChanges = true; }
+
+    if (sourceFilter && sourceFilter !== 'ALL') {
+      if (currentParams.get('source') !== sourceFilter) { currentParams.set('source', sourceFilter); hasChanges = true; }
+    } else if (currentParams.has('source')) { currentParams.delete('source'); hasChanges = true; }
+
+    if (dateRange.start) {
+      if (currentParams.get('dateStart') !== dateRange.start) { currentParams.set('dateStart', dateRange.start); hasChanges = true; }
+    } else if (currentParams.has('dateStart')) { currentParams.delete('dateStart'); hasChanges = true; }
+
+    if (dateRange.end) {
+      if (currentParams.get('dateEnd') !== dateRange.end) { currentParams.set('dateEnd', dateRange.end); hasChanges = true; }
+    } else if (currentParams.has('dateEnd')) { currentParams.delete('dateEnd'); hasChanges = true; }
+
+    if (hasChanges) {
+      router.replace(`?${currentParams.toString()}`, { scroll: false });
+    }
+  }, [search, statusFilter, stageFilter, sourceFilter, dateRange, router, searchParams]);
 
   // Toggle sort handler
   const handleSort = useCallback((column: ContactSortableColumn) => {

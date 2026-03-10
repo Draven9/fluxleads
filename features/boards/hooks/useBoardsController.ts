@@ -136,11 +136,91 @@ export const useBoardsController = () => {
   const moveDealMutation = useMoveDeal();
   const createActivityMutation = useCreateActivity();
 
-  // Filter State (declared before AI context useEffect that uses them)
-  const [searchTerm, setSearchTerm] = useState('');
-  const [ownerFilter, setOwnerFilter] = useState<'all' | 'mine'>('all');
-  const [statusFilter, setStatusFilter] = useState<'open' | 'won' | 'lost' | 'all'>('open');
-  const [dateRange, setDateRange] = useState({ start: '', end: '' });
+  // Filter State - Inicializa com valores da URL
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
+  const [ownerFilter, setOwnerFilter] = useState<'all' | 'mine'>((searchParams.get('owner') as 'all' | 'mine') || 'all');
+  const [statusFilter, setStatusFilter] = useState<'open' | 'won' | 'lost' | 'all'>((searchParams.get('status') as 'open' | 'won' | 'lost' | 'all') || 'open');
+  const [dateRange, setDateRange] = useState({
+    start: searchParams.get('dateStart') || '',
+    end: searchParams.get('dateEnd') || '',
+  });
+
+  // Track initial load to prevent premature URL updates
+  const isInitialMount = useRef(true);
+
+  // Sincroniza o estado dos filtros para a URL sempre que eles mudarem
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
+    const currentParams = new URLSearchParams(Array.from(searchParams.entries()));
+    let hasChanges = false;
+
+    // Search
+    if (searchTerm) {
+      if (currentParams.get('search') !== searchTerm) {
+        currentParams.set('search', searchTerm);
+        hasChanges = true;
+      }
+    } else if (currentParams.has('search')) {
+      currentParams.delete('search');
+      hasChanges = true;
+    }
+
+    // Owner
+    if (ownerFilter && ownerFilter !== 'all') {
+      if (currentParams.get('owner') !== ownerFilter) {
+        currentParams.set('owner', ownerFilter);
+        hasChanges = true;
+      }
+    } else if (currentParams.has('owner')) {
+      currentParams.delete('owner');
+      hasChanges = true;
+    }
+
+    // Status
+    if (statusFilter && statusFilter !== 'open') {
+      if (currentParams.get('status') !== statusFilter) {
+        currentParams.set('status', statusFilter);
+        hasChanges = true;
+      }
+    } else if (currentParams.has('status')) {
+      if (currentParams.get('status') !== 'open') {
+        currentParams.delete('status');
+        hasChanges = true;
+      }
+    }
+
+    // Dates
+    if (dateRange.start) {
+      if (currentParams.get('dateStart') !== dateRange.start) {
+        currentParams.set('dateStart', dateRange.start);
+        hasChanges = true;
+      }
+    } else if (currentParams.has('dateStart')) {
+      currentParams.delete('dateStart');
+      hasChanges = true;
+    }
+
+    if (dateRange.end) {
+      if (currentParams.get('dateEnd') !== dateRange.end) {
+        currentParams.set('dateEnd', dateRange.end);
+        hasChanges = true;
+      }
+    } else if (currentParams.has('dateEnd')) {
+      currentParams.delete('dateEnd');
+      hasChanges = true;
+    }
+
+    // Atualiza a URL apenas se houver mudanças reais para não causar loops ou perda de foco
+    if (hasChanges) {
+      const qs = currentParams.toString();
+      // preserve the query parameter 'deal' or 'board' if they exist, which are already in searchParams
+      router.replace(`?${qs}`, { scroll: false });
+    }
+  }, [searchTerm, ownerFilter, statusFilter, dateRange, searchParams, router]);
 
   // Track last context signature to avoid unnecessary setContext calls
   const lastContextSignatureRef = useRef<string | null>(null);

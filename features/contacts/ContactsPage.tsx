@@ -3,7 +3,7 @@ import { useRouter } from 'next/navigation';
 import { Trash2, X } from 'lucide-react';
 import { useContactsController } from './hooks/useContactsController';
 import { ContactsHeader } from './components/ContactsHeader';
-import { ContactsFilters } from './components/ContactsFilters';
+import { FilterBar, FilterDefinition, ActiveFilter } from '@/components/ui/FilterBar';
 import { ContactsTabs } from './components/ContactsTabs';
 import { ContactsStageTabs } from './components/ContactsStageTabs';
 import { ContactsList } from './components/ContactsList';
@@ -29,18 +29,96 @@ export const ContactsPage: React.FC = () => {
         router.push(`/boards?deal=${dealId}`);
     };
 
+    const filterDefinitions: FilterDefinition[] = [
+        {
+            id: 'status',
+            label: 'Status',
+            type: 'select',
+            options: [
+                { label: 'Todos os Status', value: 'ALL' },
+                { label: 'Ativos', value: 'ACTIVE' },
+                { label: 'Inativos', value: 'INACTIVE' },
+                { label: 'Perdidos (Churn)', value: 'CHURNED' },
+                { label: 'Em Risco', value: 'RISK' },
+            ]
+        },
+        {
+            id: 'source',
+            label: 'Origem',
+            type: 'select',
+            options: [
+                { label: 'Todas', value: 'ALL' },
+                { label: 'Site', value: 'WEBSITE' },
+                { label: 'LinkedIn', value: 'LINKEDIN' },
+                { label: 'Indicação', value: 'REFERRAL' },
+                { label: 'Grupo WhatsApp', value: 'whatsapp_group' },
+                { label: 'Manual', value: 'MANUAL' },
+            ]
+        },
+        {
+            id: 'dateRange',
+            label: 'Data de Criação',
+            type: 'date-range',
+        }
+    ];
+
+    const activeFilters: ActiveFilter[] = [];
+    if (controller.statusFilter && controller.statusFilter !== 'ALL') {
+        const label = filterDefinitions[0].options?.find(o => o.value === controller.statusFilter)?.label;
+        activeFilters.push({ id: 'status', value: controller.statusFilter, labelDisplay: label });
+    }
+    if (controller.sourceFilter && controller.sourceFilter !== 'ALL') {
+        const label = filterDefinitions[1].options?.find(o => o.value === controller.sourceFilter)?.label;
+        activeFilters.push({ id: 'source', value: controller.sourceFilter, labelDisplay: label });
+    }
+    if (controller.dateRange.start || controller.dateRange.end) {
+        let labelDisplay = '';
+        if (controller.dateRange.start && controller.dateRange.end) {
+            labelDisplay = `${new Date(controller.dateRange.start).toLocaleDateString()} até ${new Date(controller.dateRange.end).toLocaleDateString()}`;
+        } else if (controller.dateRange.start) {
+            labelDisplay = `A partir de ${new Date(controller.dateRange.start).toLocaleDateString()}`;
+        } else if (controller.dateRange.end) {
+            labelDisplay = `Até ${new Date(controller.dateRange.end).toLocaleDateString()}`;
+        }
+        activeFilters.push({ id: 'dateRange', value: controller.dateRange, labelDisplay: labelDisplay });
+    }
+
+    const handleAddFilter = (f: ActiveFilter) => {
+        if (f.id === 'status') controller.setStatusFilter(f.value as any);
+        if (f.id === 'source') controller.setSourceFilter(f.value as any);
+        if (f.id === 'dateRange') controller.setDateRange(f.value as any);
+    };
+
+    const handleRemoveFilter = (id: string) => {
+        if (id === 'status') controller.setStatusFilter('ALL');
+        if (id === 'source') controller.setSourceFilter('ALL');
+        if (id === 'dateRange') controller.setDateRange({ start: '', end: '' });
+    };
+
+    const handleClearFilters = () => {
+        controller.setStatusFilter('ALL');
+        controller.setSourceFilter('ALL');
+        controller.setDateRange({ start: '', end: '' });
+        controller.setSearch('');
+    };
+
     return (
         <div className="space-y-6 p-8 max-w-[1600px] mx-auto">
             <ContactsHeader
                 viewMode={controller.viewMode}
-                search={controller.search}
-                setSearch={controller.setSearch}
-                statusFilter={controller.statusFilter}
-                setStatusFilter={controller.setStatusFilter}
-                isFilterOpen={controller.isFilterOpen}
-                setIsFilterOpen={controller.setIsFilterOpen}
                 openCreateModal={controller.openCreateModal}
                 openImportExportModal={() => setIsImportExportOpen(true)}
+            />
+
+            <FilterBar
+                definitions={filterDefinitions}
+                activeFilters={activeFilters}
+                onAddFilter={handleAddFilter}
+                onRemoveFilter={handleRemoveFilter}
+                onClearFilters={handleClearFilters}
+                searchTerm={controller.search}
+                onSearchChange={controller.setSearch}
+                searchPlaceholder={controller.viewMode === 'people' ? 'Buscar nomes, emails...' : 'Buscar empresas, setor...'}
             />
 
             {/* TASK-05: Painel Lateral do Cliente */}
@@ -66,16 +144,8 @@ export const ContactsPage: React.FC = () => {
                     sortBy: controller.sortBy,
                     sortOrder: controller.sortOrder,
                 }}
+                currentData={controller.filteredContacts}
             />
-
-            {controller.isFilterOpen && (
-                <ContactsFilters
-                    dateRange={controller.dateRange}
-                    setDateRange={controller.setDateRange}
-                    sourceFilter={controller.sourceFilter}
-                    setSourceFilter={controller.setSourceFilter}
-                />
-            )}
 
             {/* Stage Tabs - Funil de Contatos */}
             <ContactsStageTabs

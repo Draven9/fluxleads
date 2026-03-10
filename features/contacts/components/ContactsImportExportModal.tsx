@@ -3,6 +3,7 @@ import { Download, Upload, FileDown, FileSpreadsheet } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { useToast } from '@/context/ToastContext';
 import { stringifyCsv, withUtf8Bom, type CsvDelimiter } from '@/lib/utils/csv';
+import { exportToCSV, exportToXLSX } from '@/lib/utils/export';
 
 type Panel = 'export' | 'import';
 
@@ -49,6 +50,7 @@ export function ContactsImportExportModal(props: {
   isOpen: boolean;
   onClose: () => void;
   exportParams: ContactsExportParams;
+  currentData?: any[];
 }) {
   const { isOpen, onClose, exportParams } = props;
   const { addToast, showToast } = useToast();
@@ -69,6 +71,7 @@ export function ContactsImportExportModal(props: {
   // Export state
   const [isExporting, setIsExporting] = useState(false);
   const [exportFormat, setExportFormat] = useState<'csv' | 'xlsx'>('csv');
+  const [exportScope, setExportScope] = useState<'all' | 'current'>('all');
 
   const templateCsv = useMemo(() => {
     const d: CsvDelimiter = delimiter === 'auto' ? ';' : delimiter;
@@ -115,6 +118,37 @@ export function ContactsImportExportModal(props: {
   const handleExport = async (format: 'csv' | 'xlsx' = exportFormat) => {
     setIsExporting(true);
     try {
+      if (exportScope === 'current') {
+        if (!props.currentData || props.currentData.length === 0) {
+          toast?.('Nenhum dado na página atual para exportar.', 'error');
+          setIsExporting(false);
+          return;
+        }
+
+        const dataToExport = props.currentData.map(c => ({
+          'Nome': c.name,
+          'E-mail': c.email,
+          'Telefone': c.phone || '',
+          'Cargo': c.role || '',
+          'Empresa': c.companyName || c.clientCompanyName || '',
+          'Status': c.status,
+          'Etapa': c.stage,
+          'Origem': c.source || '',
+          'Data de Criação': new Date(c.createdAt || c.created_at || new Date()).toLocaleDateString('pt-BR'),
+        }));
+
+        if (format === 'csv') {
+          const d: any = delimiter === 'auto' ? ';' : delimiter;
+          exportToCSV(dataToExport, 'contatos_pagina_atual', d);
+        } else {
+          exportToXLSX(dataToExport, 'contatos_pagina_atual');
+        }
+
+        toast?.(`Exportação ${format.toUpperCase()} da página atual concluída.`, 'success');
+        setIsExporting(false);
+        return;
+      }
+
       const url = buildExportUrl(format);
       const res = await fetch(url, { method: 'GET' });
       if (!res.ok) {
@@ -244,7 +278,31 @@ export function ContactsImportExportModal(props: {
           </div>
 
           <div className="text-xs text-slate-600 dark:text-slate-300">
-            <b>Campos exportados:</b> name, email, phone, role, company, status, stage, notes, created_at, updated_at.
+            <b>Campos exportados:</b> name, email, phone, role, company, status, stage, source, created_at
+          </div>
+
+          <div className="space-y-2 mt-4">
+            <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">Escopo da exportação:</span>
+            <div className="flex flex-col gap-2 text-sm text-slate-700 dark:text-slate-200">
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="exportScope"
+                  checked={exportScope === 'all'}
+                  onChange={() => setExportScope('all')}
+                />
+                Todos os resultados (Via Servidor, ignorando paginação)
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="exportScope"
+                  checked={exportScope === 'current'}
+                  onChange={() => setExportScope('current')}
+                />
+                Apenas Página Atual (Client-side)
+              </label>
+            </div>
           </div>
 
           {/* Seleção de formato */}
