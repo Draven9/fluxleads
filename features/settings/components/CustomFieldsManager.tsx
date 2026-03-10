@@ -1,5 +1,5 @@
 import React from 'react';
-import { PenTool, Pencil, Check, Plus, List, Tag, Trash2 } from 'lucide-react';
+import { PenTool, Pencil, Check, Plus, List, Tag, Trash2, ToggleLeft, Link, Type, Hash, Calendar } from 'lucide-react';
 import { SettingsSection } from './SettingsSection';
 import { CustomFieldDefinition, CustomFieldType } from '@/types';
 
@@ -99,6 +99,8 @@ export const CustomFieldsManager: React.FC<CustomFieldsManagerProps> = ({
               <option value="number">Número</option>
               <option value="date">Data</option>
               <option value="select">Seleção</option>
+              <option value="boolean">Sim/Não (Toggle)</option>
+              <option value="url">Link / URL</option>
             </select>
           </div>
           <div className="flex gap-2">
@@ -143,7 +145,13 @@ export const CustomFieldsManager: React.FC<CustomFieldsManagerProps> = ({
           <div key={field.id} className={`flex items-center justify-between p-3 bg-white dark:bg-white/5 border rounded-lg group transition-colors ${editingId === field.id ? 'border-amber-400 dark:border-amber-500/50 ring-1 ring-amber-400/30' : 'border-slate-200 dark:border-white/10 hover:border-primary-300 dark:hover:border-primary-500/50'}`}>
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded bg-slate-100 dark:bg-white/10 flex items-center justify-center text-slate-500 dark:text-slate-400">
-                <Tag size={14} />
+                {field.type === 'text' && <Type size={14} />}
+                {field.type === 'number' && <Hash size={14} />}
+                {field.type === 'date' && <Calendar size={14} />}
+                {field.type === 'select' && <List size={14} />}
+                {field.type === 'boolean' && <ToggleLeft size={14} />}
+                {field.type === 'url' && <Link size={14} />}
+                {!['text', 'number', 'date', 'select', 'boolean', 'url'].includes(field.type) && <Tag size={14} />}
               </div>
               <div>
                 <p className="text-sm font-bold text-slate-900 dark:text-white">{field.label}</p>

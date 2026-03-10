@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { PenTool, Pencil, Check, Plus, List, Tag, Trash2 } from 'lucide-react';
+import { PenTool, Pencil, Check, Plus, List, Tag, Trash2, ToggleLeft, Link, Type, Hash, Calendar } from 'lucide-react';
 import { SettingsSection } from './SettingsSection';
 import { ContactCustomField, ContactCustomFieldType } from '@/types';
 import { useContactCustomFields } from '@/lib/query/hooks/useContactCustomFields';
@@ -106,6 +106,7 @@ export const ContactCustomFieldsManager: React.FC = () => {
                             <option value="boolean">Checkbox Sim/Não</option>
                             <option value="date">Data</option>
                             <option value="select">Seleção</option>
+                            <option value="url">Link / URL</option>
                         </select>
                     </div>
                 </div>
@@ -167,7 +168,12 @@ export const ContactCustomFieldsManager: React.FC = () => {
                     <div key={field.id} className={`flex items-center justify-between p-3 bg-white dark:bg-white/5 border rounded-lg group transition-colors ${editingId === field.id ? 'border-amber-400 dark:border-amber-500/50 ring-1 ring-amber-400/30' : 'border-slate-200 dark:border-white/10 hover:border-primary-300 dark:hover:border-primary-500/50'}`}>
                         <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded bg-slate-100 dark:bg-white/10 flex items-center justify-center text-slate-500 dark:text-slate-400">
-                                <Tag size={14} />
+                                {field.fieldType === 'text' && <Type size={14} />}
+                                {field.fieldType === 'date' && <Calendar size={14} />}
+                                {field.fieldType === 'select' && <List size={14} />}
+                                {field.fieldType === 'boolean' && <ToggleLeft size={14} />}
+                                {field.fieldType === 'url' && <Link size={14} />}
+                                {!['text', 'date', 'select', 'boolean', 'url'].includes(field.fieldType) && <Hash size={14} />}
                             </div>
                             <div>
                                 <p className="text-sm font-bold text-slate-900 dark:text-white">{field.name}</p>

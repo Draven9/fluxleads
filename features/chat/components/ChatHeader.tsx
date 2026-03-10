@@ -2,14 +2,17 @@ import React from 'react';
 import { ArrowLeft, User, Instagram, Facebook, PanelRight } from 'lucide-react';
 import Image from 'next/image';
 import { ChatSession } from '../types';
+import type { Message } from '../types';
+import { ExportConversationButton } from './ExportConversationButton';
 
 interface ChatHeaderProps {
     session: ChatSession;
     onBack: () => void;
     onTogglePanel?: () => void;
+    messages?: Message[];
 }
 
-export const ChatHeader: React.FC<ChatHeaderProps> = ({ session, onBack, onTogglePanel }) => {
+export const ChatHeader: React.FC<ChatHeaderProps> = ({ session, onBack, onTogglePanel, messages = [] }) => {
     return (
         <div className="h-16 px-4 border-b border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 flex items-center shadow-sm z-10 shrink-0">
             <div className="flex items-center space-x-3 flex-1">
@@ -56,15 +59,22 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({ session, onBack, onToggl
             </div>
 
             {/* Right Side Actions */}
-            {onTogglePanel && (
-                <button
-                    onClick={onTogglePanel}
-                    className="p-2 ml-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full transition-colors"
-                    title="Detalhes do Contato"
-                >
-                    <PanelRight className="w-5 h-5" />
-                </button>
-            )}
+            <div className="flex items-center gap-1">
+                <ExportConversationButton
+                    messages={messages}
+                    contactName={session.contact?.name}
+                    sessionId={session.id}
+                />
+                {onTogglePanel && (
+                    <button
+                        onClick={onTogglePanel}
+                        className="p-2 ml-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full transition-colors"
+                        title="Detalhes do Contato"
+                    >
+                        <PanelRight className="w-5 h-5" />
+                    </button>
+                )}
+            </div>
         </div>
     );
 };

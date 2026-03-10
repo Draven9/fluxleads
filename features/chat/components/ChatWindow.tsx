@@ -158,6 +158,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ session, onBack }) => {
                 session={session}
                 onBack={onBack}
                 onTogglePanel={() => setIsPanelOpen(!isPanelOpen)}
+                messages={messages}
             />
 
             <div className="flex flex-1 overflow-hidden">

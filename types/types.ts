@@ -196,7 +196,7 @@ export interface DealItem {
 }
 
 // CUSTOM FIELDS DEFINITION
-export type CustomFieldType = 'text' | 'number' | 'date' | 'select';
+export type CustomFieldType = 'text' | 'number' | 'date' | 'select' | 'boolean' | 'url';
 
 export interface CustomFieldDefinition {
   id: string;
@@ -260,7 +260,7 @@ export interface DealView extends Deal {
 // CONTACT CUSTOM FIELDS (Sprint 3)
 // =============================================================================
 
-export type ContactCustomFieldType = 'text' | 'boolean' | 'date' | 'select';
+export type ContactCustomFieldType = 'text' | 'boolean' | 'date' | 'select' | 'url';
 
 export interface ContactCustomField {
   id: string;
