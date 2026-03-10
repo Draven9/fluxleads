@@ -1,31 +1,174 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from 'react';
-import { ReactFlow, Background, Controls, addEdge, BackgroundVariant, applyNodeChanges, applyEdgeChanges, NodeChange, EdgeChange, Connection, Edge, Node } from '@xyflow/react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+    ReactFlow, Background, Controls, addEdge,
+    BackgroundVariant, applyNodeChanges, applyEdgeChanges,
+    NodeChange, EdgeChange, Connection, Edge, Node, NodeTypes,
+    MiniMap,
+} from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { useAutomations } from '@/lib/query/hooks/useAutomations';
-import { ArrowLeft, Play, Save, Settings2, Trash2 } from 'lucide-react';
+import {
+    ArrowLeft, Save, MessageSquare, Clock, Shuffle,
+    ArrowRightCircle, UserCheck, Webhook, CalendarPlus,
+    Play, StopCircle,
+} from 'lucide-react';
 import { useToast } from '@/context/ToastContext';
+import { TriggerNode, ActionNode, ConditionNode } from './components/CustomNodes';
 
-// Tailwind custom styled node types could be imported here
-// For this v1 we'll use default nodes and simple custom nodes
+// ─────────────────────────────────────────────
+// Trigger & Block definitions
+// ─────────────────────────────────────────────
 
-const initialNodes: Node[] = [
+const TRIGGER_OPTIONS = [
     {
-        id: 'trigger-1',
-        type: 'input',
-        data: { label: 'Gatilho: Lead Criado' },
-        position: { x: 250, y: 50 },
+        group: '👤 Lead / Contato',
+        items: [
+            { value: 'lead_created', label: '🆕 Novo Lead Criado' },
+            { value: 'tag_added', label: '🏷️ Tag Adicionada ao Lead' },
+            { value: 'tag_removed', label: '🏷️ Tag Removida do Lead' },
+        ],
+    },
+    {
+        group: '💼 Negócios (Deals)',
+        items: [
+            { value: 'stage_changed', label: '🔄 Negócio Movido de Etapa' },
+            { value: 'deal_won', label: '🏆 Negócio Ganho (Venda)' },
+            { value: 'deal_lost', label: '❌ Negócio Perdido' },
+            { value: 'deal_stale', label: '⏳ Negócio Parado (Inativo)' },
+        ],
+    },
+    {
+        group: '💬 Comunicação',
+        items: [
+            { value: 'message_received', label: '💬 Mensagem Recebida' },
+            { value: 'form_submitted', label: '📝 Formulário Preenchido' },
+        ],
+    },
+    {
+        group: '⏰ Tempo',
+        items: [
+            { value: 'scheduled', label: '📅 Agendado (Recorrente)' },
+        ],
     },
 ];
+
+interface BlockDef {
+    label: string;
+    typeLabel: string;
+    nodeType: string;
+    icon: string;
+    color: string;
+    defaultText: string;
+}
+
+const BLOCKS: BlockDef[] = [
+    {
+        label: 'Enviar Mensagem',
+        typeLabel: 'Ação',
+        nodeType: 'action',
+        icon: 'message',
+        color: 'emerald',
+        defaultText: 'Enviar Mensagem',
+    },
+    {
+        label: 'Mover Negócio de Etapa',
+        typeLabel: 'Ação',
+        nodeType: 'action',
+        icon: 'move',
+        color: 'amber',
+        defaultText: 'Mover Negócio',
+    },
+    {
+        label: 'Atribuir a Vendedor',
+        typeLabel: 'Ação',
+        nodeType: 'action',
+        icon: 'action',
+        color: 'blue',
+        defaultText: 'Atribuir Vendedor',
+    },
+    {
+        label: 'Criar Atividade / Follow-up',
+        typeLabel: 'Ação',
+        nodeType: 'action',
+        icon: 'action',
+        color: 'green',
+        defaultText: 'Criar Follow-up',
+    },
+    {
+        label: 'Enviar Webhook',
+        typeLabel: 'Integração',
+        nodeType: 'action',
+        icon: 'action',
+        color: 'slate',
+        defaultText: 'Disparar Webhook',
+    },
+    {
+        label: 'Aguardar (Delay)',
+        typeLabel: 'Tempo',
+        nodeType: 'action',
+        icon: 'delay',
+        color: 'blue',
+        defaultText: 'Aguardar 1 Dia',
+    },
+    {
+        label: 'Condição SE',
+        typeLabel: 'Lógica',
+        nodeType: 'condition',
+        icon: 'condition',
+        color: 'amber',
+        defaultText: 'Se Condição…',
+    },
+    {
+        label: 'Encerrar Fluxo',
+        typeLabel: 'Fim',
+        nodeType: 'action',
+        icon: 'stop',
+        color: 'slate',
+        defaultText: 'Fim do Fluxo',
+    },
+];
+
+
+// ─────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────
+
+function triggerLabel(value: string) {
+    for (const group of TRIGGER_OPTIONS) {
+        const found = group.items.find(i => i.value === value);
+        if (found) return found.label;
+    }
+    return 'Gatilho';
+}
+
+const buildInitialNodes = (tType: string): Node[] => [
+    {
+        id: 'trigger-1',
+        type: 'trigger',
+        data: { label: triggerLabel(tType) },
+        position: { x: 100, y: 60 },
+    },
+];
+
+// ─────────────────────────────────────────────
+// Component
+// ─────────────────────────────────────────────
 
 interface FlowBuilderPageProps {
     automationId?: string;
     onClose: () => void;
 }
 
+const nodeTypes: NodeTypes = {
+    trigger: TriggerNode,
+    action: ActionNode,
+    condition: ConditionNode,
+};
+
 export const FlowBuilderPage: React.FC<FlowBuilderPageProps> = ({ automationId, onClose }) => {
-    const { automations, createAutomation, updateAutomation, deleteAutomation } = useAutomations();
+    const { automations, createAutomation, updateAutomation } = useAutomations();
     const { addToast } = useToast();
 
     const [nodes, setNodes] = useState<Node[]>([]);
@@ -34,33 +177,41 @@ export const FlowBuilderPage: React.FC<FlowBuilderPageProps> = ({ automationId, 
     const [triggerType, setTriggerType] = useState('lead_created');
     const [loading, setLoading] = useState(false);
 
-    const automation = automationId ? automations.find(a => a.id === automationId) : null;
+    const automation = useMemo(
+        () => automationId ? automations.find(a => a.id === automationId) : null,
+        [automationId, automations],
+    );
 
     useEffect(() => {
         if (automation) {
             setName(automation.name);
             setTriggerType(automation.trigger_type);
-            setNodes(automation.nodes as any || initialNodes);
-            setEdges(automation.edges as any || []);
+            setNodes((automation.nodes as any) || buildInitialNodes(automation.trigger_type));
+            setEdges((automation.edges as any) || []);
         } else {
-            setNodes(initialNodes);
+            setNodes(buildInitialNodes('lead_created'));
             setEdges([]);
         }
     }, [automation]);
 
+    // Sync trigger node label when triggerType changes (new flow only)
+    useEffect(() => {
+        if (!automationId) {
+            setNodes(buildInitialNodes(triggerType));
+        }
+    }, [triggerType, automationId]);
+
     const onNodesChange = useCallback(
-        (changes: NodeChange[]) => setNodes((nds) => applyNodeChanges(changes, nds)),
-        []
+        (changes: NodeChange[]) => setNodes(nds => applyNodeChanges(changes, nds)),
+        [],
     );
-
     const onEdgesChange = useCallback(
-        (changes: EdgeChange[]) => setEdges((eds) => applyEdgeChanges(changes, eds)),
-        []
+        (changes: EdgeChange[]) => setEdges(eds => applyEdgeChanges(changes, eds)),
+        [],
     );
-
     const onConnect = useCallback(
-        (connection: Connection) => setEdges((eds) => addEdge(connection, eds)),
-        []
+        (connection: Connection) => setEdges(eds => addEdge({ ...connection, animated: true, style: { stroke: '#6366f1', strokeWidth: 2 } }, eds)),
+        [],
     );
 
     const handleSave = async () => {
@@ -71,13 +222,13 @@ export const FlowBuilderPage: React.FC<FlowBuilderPageProps> = ({ automationId, 
                     name,
                     trigger_type: triggerType,
                     nodes: nodes as any,
-                    edges: edges as any
+                    edges: edges as any,
                 });
+                addToast('Automação atualizada', 'success');
             } else {
                 const result = await createAutomation(name, triggerType, nodes as any, edges as any);
                 if (result) {
-                    // close builder on new creation success
-                    addToast('Salvo com sucesso', 'success');
+                    addToast('Automação criada com sucesso!', 'success');
                     onClose();
                 }
             }
@@ -86,126 +237,162 @@ export const FlowBuilderPage: React.FC<FlowBuilderPageProps> = ({ automationId, 
         }
     };
 
-    const addNode = (type: 'default' | 'output', label: string) => {
-        const newNode = {
+    const addBlock = (block: BlockDef) => {
+        const y = 80 + nodes.length * 120;
+        const newNode: Node = {
             id: `node-${Date.now()}`,
-            type,
-            position: { x: 250, y: nodes.length * 100 + 150 },
-            data: { label },
+            type: block.nodeType,
+            position: { x: 100, y },
+            data: {
+                label: block.defaultText,
+                typeLabel: block.typeLabel,
+                icon: block.icon,
+            },
         };
-        setNodes((nds) => nds.concat(newNode));
+        setNodes(nds => [...nds, newNode]);
     };
 
     return (
-        <div className="flex flex-col h-[800px] border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden bg-slate-50 dark:bg-slate-950">
-            {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
-                <div className="flex items-center gap-4">
+        <div className="flex flex-col h-[820px] border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden bg-slate-50/80 dark:bg-slate-950">
+
+            {/* ── Header ── */}
+            <div className="flex items-center justify-between px-5 py-3 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shrink-0">
+                <div className="flex items-center gap-3">
                     <button
                         onClick={onClose}
                         className="p-2 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
                     >
-                        <ArrowLeft className="w-5 h-5" />
+                        <ArrowLeft className="w-4 h-4" />
                     </button>
                     <input
                         type="text"
                         value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        className="text-lg font-bold bg-transparent border-none focus:outline-none focus:ring-0 text-slate-900 dark:text-white placeholder:text-slate-400"
+                        onChange={e => setName(e.target.value)}
+                        className="text-base font-bold bg-transparent border-none focus:outline-none focus:ring-0 text-slate-900 dark:text-white placeholder:text-slate-400 min-w-[200px]"
                         placeholder="Nome da automação"
                     />
                 </div>
-                <div className="flex items-center gap-3">
-                    <button
-                        onClick={handleSave}
-                        disabled={loading}
-                        className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 disabled:opacity-50 text-white rounded-lg transition-colors font-medium shadow-sm"
-                    >
-                        <Save className="w-4 h-4" />
-                        {loading ? 'Salvando...' : 'Salvar'}
-                    </button>
-                </div>
+                <button
+                    onClick={handleSave}
+                    disabled={loading}
+                    className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 disabled:opacity-50 text-white rounded-lg transition-colors text-sm font-semibold shadow-sm"
+                >
+                    <Save className="w-4 h-4" />
+                    {loading ? 'Salvando…' : 'Salvar'}
+                </button>
             </div>
 
-            {/* Main Content */}
-            <div className="flex flex-1 overflow-hidden relative">
-                {/* Sidebar */}
-                <div className="w-72 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 p-4 flex flex-col gap-6 overflow-y-auto z-10">
-                    <div>
-                        <h3 className="text-sm font-semibold text-slate-900 dark:text-white uppercase tracking-wider mb-3">
-                            Gatilho Principal
-                        </h3>
-                        <select
-                            value={triggerType}
-                            onChange={(e) => setTriggerType(e.target.value)}
-                            className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-                        >
-                            <option value="lead_created">Novo Lead Criado</option>
-                            <option value="stage_changed">Etapa de Negócio Alterada</option>
-                            <option value="message_received">Mensagem Recebida</option>
-                            <option value="tag_added">Tag Adicionada</option>
-                        </select>
+            {/* ── Body ── */}
+            <div className="flex flex-1 overflow-hidden">
+
+                {/* ── Left Sidebar ── */}
+                <aside className="w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden shrink-0">
+                    <div className="flex-1 overflow-y-auto p-4 space-y-6">
+
+                        {/* Trigger selector */}
+                        <section>
+                            <h3 className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-3">
+                                🎯 Gatilho Principal
+                            </h3>
+                            <select
+                                value={triggerType}
+                                onChange={e => setTriggerType(e.target.value)}
+                                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer"
+                            >
+                                {TRIGGER_OPTIONS.map(group => (
+                                    <optgroup key={group.group} label={group.group}>
+                                        {group.items.map(item => (
+                                            <option key={item.value} value={item.value}>
+                                                {item.label}
+                                            </option>
+                                        ))}
+                                    </optgroup>
+                                ))}
+                            </select>
+                        </section>
+
+                        {/* Block palette */}
+                        <section>
+                            <h3 className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-3">
+                                ➕ Adicionar Bloco
+                            </h3>
+                            <div className="space-y-1.5">
+                                {BLOCKS.map(block => (
+                                    <button
+                                        key={block.label}
+                                        onClick={() => addBlock(block)}
+                                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700/80 hover:border-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/10 transition-all text-left group"
+                                    >
+                                        <BlockIcon icon={block.icon} />
+                                        <div>
+                                            <div className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wide leading-none mb-0.5">{block.typeLabel}</div>
+                                            <div className="text-sm font-medium text-slate-700 dark:text-slate-300 group-hover:text-primary-700 dark:group-hover:text-primary-400 transition-colors leading-tight">{block.label}</div>
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        </section>
                     </div>
 
-                    <div className="space-y-3">
-                        <h3 className="text-sm font-semibold text-slate-900 dark:text-white uppercase tracking-wider">
-                            Adicionar Blocos
-                        </h3>
-                        <button
-                            onClick={() => addNode('default', 'Enviar Mensagem')}
-                            className="w-full flex items-center justify-between p-3 border border-slate-200 dark:border-slate-700 rounded-xl hover:border-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/10 transition-colors text-left"
-                        >
-                            <div className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 font-medium">
-                                <Play className="w-4 h-4 text-emerald-500" />
-                                Ação Simples
-                            </div>
-                        </button>
-                        <button
-                            onClick={() => addNode('default', 'Esperar 1 Dia')}
-                            className="w-full flex items-center justify-between p-3 border border-slate-200 dark:border-slate-700 rounded-xl hover:border-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/10 transition-colors text-left"
-                        >
-                            <div className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 font-medium">
-                                <Settings2 className="w-4 h-4 text-amber-500" />
-                                Atraso / Condição
-                            </div>
-                        </button>
-                        <button
-                            onClick={() => addNode('output', 'Fim do Fluxo')}
-                            className="w-full flex items-center justify-between p-3 border border-slate-200 dark:border-slate-700 rounded-xl hover:border-red-400 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors text-left"
-                        >
-                            <div className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 font-medium">
-                                <Trash2 className="w-4 h-4 text-slate-400" />
-                                Ponto de Parada
-                            </div>
-                        </button>
-                    </div>
-
-                    <div className="mt-auto pt-4 border-t border-slate-200 dark:border-slate-800">
-                        <p className="text-xs text-slate-500 text-center">
-                            Dica: Arraste os conectores de um bloco para outro para ligá-los.
+                    {/* Tip */}
+                    <div className="px-4 py-3 border-t border-slate-200 dark:border-slate-800 shrink-0">
+                        <p className="text-[11px] text-slate-400 dark:text-slate-500 text-center leading-relaxed">
+                            Arraste a bolinha de um bloco para o próximo para criar conexões.
                         </p>
                     </div>
-                </div>
+                </aside>
 
-                {/* Builder Canvas */}
-                <div className="flex-1 w-full h-full">
+                {/* ── Canvas ── */}
+                <div className="flex-1 h-full relative">
                     <ReactFlow
                         nodes={nodes}
                         edges={edges}
                         onNodesChange={onNodesChange}
                         onEdgesChange={onEdgesChange}
                         onConnect={onConnect}
+                        nodeTypes={nodeTypes}
                         fitView
-                        minZoom={0.5}
+                        fitViewOptions={{ padding: 0.35 }}
+                        minZoom={0.3}
                         maxZoom={2}
+                        deleteKeyCode="Delete"
+                        className="!bg-slate-50 dark:!bg-slate-950"
                     >
-                        <Background color="#ccc" variant={BackgroundVariant.Dots} />
-                        <Controls />
+                        <Background
+                            color="#94a3b8"
+                            gap={20}
+                            size={1}
+                            variant={BackgroundVariant.Dots}
+                            className="dark:!text-slate-700"
+                        />
+                        <Controls className="!bg-white dark:!bg-slate-800 !border-slate-200 dark:!border-slate-700 !shadow-sm [&>button]:!text-slate-600 dark:[&>button]:!text-slate-300" />
+                        <MiniMap
+                            nodeStrokeColor="#6366f1"
+                            nodeBorderRadius={12}
+                            className="!bg-white dark:!bg-slate-800 !border !border-slate-200 dark:!border-slate-700 !rounded-xl !shadow-sm"
+                        />
                     </ReactFlow>
                 </div>
             </div>
         </div>
     );
 };
+
+// ─────────────────────────────────────────────
+// Icon helper
+// ─────────────────────────────────────────────
+
+function BlockIcon({ icon }: { icon: string }) {
+    const base = "w-4 h-4 flex-shrink-0";
+    switch (icon) {
+        case 'message': return <MessageSquare className={`${base} text-emerald-500`} />;
+        case 'move': return <ArrowRightCircle className={`${base} text-amber-500`} />;
+        case 'action': return <UserCheck className={`${base} text-blue-500`} />;
+        case 'delay': return <Clock className={`${base} text-sky-500`} />;
+        case 'condition': return <Shuffle className={`${base} text-amber-500`} />;
+        case 'stop': return <StopCircle className={`${base} text-slate-400`} />;
+        default: return <Play className={`${base} text-primary-500`} />;
+    }
+}
 
 export default FlowBuilderPage;
