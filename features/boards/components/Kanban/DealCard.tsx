@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import { DealView } from '@/types';
-import { Building2, Hourglass, Trophy, XCircle, MessageCircle } from 'lucide-react';
+import { Building2, Hourglass, Trophy, XCircle, MessageCircle, AlertTriangle, Sparkles } from 'lucide-react';
 import { ActivityStatusIcon } from './ActivityStatusIcon';
 import { DealChecklist } from '../DealChecklist';
 import { useRouter } from 'next/navigation';
 import { priorityAriaLabelPtBr } from '@/lib/utils/priority';
+import { useAIDealAnalysis, deriveHealthFromProbability } from '@/features/inbox/hooks/useAIDealAnalysis';
+import { differenceInDays } from 'date-fns';
 
 interface DealCardProps {
   deal: DealView;
@@ -63,6 +65,23 @@ const DealCardComponent: React.FC<DealCardProps> = ({
   const router = useRouter();
   const [localDragging, setLocalDragging] = useState(false);
   const isClosed = isDealClosed(deal);
+
+  // 4.1 — AI Score (lazy, only for open deals, cache 5 min)
+  const { data: aiData } = useAIDealAnalysis(
+    isClosed ? null : deal,
+    undefined,
+    { enabled: !isClosed && !deal.id.startsWith('temp-') }
+  );
+  const health = aiData?.probabilityScore != null
+    ? deriveHealthFromProbability(aiData.probabilityScore)
+    : null;
+
+  // 4.4 — Stale deal alert (client-side, no API)
+  const daysSinceUpdate = deal.updatedAt
+    ? differenceInDays(new Date(), new Date(deal.updatedAt))
+    : 0;
+  const isStale = !isClosed && daysSinceUpdate >= 3;
+  const isCriticallyStale = !isClosed && daysSinceUpdate >= 7;
 
   const handleToggleMenu = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -207,7 +226,7 @@ const DealCardComponent: React.FC<DealCardProps> = ({
         </div>
       )}
 
-      <div className="flex gap-1 mb-2 flex-wrap">
+      <div className="flex gap-1 mb-2 flex-wrap items-center">
         {/* Won/Lost status badge */}
         {deal.isWon && (
           <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-green-100 dark:bg-green-800/40 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-700">
@@ -228,6 +247,19 @@ const DealCardComponent: React.FC<DealCardProps> = ({
             {tag}
           </span>
         ))}
+        {/* 4.4 — Stale deal alert */}
+        {isStale && (
+          <span
+            className={`text-[10px] font-bold px-1.5 py-0.5 rounded border flex items-center gap-0.5 ${isCriticallyStale
+                ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border-red-200 dark:border-red-700/50'
+                : 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-700/50'
+              }`}
+            title={`Sem atualização há ${daysSinceUpdate} dias`}
+          >
+            <AlertTriangle size={9} aria-hidden="true" />
+            {daysSinceUpdate}d parado
+          </span>
+        )}
       </div>
 
       <h4
@@ -235,9 +267,32 @@ const DealCardComponent: React.FC<DealCardProps> = ({
       >
         {deal.title}
       </h4>
-      <p className="text-xs text-slate-500 dark:text-slate-400 mb-3 flex items-center gap-1">
+      <p className="text-xs text-slate-500 dark:text-slate-400 mb-2 flex items-center gap-1">
         <Building2 size={10} aria-hidden="true" /> {deal.companyName}
       </p>
+
+      {/* 4.1/4.2 — AI Score badge + NBA suggestion */}
+      {!isClosed && health && (
+        <div className="flex items-center gap-2 mb-2">
+          <span
+            className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full border flex items-center gap-0.5 ${health.status === 'excellent' ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-700/50' :
+                health.status === 'good' ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-700/50' :
+                  health.status === 'warning' ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-700/50' :
+                    'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border-red-200 dark:border-red-700/50'
+              }`}
+            title={`Probabilidade estimada pela IA: ${health.score}%`}
+          >
+            {health.status === 'excellent' ? '🔥' : health.status === 'good' ? '🟢' : health.status === 'warning' ? '🟡' : '🔵'}
+            {health.score}%
+          </span>
+          {aiData?.action && (
+            <p className="text-[10px] text-slate-400 dark:text-slate-500 truncate flex items-center gap-0.5" title={aiData.action}>
+              <Sparkles size={9} className="shrink-0" />
+              {aiData.action}
+            </p>
+          )}
+        </div>
+      )}
 
       <div className="flex justify-between items-center pt-2 border-t border-slate-100 dark:border-white/5">
         <div className="flex items-center gap-2">
