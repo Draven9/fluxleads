@@ -142,6 +142,14 @@ export const ChatSessionList: React.FC<ChatSessionListProps> = ({ selectedSessio
                                                     {formatTime(session.last_message_at)}
                                                 </span>
                                             </div>
+                                            {/* Instance badge — shown when there's source info */}
+                                            {(session.source_display_name || session.source_phone_number) && (
+                                                <div className="flex items-center gap-1 mb-1">
+                                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400 max-w-[120px] truncate">
+                                                        📱 {session.source_display_name || session.source_phone_number}
+                                                    </span>
+                                                </div>
+                                            )}
                                             <div className="flex justify-between items-center">
                                                 <p className={`text-sm truncate pr-2 ${isUnread ? 'font-medium text-slate-800 dark:text-slate-200' : 'text-slate-500 dark:text-slate-400'}`}>
                                                     {session.contact?.phone || session.provider_id}

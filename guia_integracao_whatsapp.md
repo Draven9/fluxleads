@@ -1,580 +1,224 @@
-# Guia de Integração: WhatsApp (Evolution API) <-> Flux Leads (v1.0.0)
+# Guia de Integração: WhatsApp ↔ Flux Leads (v2.0 — Integração Direta)
 
-Este guia foi separado em dois fluxos distintos para facilitar a organização e evitar erros. Recomenda-se criar **dois workflows separados** no n8n.
+> **Novidade na v2:** O n8n foi completamente eliminado. A integração agora é **direta** entre o Flux Leads e o seu provedor de WhatsApp (uazapi ou Evolution API).
 
 ---
 
-## 📥 Parte 1: Entrada (WhatsApp -> Flux Leads)
+## Visão Geral da Arquitetura
 
-**Objetivo:** Receber mensagens dos clientes e criar Leads/Chat no sistema.
+```
+┌─────────────────┐        webhook        ┌──────────────────────────────────┐
+│  WhatsApp App   │ ─────────────────────▶│  Edge Function: whatsapp-inbound │
+└─────────────────┘                       │  (Supabase — sem autenticação)   │
+                                          └──────────────┬───────────────────┘
+                                                         │
+                                          ┌──────────────▼───────────────────┐
+                                          │  Banco de Dados (Supabase)        │
+                                          │  contacts + chat_sessions +        │
+                                          │  messages                          │
+                                          └──────────────────────────────────┘
 
-### 1. Configurar Flux Leads
-1.  Acesse **Configurações > Webhooks**.
-2.  Na aba **"Receber leads"**, configure o funil de entrada.
-3.  Clique em **"Gerar URL e Secret"**. 
-4.  Copie a **URL** e o **Secret** (você vai precisar dos dois).
+┌─────────────────┐        invocar        ┌──────────────────────────────────┐
+│  Flux Leads UI  │ ─────────────────────▶│  Edge Function: whatsapp-proxy   │
+│  (responder)    │                       │  (autenticado, roteia por         │
+└─────────────────┘                       │   provider_type)                  │
+                                          └──────────────┬───────────────────┘
+                                                         │
+                                          ┌──────────────▼───────────────────┐
+                                          │  uazapi / Evolution API           │
+                                          │  (envia mensagem ao WhatsApp)     │
+                                          └──────────────────────────────────┘
+```
 
-### 2. Configurar n8n (Novo Workflow)
-Crie um workflow novo chamado "Receber WhatsApp"..
-Copie o JSON abaixo e cole no n8n:
+---
 
+## Passo a Passo: Configurar uma nova instância
+
+### 1. Adicionar instância no Flux Leads
+
+1. Acesse **Configurações → Integrações → aba WhatsApp**
+2. Clique em **"+ Adicionar número"**
+3. Preencha o formulário conforme o seu provedor:
+
+#### Se usar **uazapi**:
+| Campo | Valor |
+|---|---|
+| Nome interno | Ex: `Comercial` |
+| Nome de exibição | Ex: `Vendas WhatsApp` |
+| Número | `+5511999999999` |
+| Provider | `uazapi` |
+| Token da instância | Copiado do painel uazapi |
+| URL Base | `https://api.uazapi.com` (padrão) |
+
+#### Se usar **Evolution API**:
+| Campo | Valor |
+|---|---|
+| Nome interno | Ex: `Suporte` |
+| Provider | `Evolution API` |
+| URL da Evolution API | `https://evolution.seuservidor.com` |
+| API Key | Chave do painel Evolution |
+| Nome da Instância | Nome exato da instância no Evolution |
+
+4. Clique em **"Salvar instância"**
+
+---
+
+### 2. Copiar a URL do Webhook
+
+Após salvar, a instância exibirá automaticamente a URL do webhook:
+
+```
+https://<seu-projeto>.supabase.co/functions/v1/whatsapp-inbound?source=<ID_DA_INSTANCIA>
+```
+
+Clique no ícone de cópia 📋 ao lado da URL.
+
+---
+
+### 3. Configurar o Webhook no seu provedor
+
+#### uazapi
+
+1. Acesse o painel da uazapi
+2. Selecione a instância correspondente
+3. Vá em **Webhook** (ou Configurações da instância)
+4. Cole a URL copiada no campo de webhook
+5. Marque os eventos: **`messages.upsert`** (mensagens recebidas)
+6. Salve
+
+#### Evolution API
+
+1. Acesse o painel da Evolution API
+2. Selecione a instância
+3. Vá em **Webhook**
+4. Cole a URL copiada no campo `url`
+5. Ative os eventos:
+   - `MESSAGES_UPSERT` — mensagens recebidas
+   - (opcional) `MESSAGES_UPDATE` — status de leitura
+6. Salve
+
+---
+
+### 4. Testar a conexão
+
+No Flux Leads:
+1. Na lista de instâncias (Configurações → WhatsApp), clique em **↻ (atualizar)** na instância desejada
+2. O badge de status mudará para 🟢 **Conectado** se a instância estiver ativa
+3. Envie uma mensagem de teste de um celular para o número configurado
+4. A mensagem deve aparecer em **Chat** em poucos segundos — sem n8n
+
+---
+
+## Fluxo de Mensagens: Como Funciona
+
+### Mensagem recebida (inbound)
+
+```
+WhatsApp (cliente) 
+  → POST para /whatsapp-inbound?source=<id>
+  → valida source_id
+  → normaliza payload (uazapi ou Evolution)
+  → upsert em contacts (cria se não existir)
+  → upsert em chat_sessions (cria se não existir, vincula ao source)
+  → insere em messages (com deduplicação por external_id)
+  → salva em webhook_events_in (auditoria)
+  → Flux Leads exibe em tempo real via Realtime
+```
+
+### Mensagem enviada (outbound)
+
+```
+Agente clica em Enviar no Flux Leads
+  → chama whatsapp-proxy (autenticado)
+  → resolve a instância (sourceId ou padrão)
+  → detecta provider_type (uazapi ou evolution)
+  → chama API correspondente (sendText / sendMedia / sendAudio)
+  → retorna confirmação
+  → mensagem salva em messages com direction=outbound
+```
+
+---
+
+## Suporte a Múltiplos Números
+
+Cada instância cadastrada = um número diferente. O Flux Leads:
+
+- Exibe um badge 📱 na lista de conversas identificando de qual número a mensagem veio
+- Permite ter instâncias **uazapi** e **Evolution API** simultaneamente na mesma organização
+- Roteia o envio automaticamente pelo número correto conforme a conversa aberta
+
+---
+
+## Estrutura do Payload (Referência)
+
+### uazapi → Flux Leads
 ```json
 {
-  "nodes": [
-    {
-      "parameters": {
-        "httpMethod": "POST",
-        "path": "webhook-evolution-in",
-        "options": {}
-      },
-      "id": "webhook-evolution-node",
-      "name": "Webhook (Evolution)",
-      "type": "n8n-nodes-base.webhook",
-      "typeVersion": 1,
-      "position": [
-        460,
-        460
-      ]
+  "instanceToken": "token_da_instancia",
+  "chatid": "5511999999999@s.whatsapp.net",
+  "text": "Olá, quero um orçamento",
+  "sender": "5511999999999",
+  "senderName": "João Silva",
+  "fromMe": false,
+  "messageType": "conversation",
+  "messageId": "ABCDEF123456"
+}
+```
+
+### Evolution API → Flux Leads
+```json
+{
+  "event": "messages.upsert",
+  "data": {
+    "key": {
+      "remoteJid": "5511999999999@s.whatsapp.net",
+      "fromMe": false,
+      "id": "ABCDEF123456"
     },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "SUA_URL_DO_FLUX_LEADS_AQUI",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            },
-            {
-              "name": "X-Webhook-Secret",
-              "value": "SEU_SECRET_DO_FLUX_LEADS_AQUI"
-            }
-          ]
-        },
-        "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            {
-              "name": "source",
-              "value": "whatsapp"
-            },
-            {
-              "name": "name",
-              "value": "={{ $json.body.data.pushName }}"
-            },
-            {
-              "name": "phone",
-              "value": "={{ $json.body.data.key.remoteJid.replace('@s.whatsapp.net', '') }}"
-            },
-            {
-              "name": "notes",
-              "value": "={{ $json.body.data.message.conversation || $json.body.data.message.extendedTextMessage.text || $json.body.data.message.imageMessage?.caption || '' }}"
-            },
-            {
-              "name": "media_url",
-              "value": "={{ $json.body.data.message.base64 || $json.body.data.message.imageMessage?.url || $json.body.data.message.audioMessage?.url || $json.body.data.message.videoMessage?.url || $json.body.data.message.documentMessage?.url || $json.body.data.message.extendedTextMessage?.contextInfo?.quotedMessage?.imageMessage?.url || $json.body.data.message.extendedTextMessage?.contextInfo?.quotedMessage?.videoMessage?.url || $json.body.data.message?.imageMessage?.jpegThumbnail }}"
-            },
-            {
-              "name": "message_type",
-              "value": "={{ $json.body.data.messageType }}"
-            },
-            {
-              "name": "external_event_id",
-              "value": "={{ $json.body.data.key.id }}"
-            },
-            {
-               "name": "is_group",
-               "value": "={{ $json.body.data.key.remoteJid.includes('@g.us') }}"
-            },
-            {
-               "name": "group_id",
-               "value": "={{ $json.body.data.key.remoteJid }}"
-            },
-            {
-               "name": "participant",
-               "value": "={{ $json.body.data.key.participant ? $json.body.data.key.participant.split('@')[0] : '' }}"
-            },
-            {
-               "name": "pushName",
-               "value": "={{ $json.body.data.pushName }}"
-            },
-            {
-               "name": "from_me",
-               "value": "={{ $json.body.data.key.fromMe }}"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "http-request-flux",
-      "name": "Enviar p/ Flux Leads",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.1,
-      "position": [
-        680,
-        460
-      ]
-    }
-  ],
-  "connections": {
-    "Webhook (Evolution)": {
-      "main": [
-        [
-          {
-            "node": "Enviar p/ Flux Leads",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+    "pushName": "João Silva",
+    "message": {
+      "conversation": "Olá, quero um orçamento"
     }
   }
 }
 ```
 
-**Ajustes Necessários neste JSON:**
-1.  Abra o nó **"Enviar p/ Flux Leads"**.
-2.  Substitua `SUA_URL_DO_FLUX_LEADS_AQUI` pela URL copiada.
-3.  **NOVO:** Substitua `SEU_SECRET_DO_FLUX_LEADS_AQUI` pelo Secret copiado (está nos Headers).
-4.  Salve e Ative o Workflow.
-5.  Configure o Webhook na Evolution API.
+---
+
+## Configuração de Envio (whatsapp-proxy)
+
+O proxy de envio usa o campo `configuration` da instância para rotear:
+
+| provider_type | Endpoint de envio de texto |
+|---|---|
+| `uazapi` | `POST {baseUrl}/send/text` + header `token` |
+| `evolution` | `POST {baseUrl}/message/sendText/{instanceName}` + header `apikey` |
 
 ---
 
-## 📤 Parte 2: Saída (Flux Leads -> WhatsApp)
+## Solução de Problemas
 
-**Objetivo:** Enviar respostas do chat e notificações de follow-up.
+| Problema | Causa provável | Solução |
+|---|---|---|
+| Mensagem não aparece no chat | Webhook não configurado ou URL errada | Confirme URL no painel do provedor |
+| Badge "Desconectado" | Instância encerrou sessão | Reconecte no painel uazapi/Evolution |
+| Erro "Invalid or inactive source" | source_id inválido ou instância desativada | Verifique se a instância está ativa |
+| Mensagem duplicada | Webhook disparando duas vezes | A deduplicação por `external_id` previne duplicatas no DB |
+| Envio falha | Token/ApiKey errado | Reconfigure as credenciais em Configurações → WhatsApp |
 
-### 1. Configurar Flux Leads
-1.  Acesse **Configurações > Webhooks**.
-2.  Em **"Follow-up (Webhook de saída)"**, clique em conectar.
-3.  Insira a URL do seu workflow de saída do n8n (veja abaixo).
+---
 
-### 2. Configurar n8n (Workflow de Saída)
-Este é o workflow que você já tem configurado (com o Switch). Se precisar recriar, use o código abaixo.
+## Migração: sair do n8n
 
-> **Atenção:** Lembre-se de trocar `SUA_APIKEY_AQUI` e `INSTANCIA` pelos seus dados reais da Evolution para que o envio funcione.
+Se você ainda usa n8n, a migração é simples:
 
-```json
-{
-  "nodes": [
-    {
-      "parameters": {
-        "httpMethod": "POST",
-        "path": "flux-leads-notification",
-        "options": {}
-      },
-      "id": "webhook-flux",
-      "name": "Webhook (Flux Leads)",
-      "type": "n8n-nodes-base.webhook",
-      "typeVersion": 1,
-      "position": [
-        -220,
-        460
-      ]
-    },
-    {
-      "parameters": {
-        "dataType": "string",
-        "value1": "={{ $json.body.event }}",
-        "rules": {
-          "rules": [
-            {
-              "value2": "chat.new_message",
-              "output": 0
-            },
-            {
-              "value2": "deal.stage_changed",
-              "output": 1
-            }
-          ]
-        }
-      },
-      "id": "switch-event-type",
-      "name": "Tipo de Evento?",
-      "type": "n8n-nodes-base.switch",
-      "typeVersion": 1,
-      "position": [
-        0,
-        460
-      ]
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "string": [
-            {
-              "value1": "={{ $json.body.data.forward_message_external_id }}",
-              "operation": "isNotEmpty"
-            }
-          ]
-        }
-      },
-      "id": "switch-is-forward",
-      "name": "É Encaminhamento?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 1,
-      "position": [
-        220,
-        240
-      ]
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "https://prospeccao-evolution.gw3vnc.easypanel.host/message/forwardMessage/INSTANCIA",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "apikey",
-              "value": "SUA_APIKEY_AQUI"
-            }
-          ]
-        },
-        "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            {
-              "name": "number",
-              "value": "={{ $json.body.data.contact.phone }}"
-            },
-            {
-              "name": "key",
-              "value": "={{ { id: $json.body.data.forward_message_external_id } }}"
-            },
-             {
-              "name": "contextInfo",
-              "value": "={{ { isForwarded: true } }}"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "send-forward",
-      "name": "Encaminhar Mensagem",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.1,
-      "position": [
-        500,
-        100
-      ]
-    },
-    {
-      "parameters": {
-        "dataType": "string",
-        "value1": "={{ $json.body.data.message_type }}",
-        "rules": {
-          "rules": [
-            {
-              "value2": "audio",
-              "output": 1
-            },
-            {
-              "value2": "image",
-              "output": 2
-            },
-            {
-              "value2": "document",
-              "output": 2
-            },
-            {
-              "value2": "video",
-              "output": 2
-            }
-          ]
-        },
-        "fallbackOutput": 0
-      },
-      "id": "switch-message-type",
-      "name": "Tipo de Mensagem?",
-      "type": "n8n-nodes-base.switch",
-      "typeVersion": 1,
-      "position": [
-        280,
-        460
-      ]
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "https://prospeccao-evolution.gw3vnc.easypanel.host/message/sendText/INSTANCIA",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "apikey",
-              "value": "SUA_APIKEY_AQUI"
-            }
-          ]
-        },
-        "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            {
-              "name": "number",
-              "value": "={{ $json.body.data.contact.phone }}"
-            },
-            {
-              "name": "text",
-              "value": "={{ $json.body.data.content }}"
-            },
-            {
-              "name": "mentions",
-              "value": "={{ $json.body.data.mentions }}"
-            },
-            {
-              "name": "quoted",
-              "value": "={{ $json.body.data.reply_to_message_id ? { key: { id: $json.body.data.reply_to_message_external_id } } : undefined }}"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "send-text",
-      "name": "Enviar Texto",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.1,
-      "position": [
-        580,
-        300
-      ]
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "https://prospeccao-evolution.gw3vnc.easypanel.host/message/sendWhatsAppAudio/INSTANCIA",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "apikey",
-              "value": "SUA_APIKEY_AQUI"
-            }
-          ]
-        },
-        "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            {
-              "name": "number",
-              "value": "={{ $json.body.data.contact.phone }}"
-            },
-            {
-              "name": "audio",
-              "value": "={{ $json.body.data.media_url }}"
-            },
-            {
-              "name": "quoted",
-              "value": "={{ $json.body.data.reply_to_message_id ? { key: { id: $json.body.data.reply_to_message_external_id } } : undefined }}"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "send-audio",
-      "name": "Enviar Audio (PTT)",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.1,
-      "position": [
-        580,
-        460
-      ]
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "https://prospeccao-evolution.gw3vnc.easypanel.host/message/sendMedia/INSTANCIA",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "apikey",
-              "value": "SUA_APIKEY_AQUI"
-            }
-          ]
-        },
-        "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            {
-              "name": "number",
-              "value": "={{ $json.body.data.contact.phone }}"
-            },
-            {
-              "name": "media",
-              "value": "={{ $json.body.data.media_url }}"
-            },
-            {
-              "name": "mediatype",
-              "value": "={{ $json.body.data.message_type }}"
-            },
-            {
-              "name": "caption",
-              "value": "={{ $json.body.data.content }}"
-            },
-            {
-              "name": "quoted",
-              "value": "={{ $json.body.data.reply_to_message_id ? { key: { id: $json.body.data.reply_to_message_external_id } } : undefined }}"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "send-media",
-      "name": "Enviar Mídia (Geral)",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.1,
-      "position": [
-        580,
-        620
-      ]
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "string": [
-            {
-              "value1": "={{ $json.body.data.to_stage.name }}",
-              "operation": "contains",
-              "value2": "Agendado"
-            }
-          ]
-        }
-      },
-      "id": "filter-stage",
-      "name": "Filtra Etapa 'Agendado'",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 1,
-      "position": [
-        280,
-        760
-      ]
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "https://prospeccao-evolution.gw3vnc.easypanel.host/message/sendText/INSTANCIA",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "apikey",
-              "value": "SUA_APIKEY_AQUI"
-            }
-          ]
-        },
-        "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            {
-              "name": "number",
-              "value": "={{ $json.body.data.contact.phone }}"
-            },
-            {
-              "name": "text",
-              "value": "Olá {{ $json.body.data.contact.name }}, seu pedido mudou para: {{ $json.body.data.to_stage.name }}!"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "send-followup",
-      "name": "Enviar Follow-up",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.1,
-      "position": [
-        580,
-        760
-      ]
-    }
-  ],
-  "connections": {
-    "Webhook (Flux Leads)": {
-      "main": [
-        [
-          {
-            "node": "Tipo de Evento?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Tipo de Evento?": {
-      "main": [
-        [
-          {
-            "node": "É Encaminhamento?",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Filtra Etapa 'Agendado'",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "É Encaminhamento?": {
-      "main": [
-        [
-          {
-            "node": "Encaminhar Mensagem",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Tipo de Mensagem?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Tipo de Mensagem?": {
-      "main": [
-        [
-          {
-            "node": "Enviar Texto",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Enviar Audio (PTT)",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Enviar Mídia (Geral)",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Filtra Etapa 'Agendado'": {
-      "main": [
-        [
-          {
-            "node": "Enviar Follow-up",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    }
-  }
-}
-```
+1. Configure a nova URL de webhook direto no uazapi/Evolution (Passo 3 acima)
+2. Aguarde alguns minutos para confirmar que mensagens chegam direto
+3. Desative os workflows do n8n (não exclua ainda, aguarde uma semana)
+4. Após confirmação, encerre os workflows no n8n
+
+> ✅ O n8n pode ser desligado com segurança após a validação.
+
+---
+
+*Atualizado em 2026-03-10 — Integração direta v2.0 (sem n8n)*

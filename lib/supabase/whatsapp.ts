@@ -11,124 +11,145 @@ export interface WhatsAppGroup {
     announce?: boolean;
 }
 
+export interface WhatsAppSource {
+    id: string;
+    name: string;
+    display_name: string | null;
+    phone_number: string | null;
+    provider_type: 'uazapi' | 'evolution' | 'meta';
+    active: boolean;
+    configuration: Record<string, any>;
+}
+
+// ─── Internal helper ──────────────────────────────────────────────────────────
+async function invokeProxy(body: Record<string, any>) {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Unauthorized');
+
+    const { data, error } = await supabase.functions.invoke('whatsapp-proxy', { body });
+    if (error) throw error;
+    if (data?.error) throw new Error(data.error);
+    return data;
+}
+
+// ─── Service ──────────────────────────────────────────────────────────────────
 export const whatsappService = {
-    /**
-     * Fetches all groups from the connected WhatsApp instance via Edge Function
-     */
-    fetchGroups: async (): Promise<{ data: WhatsAppGroup[] | null; error: any }> => {
+
+    /** List all configured WhatsApp instances for the current org */
+    listSources: async (): Promise<{ data: WhatsAppSource[] | null; error: any }> => {
         try {
-            const { data: { session } } = await supabase.auth.getSession();
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return { data: null, error: 'Unauthorized' };
 
-            if (!session) {
-                return { data: null, error: 'Unauthorized' };
-            }
+            const { data: profile } = await supabase
+                .from('profiles').select('organization_id').eq('id', user.id).single();
 
-            const { data, error } = await supabase.functions.invoke('whatsapp-proxy', {
-                body: { action: 'fetchGroups' }
-            });
+            const { data, error } = await supabase
+                .from('integration_inbound_sources')
+                .select('id, name, display_name, phone_number, provider_type, active, configuration')
+                .eq('organization_id', profile?.organization_id)
+                .order('created_at', { ascending: true });
 
-            if (error) throw error;
-
-            // Handle logical errors returned with 200 OK
-            if (data && data.error) {
-                throw new Error(data.error);
-            }
-
-            // The edge function returns the array directly or in a data property
-            // We should ensure we return an array
-            return { data: Array.isArray(data) ? data : [], error: null };
-        } catch (error) {
-            console.error('Error fetching WhatsApp groups:', error);
-            return { data: null, error };
+            return { data: data as WhatsAppSource[] | null, error };
+        } catch (err) {
+            return { data: null, error: err };
         }
     },
 
-    /**
-     * Fetches participants for a specific group
-     */
-    fetchParticipants: async (groupJid: string): Promise<{ data: any[] | null; error: any }> => {
+    /** Check connection status for a given source instance */
+    instanceStatus: async (sourceId: string): Promise<{ data: any; error: any }> => {
         try {
-            const { data: { session } } = await supabase.auth.getSession();
+            const data = await invokeProxy({ action: 'instanceStatus', sourceId });
+            return { data, error: null };
+        } catch (err) {
+            return { data: null, error: err };
+        }
+    },
 
-            if (!session) {
-                return { data: null, error: 'Unauthorized' };
-            }
+    /** Send a text message via a specific source instance */
+    sendText: async (sourceId: string, phone: string, content: string): Promise<{ data: any; error: any }> => {
+        try {
+            const data = await invokeProxy({ action: 'sendText', sourceId, phone, content });
+            return { data, error: null };
+        } catch (err) {
+            return { data: null, error: err };
+        }
+    },
 
-            const { data, error } = await supabase.functions.invoke('whatsapp-proxy', {
-                body: { action: 'fetchParticipants', groupJid }
-            });
+    /** Send a media message (image, video, document) */
+    sendMedia: async (sourceId: string, phone: string, mediaUrl: string, mediaType: string, caption?: string): Promise<{ data: any; error: any }> => {
+        try {
+            const data = await invokeProxy({ action: 'sendMedia', sourceId, phone, mediaUrl, mediaType, caption });
+            return { data, error: null };
+        } catch (err) {
+            return { data: null, error: err };
+        }
+    },
 
-            if (error) throw error;
+    /** Send a PTT audio message */
+    sendAudio: async (sourceId: string, phone: string, mediaUrl: string): Promise<{ data: any; error: any }> => {
+        try {
+            const data = await invokeProxy({ action: 'sendAudio', sourceId, phone, mediaUrl });
+            return { data, error: null };
+        } catch (err) {
+            return { data: null, error: err };
+        }
+    },
 
-            if (data && data.error) {
-                throw new Error(data.error);
-            }
+    /** Fetch all WhatsApp groups from a source instance */
+    fetchGroups: async (sourceId?: string): Promise<{ data: WhatsAppGroup[] | null; error: any }> => {
+        try {
+            const raw = await invokeProxy({ action: 'fetchGroups', sourceId });
+            return { data: Array.isArray(raw) ? raw : [], error: null };
+        } catch (err) {
+            console.error('[whatsappService] fetchGroups:', err);
+            return { data: null, error: err };
+        }
+    },
 
-            // Normalization: Evolution v2 might return { participants: [] } or just []
-            // Adjust based on observation or assume array/nested array
-            const participants = Array.isArray(data) ? data : (data.participants || []);
-
+    /** Fetch participants of a specific group */
+    fetchParticipants: async (groupJid: string, sourceId?: string): Promise<{ data: any[] | null; error: any }> => {
+        try {
+            const raw = await invokeProxy({ action: 'fetchParticipants', groupJid, sourceId });
+            const participants = Array.isArray(raw) ? raw : (raw?.participants || []);
             return { data: participants, error: null };
-        } catch (error) {
-            console.error('Error fetching participants:', error);
-            return { data: null, error };
+        } catch (err) {
+            console.error('[whatsappService] fetchParticipants:', err);
+            return { data: null, error: err };
         }
     },
 
-    /**
-     * Imports selected groups as Contacts
-     */
+    /** Import WhatsApp groups as Contacts + create ChatSessions */
     importGroupsAsContacts: async (groups: WhatsAppGroup[], ownerId: string) => {
         try {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) throw new Error('Unauthorized');
 
-            // Get organization_id
             const { data: profile } = await supabase
-                .from('profiles')
-                .select('organization_id')
-                .eq('id', user.id)
-                .single();
-
+                .from('profiles').select('organization_id').eq('id', user.id).single();
             if (!profile?.organization_id) throw new Error('No organization found');
 
             const contactsToCreate = groups.map(g => ({
                 organization_id: profile.organization_id,
                 name: g.subject || 'Grupo sem nome',
-                phone: g.id.split('@')[0], // Extract number part from JID
+                phone: g.id.split('@')[0],
                 owner_id: ownerId || user.id,
-                // type: 'company', // removed: column does not exist on contacts table
-                source: 'whatsapp_group', // Mark as group for chat logic
+                source: 'whatsapp_group',
                 notes: `Importado do WhatsApp via Sync. ID: ${g.id}`,
-                // Custom fields could be added to store group metadata
             }));
 
             const { data, error } = await supabase
                 .from('contacts')
-                .upsert(contactsToCreate, {
-                    onConflict: 'phone,organization_id',
-                    ignoreDuplicates: false // We want to update so we get the IDs back reliably or use select
-                })
+                .upsert(contactsToCreate, { onConflict: 'phone,organization_id', ignoreDuplicates: false })
                 .select();
 
             if (data) {
-                // Ensure chat sessions exist for these groups so they appear in the list
                 const sessionsToCreate = data.map(c => ({
                     organization_id: profile.organization_id,
                     contact_id: c.id,
                     provider: 'whatsapp',
-                    unread_count: 0
+                    unread_count: 0,
                 }));
-
-                // Upsert sessions (prevent duplicates if session already exists)
-                // Assuming composite unique key on (organization_id, contact_id) or similar logic needed.
-                // Since chat_sessions might not have a clean composite key for upserting by contact_id, 
-                // we'll try to insert and ignore conflicts if possible, or check first.
-                // However, for bulk, upsert with ignoreDuplicates is best if constraint exists.
-                // Let's assume standard upsert might duplicate if no constraint. 
-                // Safest is to just loop or use ignoreDuplicates on a known constraint.
-                // Prerequisite: Constraint on chat_sessions(organization_id, contact_id)
-
                 await supabase
                     .from('chat_sessions')
                     .upsert(sessionsToCreate, { onConflict: 'organization_id,contact_id', ignoreDuplicates: true });
@@ -138,5 +159,5 @@ export const whatsappService = {
         } catch (error) {
             return { data: null, error };
         }
-    }
+    },
 };

@@ -9,6 +9,7 @@ import { ContactCustomFieldsManager } from './components/ContactCustomFieldsMana
 import { ApiKeysSection } from './components/ApiKeysSection';
 import { WebhooksSection } from './components/WebhooksSection';
 import { McpSection } from './components/McpSection';
+import { WhatsAppInstancesManager } from './components/WhatsAppInstancesManager';
 import { DataStorageSettings } from './components/DataStorageSettings';
 import { ProductsCatalogManager } from './components/ProductsCatalogManager';
 import { OrganizationRoleSettings } from './components/OrganizationRoleSettings';
@@ -112,13 +113,13 @@ const ProductsSettings: React.FC = () => {
 };
 
 const IntegrationsSettings: React.FC = () => {
-  type IntegrationsSubTab = 'api' | 'webhooks' | 'mcp';
+  type IntegrationsSubTab = 'api' | 'webhooks' | 'mcp' | 'whatsapp';
   const [subTab, setSubTab] = useState<IntegrationsSubTab>('api');
 
   useEffect(() => {
     const syncFromHash = () => {
       const h = typeof window !== 'undefined' ? (window.location.hash || '').replace('#', '') : '';
-      if (h === 'webhooks' || h === 'api' || h === 'mcp') setSubTab(h as IntegrationsSubTab);
+      if (h === 'webhooks' || h === 'api' || h === 'mcp' || h === 'whatsapp') setSubTab(h as IntegrationsSubTab);
     };
 
     syncFromHash();
@@ -142,6 +143,7 @@ const IntegrationsSettings: React.FC = () => {
     <div className="pb-10">
       <div className="flex items-center gap-2 mb-6">
         {([
+          { id: 'whatsapp' as const, label: 'WhatsApp' },
           { id: 'webhooks' as const, label: 'Webhooks' },
           { id: 'api' as const, label: 'API' },
           { id: 'mcp' as const, label: 'MCP' },
@@ -163,6 +165,7 @@ const IntegrationsSettings: React.FC = () => {
         })}
       </div>
 
+      {subTab === 'whatsapp' && <WhatsAppInstancesManager />}
       {subTab === 'api' && <ApiKeysSection />}
       {subTab === 'webhooks' && <WebhooksSection />}
       {subTab === 'mcp' && <McpSection />}

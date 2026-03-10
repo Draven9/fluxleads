@@ -13,9 +13,13 @@ export interface ChatSession {
     updated_at: string;
 
     // Relations (Joined)
-    // Relations (Joined)
     contact?: Contact;
     is_marked_unread?: boolean;
+
+    // Multi-provider: which WhatsApp number originated this session
+    whatsapp_source_id?: string | null;
+    source_display_name?: string | null;  // populated by join from integration_inbound_sources
+    source_phone_number?: string | null;
 }
 
 export interface Message {
