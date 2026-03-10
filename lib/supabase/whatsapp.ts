@@ -24,9 +24,15 @@ export interface WhatsAppSource {
 // ─── Internal helper ──────────────────────────────────────────────────────────
 async function invokeProxy(body: Record<string, any>) {
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) throw new Error('Unauthorized');
+    if (!session?.access_token) throw new Error('Unauthorized — no active session');
 
-    const { data, error } = await supabase.functions.invoke('whatsapp-proxy', { body });
+    // Explicitly pass the Authorization header to ensure it reaches the Edge Function
+    const { data, error } = await supabase.functions.invoke('whatsapp-proxy', {
+        body,
+        headers: {
+            Authorization: `Bearer ${session.access_token}`,
+        },
+    });
     if (error) throw error;
     if (data?.error) throw new Error(data.error);
     return data;
