@@ -15,13 +15,12 @@ import { OrganizationRoleSettings } from './components/OrganizationRoleSettings'
 import { AICenterSettings } from './AICenterSettings';
 import { AuditLogDashboard } from './components/AuditLogDashboard';
 import { TeamPermissions } from './components/TeamPermissions';
-import { AutomationsManager } from '../automations/AutomationsManager';
 
 import { UsersPage } from './UsersPage';
 import { useAuth } from '@/context/AuthContext';
 import { Settings as SettingsIcon, Users, Database, Sparkles, Plug, Package, Shield, FileText, Zap } from 'lucide-react';
 
-type SettingsTab = 'general' | 'products' | 'integrations' | 'ai' | 'data' | 'users' | 'access' | 'audit' | 'automations';
+type SettingsTab = 'general' | 'products' | 'integrations' | 'ai' | 'data' | 'users' | 'access' | 'audit';
 
 interface GeneralSettingsProps {
   hash?: string;
@@ -203,8 +202,6 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ tab: initialTab }) => {
       setActiveTab('users');
     } else if (pathname?.includes('/settings/access')) {
       setActiveTab('access');
-    } else if (pathname?.includes('/settings/automations')) {
-      setActiveTab('automations');
     } else if (pathname?.includes('/settings/audit')) {
       setActiveTab('audit');
     } else {
@@ -222,7 +219,6 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ tab: initialTab }) => {
     { id: 'data' as SettingsTab, name: 'Dados', icon: Database },
     ...(isAdmin ? [{ id: 'users' as SettingsTab, name: 'Equipe', icon: Users }] : []),
     ...(isAdmin ? [{ id: 'access' as SettingsTab, name: 'Permissões', icon: Shield }] : []),
-    ...(isAdmin ? [{ id: 'automations' as SettingsTab, name: 'Automações', icon: Zap }] : []),
     ...(isAdmin ? [{ id: 'audit' as SettingsTab, name: 'Auditoria', icon: FileText }] : []),
   ];
 
@@ -230,8 +226,6 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ tab: initialTab }) => {
     switch (activeTab) {
       case 'products':
         return <ProductsSettings />;
-      case 'automations':
-        return <AutomationsManager />;
       case 'integrations':
         return <IntegrationsSettings />;
       case 'ai':

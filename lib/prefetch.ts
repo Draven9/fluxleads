@@ -12,6 +12,7 @@ const routeImports = {
   contacts: () => import('@/features/contacts/ContactsPage'),
   settings: () => import('@/features/settings/SettingsPage'),
   activities: () => import('@/features/activities/ActivitiesPage'),
+  automations: () => import('@/features/automations/AutomationsManager'),
   reports: () => import('@/features/reports/ReportsPage'),
   manual: () => import('@/features/manual/components/ManualLayout'),
   chat: () => import('@/features/chat/components/ChatLayout'),

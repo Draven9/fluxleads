@@ -50,6 +50,7 @@ import {
   MessageSquare,
   MessageCircle,
   Briefcase,
+  Zap,
 } from 'lucide-react';
 import { useCRM } from '../context/CRMContext';
 import { useAuth } from '../context/AuthContext';
@@ -284,6 +285,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               { to: '/boards', icon: KanbanSquare, label: 'Boards', prefetch: 'boards' as const },
               { to: '/companies', icon: Briefcase, label: 'Carteira', prefetch: 'companies' as const },
               { to: '/contacts', icon: Users, label: 'Contatos', prefetch: 'contacts' as const },
+              { to: '/automations', icon: Zap, label: 'Automações', prefetch: 'automations' as const },
               { to: '/activities', icon: CheckSquare, label: 'Atividades', prefetch: 'activities' as const },
               { to: '/reports', icon: BarChart3, label: 'Relatórios', prefetch: 'reports' as const },
               { to: '/manual', icon: Book, label: 'Manual', prefetch: 'manual' as const },

@@ -9,9 +9,10 @@ import {
   BarChart3,
   Settings,
   User,
+  Zap,
 } from 'lucide-react';
 
-export type PrimaryNavId = 'inbox' | 'boards' | 'contacts' | 'activities' | 'more';
+export type PrimaryNavId = 'inbox' | 'boards' | 'contacts' | 'automations' | 'activities' | 'more';
 
 export interface PrimaryNavItem {
   id: PrimaryNavId;
@@ -25,6 +26,7 @@ export const PRIMARY_NAV: PrimaryNavItem[] = [
   { id: 'inbox', label: 'Inbox', href: '/inbox', icon: Inbox },
   { id: 'boards', label: 'Boards', href: '/boards', icon: KanbanSquare },
   { id: 'contacts', label: 'Contatos', href: '/contacts', icon: Users },
+  { id: 'automations', label: 'Automações', href: '/automations', icon: Zap },
   { id: 'activities', label: 'Atividades', href: '/activities', icon: CheckSquare },
   { id: 'more', label: 'Mais', icon: MoreHorizontal },
 ];
