@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { ChatSession } from '../types';
 import { useCRM } from '@/context/CRMContext';
 import { toast } from 'react-hot-toast';
+import { ConversationSentiment } from './ConversationSentiment';
 
 interface ContactSidePanelProps {
     session: ChatSession;
@@ -158,6 +159,12 @@ export const ContactSidePanel: React.FC<ContactSidePanelProps> = ({ session, isO
                         <p className="text-xs text-amber-600 dark:text-amber-400/80">Este contato ainda não possui um negócio em aberto no funil.</p>
                     </div>
                 )}
+
+                {/* 4.3 — Análise de Sentimento */}
+                <ConversationSentiment
+                    sessionId={session.id}
+                    messageCount={0}
+                />
             </div>
         </div>
     );
