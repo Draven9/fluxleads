@@ -1,5 +1,5 @@
-import React from 'react';
-import { X } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { X, Search, ChevronDown } from 'lucide-react';
 import { Activity, Contact, Deal } from '@/types';
 import { Profile } from '@/lib/supabase/profiles';
 
@@ -10,7 +10,7 @@ interface ActivityFormData {
   time: string;
   description: string;
   dealId: string;
-  contactId: string;  // TASK-04: seleção independente de cliente
+  contactId: string;
   assigneeId: string;
   priority: 'low' | 'medium' | 'high';
 }
@@ -23,31 +23,13 @@ interface ActivityFormModalProps {
   setFormData: (data: ActivityFormData) => void;
   editingActivity: Activity | null;
   deals: Deal[];
-  contacts: Contact[];  // TASK-04: lista de contatos para seleção independente
+  contacts: Contact[];
   profiles: Profile[];
 }
 
 /**
- * Componente React `ActivityFormModal`.
- *
- * @param {ActivityFormModalProps} {
-  isOpen,
-  onClose,
-  onSubmit,
-  formData,
-  setFormData,
-  editingActivity,
-  deals,
-} - Parâmetro `{
-  isOpen,
-  onClose,
-  onSubmit,
-  formData,
-  setFormData,
-  editingActivity,
-  deals,
-}`.
- * @returns {Element | null} Retorna um valor do tipo `Element | null`.
+ * ActivityFormModal — Formulário de criação/edição de atividades.
+ * O campo de cliente suporta busca por digitação (combobox) independente do negócio.
  */
 export const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
   isOpen,
@@ -60,7 +42,40 @@ export const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
   contacts,
   profiles,
 }) => {
-  React.useEffect(() => {
+  const [contactQuery, setContactQuery] = useState('');
+  const [isContactDropdownOpen, setIsContactDropdownOpen] = useState(false);
+  const contactInputRef = useRef<HTMLInputElement>(null);
+  const contactDropdownRef = useRef<HTMLDivElement>(null);
+
+  const selectedContact = contacts.find(c => c.id === formData.contactId) ?? null;
+
+  const filteredContacts = contactQuery.trim()
+    ? contacts
+      .filter(
+        c =>
+          c.name?.toLowerCase().includes(contactQuery.toLowerCase()) ||
+          c.phone?.includes(contactQuery)
+      )
+      .slice(0, 10)
+    : contacts.slice(0, 10);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        contactDropdownRef.current &&
+        !contactDropdownRef.current.contains(e.target as Node) &&
+        contactInputRef.current &&
+        !contactInputRef.current.contains(e.target as Node)
+      ) {
+        setIsContactDropdownOpen(false);
+        setContactQuery('');
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  useEffect(() => {
     if (!isOpen) return;
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose();
@@ -75,7 +90,6 @@ export const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
     <div
       className="fixed inset-0 md:left-[var(--app-sidebar-width,0px)] z-[9999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4"
       onClick={(e) => {
-        // Close only when clicking the backdrop (outside the panel).
         if (e.target === e.currentTarget) onClose();
       }}
     >
@@ -94,7 +108,9 @@ export const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
             <X size={20} />
           </button>
         </div>
+
         <form onSubmit={onSubmit} className="p-5 space-y-4 overflow-auto pb-[calc(1.25rem+var(--app-safe-area-bottom,0px))]">
+          {/* Título */}
           <div>
             <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Título</label>
             <input
@@ -107,6 +123,7 @@ export const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
             />
           </div>
 
+          {/* Tipo + Negócio */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Tipo</label>
@@ -125,7 +142,7 @@ export const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
             </div>
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase mb-1">
-                Negócio Relacionado (Opcional)
+                Negócio (Opcional)
               </label>
               <select
                 className="w-full bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-primary-500"
@@ -142,25 +159,108 @@ export const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
             </div>
           </div>
 
-          {/* TASK-04: Campo independente de seleção de Cliente */}
+          {/* Cliente — Combobox com busca por digitação */}
           <div>
             <label className="block text-xs font-bold text-slate-500 uppercase mb-1">
               Cliente (Opcional)
             </label>
-            <select
-              className="w-full bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-primary-500"
-              value={formData.contactId}
-              onChange={e => setFormData({ ...formData, contactId: e.target.value })}
-            >
-              <option value="">Selecione um cliente (opcional)...</option>
-              {contacts.map(contact => (
-                <option key={contact.id} value={contact.id}>
-                  {contact.name}{contact.phone ? ` — ${contact.phone}` : ''}
-                </option>
-              ))}
-            </select>
+            <div className="relative">
+              {selectedContact && !isContactDropdownOpen ? (
+                /* Contato selecionado — exibe nome + botão limpar */
+                <div className="flex items-center gap-2 w-full bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2">
+                  <div className="w-6 h-6 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center text-[11px] font-bold text-primary-600 dark:text-primary-400 shrink-0">
+                    {(selectedContact.name || '?').charAt(0).toUpperCase()}
+                  </div>
+                  <span className="flex-1 text-sm text-slate-900 dark:text-white truncate">
+                    {selectedContact.name}
+                    {selectedContact.phone && (
+                      <span className="text-slate-500 ml-1 text-xs">— {selectedContact.phone}</span>
+                    )}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFormData({ ...formData, contactId: '' });
+                      setContactQuery('');
+                    }}
+                    className="text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                    aria-label="Remover contato"
+                    title="Remover contato"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              ) : (
+                /* Input de busca */
+                <div className="relative">
+                  <Search
+                    size={14}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+                  />
+                  <input
+                    ref={contactInputRef}
+                    type="text"
+                    className="w-full bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-slate-700 rounded-lg pl-8 pr-8 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-primary-500"
+                    placeholder="Buscar por nome ou telefone..."
+                    value={contactQuery}
+                    onChange={e => {
+                      setContactQuery(e.target.value);
+                      setIsContactDropdownOpen(true);
+                    }}
+                    onFocus={() => setIsContactDropdownOpen(true)}
+                    aria-label="Buscar cliente"
+                  />
+                  <ChevronDown
+                    size={14}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+                  />
+                </div>
+              )}
+
+              {/* Dropdown de resultados */}
+              {isContactDropdownOpen && (
+                <div
+                  ref={contactDropdownRef}
+                  className="absolute z-50 top-full mt-1 w-full bg-white dark:bg-dark-card border border-slate-200 dark:border-white/10 rounded-lg shadow-xl overflow-hidden max-h-48 overflow-y-auto"
+                >
+                  {filteredContacts.length === 0 ? (
+                    <p className="text-xs text-slate-500 text-center py-3 px-3">
+                      Nenhum contato encontrado
+                    </p>
+                  ) : (
+                    filteredContacts.map(contact => (
+                      <button
+                        key={contact.id}
+                        type="button"
+                        onClick={() => {
+                          setFormData({ ...formData, contactId: contact.id });
+                          setContactQuery('');
+                          setIsContactDropdownOpen(false);
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
+                      >
+                        <div className="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-[11px] font-bold text-slate-600 dark:text-slate-300 shrink-0">
+                          {(contact.name || '?').charAt(0).toUpperCase()}
+                        </div>
+                        <div className="flex flex-col min-w-0">
+                          <span className="text-slate-900 dark:text-white font-medium truncate text-xs">
+                            {contact.name || 'Sem nome'}
+                          </span>
+                          {contact.phone && (
+                            <span className="text-slate-500 text-[11px] truncate">
+                              {contact.phone}
+                            </span>
+                          )}
+                        </div>
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
+          {/* Prioridade */}
           <div>
             <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Prioridade</label>
             <div className="flex gap-4">
@@ -171,7 +271,7 @@ export const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
                     name="priority"
                     value={p}
                     checked={formData.priority === p}
-                    onChange={() => setFormData({ ...formData, priority: p as any })}
+                    onChange={() => setFormData({ ...formData, priority: p as 'low' | 'medium' | 'high' })}
                     className="w-4 h-4 text-primary-600 focus:ring-primary-500"
                   />
                   <span className="text-sm capitalize text-slate-700 dark:text-slate-300">
@@ -182,6 +282,7 @@ export const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
             </div>
           </div>
 
+          {/* Responsável */}
           <div>
             <label className="block text-xs font-bold text-slate-500 uppercase mb-1">
               Responsável (Opcional)
@@ -200,6 +301,7 @@ export const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
             </select>
           </div>
 
+          {/* Data + Hora */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Data</label>
@@ -223,6 +325,7 @@ export const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
             </div>
           </div>
 
+          {/* Descrição */}
           <div>
             <label className="block text-xs font-bold text-slate-500 uppercase mb-1">
               Descrição

@@ -77,39 +77,39 @@ export function useChatSessions() {
         };
     }, [organizationId]);
 
-    const createOrGetSession = async (contactId: string): Promise<string | null> => {
+    const createOrGetSession = async (
+        contactId: string,
+        provider: string = 'whatsapp',
+        providerId?: string
+    ): Promise<string | null> => {
         if (!organizationId) return null;
 
-        // Check locally first (opt) or just DB check
-        // Check DB for existing session
-        const { data: existing } = await supabase
+        // Upsert idempotente: ON CONFLICT em (organization_id, contact_id)
+        // Eliminando race conditions onde webhooks simultâneos criam sessões duplicadas
+        const { data, error } = await supabase
             .from('chat_sessions')
-            .select('id')
-            .eq('organization_id', organizationId)
-            .eq('contact_id', contactId)
-            .single();
-
-        if (existing) {
-            return existing.id;
-        }
-
-        // Create new
-        const { data: newSession, error } = await supabase
-            .from('chat_sessions')
-            .insert({
-                organization_id: organizationId,
-                contact_id: contactId,
-                provider: 'whatsapp', // Default
-                unread_count: 0
-            })
+            .upsert(
+                {
+                    organization_id: organizationId,
+                    contact_id: contactId,
+                    provider,
+                    ...(providerId ? { provider_id: providerId } : {}),
+                    updated_at: new Date().toISOString(),
+                },
+                {
+                    onConflict: 'organization_id,contact_id',
+                    ignoreDuplicates: false,
+                }
+            )
             .select('id')
             .single();
 
         if (error) {
-            console.error('Error creating session:', error);
+            console.error('[useChatSessions] createOrGetSession upsert failed:', error);
             return null;
         }
-        return newSession.id;
+
+        return data.id;
     };
 
     const deleteSession = async (sessionId: string) => {

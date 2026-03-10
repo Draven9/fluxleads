@@ -45,3 +45,4 @@ supabase/.branches
 !.agent/tools/
 .agent/tools/*
 !.agent/tools/n8n-mcp-client/
+.env*.local
