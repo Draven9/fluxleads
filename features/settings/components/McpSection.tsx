@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useMemo, useRef, useState } from 'react';
 import { ServerCog, Copy, CheckCircle2, Play, AlertTriangle, RefreshCw, ChevronDown } from 'lucide-react';
 import { useOptionalToast } from '@/context/ToastContext';

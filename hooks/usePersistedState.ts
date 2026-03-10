@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * @fileoverview Hook de Estado Persistido em localStorage
  * 

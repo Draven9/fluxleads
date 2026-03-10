@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * Hook de Auditoria — 5.4
  *

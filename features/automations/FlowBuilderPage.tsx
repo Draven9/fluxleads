@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useCallback, useEffect, useState } from 'react';
 import { ReactFlow, Background, Controls, addEdge, BackgroundVariant, applyNodeChanges, applyEdgeChanges, NodeChange, EdgeChange, Connection, Edge, Node } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';

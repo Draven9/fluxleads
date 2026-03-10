@@ -1,0 +1,41 @@
+
+> crmia-next@0.1.0 build
+> next build
+
+▲ Next.js 16.1.1 (Turbopack)
+- Environments: .env.local
+
+  Creating an optimized production build ...
+
+> Build error occurred
+Error: Turbopack build failed with 1 errors:
+./app/(protected)/settings/automations/page.tsx:6:14
+Ecmascript file had an error
+[0m [90m 4 |[39m [36mimport[39m { [33mMetadata[39m } [36mfrom[39m [32m'next'[39m[33m;[39m
+ [90m 5 |[39m
+[31m[1m>[22m[39m[90m 6 |[39m [36mexport[39m [36mconst[39m metadata[33m:[39m [33mMetadata[39m [33m=[39m {
+ [90m   |[39m              [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 7 |[39m     title[33m:[39m [32m'Automações | Flux Leads CRM'[39m[33m,[39m
+ [90m 8 |[39m }[33m;[39m
+ [90m 9 |[39m[0m
+
+You are attempting to export "metadata" from a component marked with "use client", which is disallowed. Either remove the export, or the "use client" directive. Read more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  Client Component Browser:
+    ./app/(protected)/settings/automations/page.tsx [Client Component Browser]
+    ./app/(protected)/settings/automations/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./app/(protected)/settings/automations/page.tsx [Client Component SSR]
+    ./app/(protected)/settings/automations/page.tsx [Server Component]
+
+  App Route:
+    ./app/(protected)/settings/automations/page.tsx
+    ./lib/installer/edgeFunctions.ts
+    ./app/api/installer/health-check/route.ts
+
+
+    at <unknown> (./app/(protected)/settings/automations/page.tsx:6:14)

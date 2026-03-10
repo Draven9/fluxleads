@@ -1,0 +1,2664 @@
+
+> crmia-next@0.1.0 build
+> next build
+
+▲ Next.js 16.1.1 (Turbopack)
+- Environments: .env.local
+
+  Creating an optimized production build ...
+
+> Build error occurred
+Error: Turbopack build failed with 61 errors:
+./app/(protected)/settings/automations/page.tsx:8:22
+Ecmascript file had an error
+[0m [90m  6 |[39m }[33m;[39m
+ [90m  7 |[39m
+[31m[1m>[22m[39m[90m  8 |[39m [36mconst[39m [33mSettingsPage[39m [33m=[39m dynamic(
+ [90m    |[39m                      [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+[31m[1m>[22m[39m[90m  9 |[39m     () [33m=>[39m [36mimport[39m([32m'@/features/settings/SettingsPage'[39m)[33m,[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+[31m[1m>[22m[39m[90m 10 |[39m     { ssr[33m:[39m [36mfalse[39m }
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+[31m[1m>[22m[39m[90m 11 |[39m )[33m;[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 12 |[39m
+ [90m 13 |[39m [36mexport[39m [36mdefault[39m [36mfunction[39m [33mAutomationsPageRoute[39m() {
+ [90m 14 |[39m     [36mreturn[39m [33m<[39m[33mSettingsPage[39m tab[33m=[39m[32m"automations"[39m [33m/[39m[33m>[39m[33m;[39m[0m
+
+`ssr: false` is not allowed with `next/dynamic` in Server Components. Please move it into a Client Component.
+
+Import trace:
+  App Route:
+    ./app/(protected)/settings/automations/page.tsx
+    ./lib/installer/edgeFunctions.ts
+    ./app/api/installer/health-check/route.ts
+
+
+./components/ConfirmModal.tsx:39:24
+Ecmascript file had an error
+[0m [90m 37 |[39m [90m */[39m
+ [90m 38 |[39m
+[31m[1m>[22m[39m[90m 39 |[39m [36mimport[39m [33mReact[39m[33m,[39m { useId[33m,[39m useRef } [36mfrom[39m [32m'react'[39m[33m;[39m
+ [90m    |[39m                        [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 40 |[39m [36mimport[39m { [33mAlertTriangle[39m } [36mfrom[39m [32m'lucide-react'[39m[33m;[39m
+ [90m 41 |[39m [36mimport[39m { [33mFocusTrap[39m[33m,[39m useFocusReturn } [36mfrom[39m [32m'@/lib/a11y'[39m[33m;[39m
+ [90m 42 |[39m[0m
+
+You're importing a component that needs `useRef`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  App Route:
+    ./components/ConfirmModal.tsx
+    ./lib/installer/edgeFunctions.ts
+    ./app/api/installer/health-check/route.ts
+
+  Server Component:
+    ./components/ConfirmModal.tsx
+    ./features/settings/UsersPage.tsx
+    ./features/settings/SettingsPage.tsx
+    ./app/(protected)/settings/automations/page.tsx
+
+  Client Component Browser:
+    ./components/ConfirmModal.tsx [Client Component Browser]
+    ./features/contacts/ContactsPage.tsx [Client Component Browser]
+    ./lib/prefetch.ts [Client Component Browser]
+    ./components/Layout.tsx [Client Component Browser]
+    ./app/(protected)/layout.tsx [Client Component Browser]
+    ./app/(protected)/layout.tsx [Server Component]
+
+  Client Component SSR:
+    ./components/ConfirmModal.tsx [Client Component SSR]
+    ./features/contacts/ContactsPage.tsx [Client Component SSR]
+    ./lib/prefetch.ts [Client Component SSR]
+    ./components/Layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Server Component]
+
+
+./components/ui/Modal.tsx:11:37
+Ecmascript file had an error
+[0m [90m  9 |[39m [90m * - Escape key closes modal[39m
+ [90m 10 |[39m [90m */[39m
+[31m[1m>[22m[39m[90m 11 |[39m [36mimport[39m [33mReact[39m[33m,[39m { useId[33m,[39m useCallback[33m,[39m useEffect } [36mfrom[39m [32m'react'[39m[33m;[39m
+ [90m    |[39m                                     [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 12 |[39m [36mimport[39m { [33mX[39m } [36mfrom[39m [32m'lucide-react'[39m[33m;[39m
+ [90m 13 |[39m [36mimport[39m { cn } [36mfrom[39m [32m'@/lib/utils/cn'[39m[33m;[39m
+ [90m 14 |[39m [36mimport[39m { [33mFocusTrap[39m[33m,[39m useFocusReturn } [36mfrom[39m [32m'@/lib/a11y'[39m[33m;[39m[0m
+
+You're importing a component that needs `useEffect`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  App Route:
+    ./components/ui/Modal.tsx
+    ./lib/installer/edgeFunctions.ts
+    ./app/api/installer/health-check/route.ts
+
+  Server Component:
+    ./components/ui/Modal.tsx
+    ./features/settings/components/WebhooksSection.tsx
+    ./features/settings/SettingsPage.tsx
+    ./app/(protected)/settings/automations/page.tsx
+
+  Client Component Browser:
+    ./components/ui/Modal.tsx [Client Component Browser]
+    ./features/inbox/components/MessageComposerModal.tsx [Client Component Browser]
+    ./features/deals/cockpit/DealCockpitClient.tsx [Client Component Browser]
+    ./features/deals/cockpit/DealCockpitClient.tsx [Server Component]
+    ./app/(protected)/deals/[dealId]/cockpit-v2/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./components/ui/Modal.tsx [Client Component SSR]
+    ./features/inbox/components/MessageComposerModal.tsx [Client Component SSR]
+    ./features/deals/cockpit/DealCockpitClient.tsx [Client Component SSR]
+    ./features/deals/cockpit/DealCockpitClient.tsx [Server Component]
+    ./app/(protected)/deals/[dealId]/cockpit-v2/page.tsx [Server Component]
+
+
+./context/AuthContext.tsx:30:17
+Ecmascript file had an error
+[0m [90m 28 |[39m [90m */[39m
+ [90m 29 |[39m
+[31m[1m>[22m[39m[90m 30 |[39m [36mimport[39m [33mReact[39m[33m,[39m { createContext[33m,[39m useContext[33m,[39m useEffect[33m,[39m useState } [36mfrom[39m [32m'react'[39m[33m;[39m
+ [90m    |[39m                 [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 31 |[39m [36mimport[39m { [33mUser[39m[33m,[39m [33mSession[39m } [36mfrom[39m [32m'@supabase/supabase-js'[39m[33m;[39m
+ [90m 32 |[39m [36mimport[39m { supabase } [36mfrom[39m [32m'../lib/supabase'[39m[33m;[39m
+ [90m 33 |[39m [36mimport[39m type { [33mOrganizationId[39m } [36mfrom[39m [32m'../types'[39m[33m;[39m[0m
+
+You're importing a component that needs `createContext`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  App Route:
+    ./context/AuthContext.tsx
+    ./lib/installer/edgeFunctions.ts
+    ./app/api/installer/health-check/route.ts
+
+  Client Component Browser:
+    ./context/AuthContext.tsx [Client Component Browser]
+    ./app/(protected)/setup/page.tsx [Client Component Browser]
+    ./app/(protected)/setup/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./context/AuthContext.tsx [Client Component SSR]
+    ./app/(protected)/setup/page.tsx [Client Component SSR]
+    ./app/(protected)/setup/page.tsx [Server Component]
+
+  Server Component:
+    ./context/AuthContext.tsx
+    ./features/settings/SettingsPage.tsx
+    ./app/(protected)/settings/automations/page.tsx
+
+
+./context/AuthContext.tsx:30:44
+Ecmascript file had an error
+[0m [90m 28 |[39m [90m */[39m
+ [90m 29 |[39m
+[31m[1m>[22m[39m[90m 30 |[39m [36mimport[39m [33mReact[39m[33m,[39m { createContext[33m,[39m useContext[33m,[39m useEffect[33m,[39m useState } [36mfrom[39m [32m'react'[39m[33m;[39m
+ [90m    |[39m                                            [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 31 |[39m [36mimport[39m { [33mUser[39m[33m,[39m [33mSession[39m } [36mfrom[39m [32m'@supabase/supabase-js'[39m[33m;[39m
+ [90m 32 |[39m [36mimport[39m { supabase } [36mfrom[39m [32m'../lib/supabase'[39m[33m;[39m
+ [90m 33 |[39m [36mimport[39m type { [33mOrganizationId[39m } [36mfrom[39m [32m'../types'[39m[33m;[39m[0m
+
+You're importing a component that needs `useEffect`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  App Route:
+    ./context/AuthContext.tsx
+    ./lib/installer/edgeFunctions.ts
+    ./app/api/installer/health-check/route.ts
+
+  Client Component Browser:
+    ./context/AuthContext.tsx [Client Component Browser]
+    ./app/(protected)/setup/page.tsx [Client Component Browser]
+    ./app/(protected)/setup/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./context/AuthContext.tsx [Client Component SSR]
+    ./app/(protected)/setup/page.tsx [Client Component SSR]
+    ./app/(protected)/setup/page.tsx [Server Component]
+
+  Server Component:
+    ./context/AuthContext.tsx
+    ./features/settings/SettingsPage.tsx
+    ./app/(protected)/settings/automations/page.tsx
+
+
+./context/AuthContext.tsx:30:55
+Ecmascript file had an error
+[0m [90m 28 |[39m [90m */[39m
+ [90m 29 |[39m
+[31m[1m>[22m[39m[90m 30 |[39m [36mimport[39m [33mReact[39m[33m,[39m { createContext[33m,[39m useContext[33m,[39m useEffect[33m,[39m useState } [36mfrom[39m [32m'react'[39m[33m;[39m
+ [90m    |[39m                                                       [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 31 |[39m [36mimport[39m { [33mUser[39m[33m,[39m [33mSession[39m } [36mfrom[39m [32m'@supabase/supabase-js'[39m[33m;[39m
+ [90m 32 |[39m [36mimport[39m { supabase } [36mfrom[39m [32m'../lib/supabase'[39m[33m;[39m
+ [90m 33 |[39m [36mimport[39m type { [33mOrganizationId[39m } [36mfrom[39m [32m'../types'[39m[33m;[39m[0m
+
+You're importing a component that needs `useState`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  App Route:
+    ./context/AuthContext.tsx
+    ./lib/installer/edgeFunctions.ts
+    ./app/api/installer/health-check/route.ts
+
+  Client Component Browser:
+    ./context/AuthContext.tsx [Client Component Browser]
+    ./app/(protected)/setup/page.tsx [Client Component Browser]
+    ./app/(protected)/setup/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./context/AuthContext.tsx [Client Component SSR]
+    ./app/(protected)/setup/page.tsx [Client Component SSR]
+    ./app/(protected)/setup/page.tsx [Server Component]
+
+  Server Component:
+    ./context/AuthContext.tsx
+    ./features/settings/SettingsPage.tsx
+    ./app/(protected)/settings/automations/page.tsx
+
+
+./context/CRMContext.tsx:30:17
+Ecmascript file had an error
+[0m [90m 28 |[39m [90m */[39m
+ [90m 29 |[39m
+[31m[1m>[22m[39m[90m 30 |[39m [36mimport[39m [33mReact[39m[33m,[39m { createContext[33m,[39m useContext[33m,[39m useMemo[33m,[39m useEffect[33m,[39m [33mReactNode[39m[33m,[39m useState[33m,[39m useCallback } [36mfrom[39m [32m'react'[39m[33m;[39m
+ [90m    |[39m                 [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 31 |[39m [36mimport[39m { useQueryClient } [36mfrom[39m [32m'@tanstack/react-query'[39m[33m;[39m
+ [90m 32 |[39m [36mimport[39m { useAuth } [36mfrom[39m [32m'@/context/AuthContext'[39m[33m;[39m
+ [90m 33 |[39m [36mimport[39m { queryKeys } [36mfrom[39m [32m'@/lib/query'[39m[33m;[39m[0m
+
+You're importing a component that needs `createContext`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  App Route:
+    ./context/CRMContext.tsx
+    ./lib/installer/edgeFunctions.ts
+    ./app/api/installer/health-check/route.ts
+
+  Client Component Browser:
+    ./context/CRMContext.tsx [Client Component Browser]
+    ./app/(protected)/layout.tsx [Client Component Browser]
+    ./app/(protected)/layout.tsx [Server Component]
+
+  Server Component:
+    ./context/CRMContext.tsx
+    ./features/settings/components/DataStorageSettings.tsx
+    ./features/settings/SettingsPage.tsx
+    ./app/(protected)/settings/automations/page.tsx
+
+  Client Component SSR:
+    ./context/CRMContext.tsx [Client Component SSR]
+    ./features/chat/components/ContactSidePanel.tsx [Client Component SSR]
+    ./features/chat/components/ChatWindow.tsx [Client Component SSR]
+    ./features/chat/components/ChatLayout.tsx [Client Component SSR]
+    ./features/chat/components/ChatLayout.tsx [Server Component]
+    ./app/(protected)/chat/page.tsx [Server Component]
+
+
+./context/CRMContext.tsx:30:53
+Ecmascript file had an error
+[0m [90m 28 |[39m [90m */[39m
+ [90m 29 |[39m
+[31m[1m>[22m[39m[90m 30 |[39m [36mimport[39m [33mReact[39m[33m,[39m { createContext[33m,[39m useContext[33m,[39m useMemo[33m,[39m useEffect[33m,[39m [33mReactNode[39m[33m,[39m useState[33m,[39m useCallback } [36mfrom[39m [32m'react'[39m[33m;[39m
+ [90m    |[39m                                                     [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 31 |[39m [36mimport[39m { useQueryClient } [36mfrom[39m [32m'@tanstack/react-query'[39m[33m;[39m
+ [90m 32 |[39m [36mimport[39m { useAuth } [36mfrom[39m [32m'@/context/AuthContext'[39m[33m;[39m
+ [90m 33 |[39m [36mimport[39m { queryKeys } [36mfrom[39m [32m'@/lib/query'[39m[33m;[39m[0m
+
+You're importing a component that needs `useEffect`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  App Route:
+    ./context/CRMContext.tsx
+    ./lib/installer/edgeFunctions.ts
+    ./app/api/installer/health-check/route.ts
+
+  Client Component Browser:
+    ./context/CRMContext.tsx [Client Component Browser]
+    ./app/(protected)/layout.tsx [Client Component Browser]
+    ./app/(protected)/layout.tsx [Server Component]
+
+  Server Component:
+    ./context/CRMContext.tsx
+    ./features/settings/components/DataStorageSettings.tsx
+    ./features/settings/SettingsPage.tsx
+    ./app/(protected)/settings/automations/page.tsx
+
+  Client Component SSR:
+    ./context/CRMContext.tsx [Client Component SSR]
+    ./features/chat/components/ContactSidePanel.tsx [Client Component SSR]
+    ./features/chat/components/ChatWindow.tsx [Client Component SSR]
+    ./features/chat/components/ChatLayout.tsx [Client Component SSR]
+    ./features/chat/components/ChatLayout.tsx [Server Component]
+    ./app/(protected)/chat/page.tsx [Server Component]
+
+
+./context/CRMContext.tsx:30:75
+Ecmascript file had an error
+[0m [90m 28 |[39m [90m */[39m
+ [90m 29 |[39m
+[31m[1m>[22m[39m[90m 30 |[39m [36mimport[39m [33mReact[39m[33m,[39m { createContext[33m,[39m useContext[33m,[39m useMemo[33m,[39m useEffect[33m,[39m [33mReactNode[39m[33m,[39m useState[33m,[39m useCallback } [36mfrom[39m [32m'react'[39m[33m;[39m
+ [90m    |[39m                                                                           [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 31 |[39m [36mimport[39m { useQueryClient } [36mfrom[39m [32m'@tanstack/react-query'[39m[33m;[39m
+ [90m 32 |[39m [36mimport[39m { useAuth } [36mfrom[39m [32m'@/context/AuthContext'[39m[33m;[39m
+ [90m 33 |[39m [36mimport[39m { queryKeys } [36mfrom[39m [32m'@/lib/query'[39m[33m;[39m[0m
+
+You're importing a component that needs `useState`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  App Route:
+    ./context/CRMContext.tsx
+    ./lib/installer/edgeFunctions.ts
+    ./app/api/installer/health-check/route.ts
+
+  Client Component Browser:
+    ./context/CRMContext.tsx [Client Component Browser]
+    ./app/(protected)/layout.tsx [Client Component Browser]
+    ./app/(protected)/layout.tsx [Server Component]
+
+  Server Component:
+    ./context/CRMContext.tsx
+    ./features/settings/components/DataStorageSettings.tsx
+    ./features/settings/SettingsPage.tsx
+    ./app/(protected)/settings/automations/page.tsx
+
+  Client Component SSR:
+    ./context/CRMContext.tsx [Client Component SSR]
+    ./features/chat/components/ContactSidePanel.tsx [Client Component SSR]
+    ./features/chat/components/ChatWindow.tsx [Client Component SSR]
+    ./features/chat/components/ChatLayout.tsx [Client Component SSR]
+    ./features/chat/components/ChatLayout.tsx [Server Component]
+    ./app/(protected)/chat/page.tsx [Server Component]
+
+
+./context/ToastContext.tsx:41:17
+Ecmascript file had an error
+[0m [90m 39 |[39m [90m */[39m
+ [90m 40 |[39m
+[31m[1m>[22m[39m[90m 41 |[39m [36mimport[39m [33mReact[39m[33m,[39m { createContext[33m,[39m useContext[33m,[39m useState[33m,[39m useCallback[33m,[39m [33mReactNode[39m } [36mfrom[39m [32m'react'[39m[33m;[39m
+ [90m    |[39m                 [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 42 |[39m [36mimport[39m { [33mX[39m[33m,[39m [33mCheckCircle[39m[33m,[39m [33mAlertCircle[39m[33m,[39m [33mInfo[39m } [36mfrom[39m [32m'lucide-react'[39m[33m;[39m
+ [90m 43 |[39m
+ [90m 44 |[39m [90m/** Tipos de notificação toast */[39m[0m
+
+You're importing a component that needs `createContext`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  App Route:
+    ./context/ToastContext.tsx
+    ./lib/installer/edgeFunctions.ts
+    ./app/api/installer/health-check/route.ts
+
+  Client Component SSR:
+    ./context/ToastContext.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Server Component]
+
+  Server Component:
+    ./context/ToastContext.tsx
+    ./features/settings/components/DataStorageSettings.tsx
+    ./features/settings/SettingsPage.tsx
+    ./app/(protected)/settings/automations/page.tsx
+
+  Client Component Browser:
+    ./context/ToastContext.tsx [Client Component Browser]
+    ./context/boards/BoardsContext.tsx [Client Component Browser]
+    ./context/CRMContext.tsx [Client Component Browser]
+    ./features/deals/cockpit/DealCockpitFocusClient.tsx [Client Component Browser]
+    ./features/deals/cockpit/DealCockpitFocusClient.tsx [Server Component]
+    ./app/(protected)/deals/[dealId]/cockpit/page.tsx [Server Component]
+
+
+./context/ToastContext.tsx:41:44
+Ecmascript file had an error
+[0m [90m 39 |[39m [90m */[39m
+ [90m 40 |[39m
+[31m[1m>[22m[39m[90m 41 |[39m [36mimport[39m [33mReact[39m[33m,[39m { createContext[33m,[39m useContext[33m,[39m useState[33m,[39m useCallback[33m,[39m [33mReactNode[39m } [36mfrom[39m [32m'react'[39m[33m;[39m
+ [90m    |[39m                                            [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 42 |[39m [36mimport[39m { [33mX[39m[33m,[39m [33mCheckCircle[39m[33m,[39m [33mAlertCircle[39m[33m,[39m [33mInfo[39m } [36mfrom[39m [32m'lucide-react'[39m[33m;[39m
+ [90m 43 |[39m
+ [90m 44 |[39m [90m/** Tipos de notificação toast */[39m[0m
+
+You're importing a component that needs `useState`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  App Route:
+    ./context/ToastContext.tsx
+    ./lib/installer/edgeFunctions.ts
+    ./app/api/installer/health-check/route.ts
+
+  Client Component SSR:
+    ./context/ToastContext.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Server Component]
+
+  Server Component:
+    ./context/ToastContext.tsx
+    ./features/settings/components/DataStorageSettings.tsx
+    ./features/settings/SettingsPage.tsx
+    ./app/(protected)/settings/automations/page.tsx
+
+  Client Component Browser:
+    ./context/ToastContext.tsx [Client Component Browser]
+    ./context/boards/BoardsContext.tsx [Client Component Browser]
+    ./context/CRMContext.tsx [Client Component Browser]
+    ./features/deals/cockpit/DealCockpitFocusClient.tsx [Client Component Browser]
+    ./features/deals/cockpit/DealCockpitFocusClient.tsx [Server Component]
+    ./app/(protected)/deals/[dealId]/cockpit/page.tsx [Server Component]
+
+
+./context/activities/ActivitiesContext.tsx:2:3
+Ecmascript file had an error
+[0m [90m 1 |[39m [36mimport[39m [33mReact[39m[33m,[39m {
+[31m[1m>[22m[39m[90m 2 |[39m   createContext[33m,[39m
+ [90m   |[39m   [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 3 |[39m   useContext[33m,[39m
+ [90m 4 |[39m   useMemo[33m,[39m
+ [90m 5 |[39m   useCallback[33m,[39m[0m
+
+You're importing a component that needs `createContext`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  App Route:
+    ./context/activities/ActivitiesContext.tsx
+    ./lib/installer/edgeFunctions.ts
+    ./app/api/installer/health-check/route.ts
+
+  Client Component Browser:
+    ./context/activities/ActivitiesContext.tsx [Client Component Browser]
+    ./context/CRMContext.tsx [Client Component Browser]
+    ./app/(protected)/layout.tsx [Client Component Browser]
+    ./app/(protected)/layout.tsx [Server Component]
+
+  Server Component:
+    ./context/activities/ActivitiesContext.tsx
+    ./context/CRMContext.tsx
+    ./features/settings/components/DataStorageSettings.tsx
+    ./features/settings/SettingsPage.tsx
+    ./app/(protected)/settings/automations/page.tsx
+
+  Client Component SSR:
+    ./context/activities/ActivitiesContext.tsx [Client Component SSR]
+    ./context/CRMContext.tsx [Client Component SSR]
+    ./features/chat/components/ContactSidePanel.tsx [Client Component SSR]
+    ./features/chat/components/ChatWindow.tsx [Client Component SSR]
+    ./features/chat/components/ChatLayout.tsx [Client Component SSR]
+    ./features/chat/components/ChatLayout.tsx [Server Component]
+    ./app/(protected)/chat/page.tsx [Server Component]
+
+
+./context/boards/BoardsContext.tsx:2:3
+Ecmascript file had an error
+[0m [90m 1 |[39m [36mimport[39m [33mReact[39m[33m,[39m {
+[31m[1m>[22m[39m[90m 2 |[39m   createContext[33m,[39m
+ [90m   |[39m   [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 3 |[39m   useContext[33m,[39m
+ [90m 4 |[39m   useMemo[33m,[39m
+ [90m 5 |[39m   useState[33m,[39m[0m
+
+You're importing a component that needs `createContext`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  App Route:
+    ./context/boards/BoardsContext.tsx
+    ./lib/installer/edgeFunctions.ts
+    ./app/api/installer/health-check/route.ts
+
+  Client Component Browser:
+    ./context/boards/BoardsContext.tsx [Client Component Browser]
+    ./context/CRMContext.tsx [Client Component Browser]
+    ./app/(protected)/layout.tsx [Client Component Browser]
+    ./app/(protected)/layout.tsx [Server Component]
+
+  Client Component SSR:
+    ./context/boards/BoardsContext.tsx [Client Component SSR]
+    ./context/CRMContext.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Server Component]
+
+  Server Component:
+    ./context/boards/BoardsContext.tsx
+    ./features/settings/components/WebhooksSection.tsx
+    ./features/settings/SettingsPage.tsx
+    ./app/(protected)/settings/automations/page.tsx
+
+
+./context/boards/BoardsContext.tsx:6:3
+Ecmascript file had an error
+[0m [90m 4 |[39m   useMemo[33m,[39m
+ [90m 5 |[39m   useState[33m,[39m
+[31m[1m>[22m[39m[90m 6 |[39m   useEffect[33m,[39m
+ [90m   |[39m   [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 7 |[39m   useCallback[33m,[39m
+ [90m 8 |[39m   [33mReactNode[39m[33m,[39m
+ [90m 9 |[39m } [36mfrom[39m [32m'react'[39m[33m;[39m[0m
+
+You're importing a component that needs `useEffect`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  App Route:
+    ./context/boards/BoardsContext.tsx
+    ./lib/installer/edgeFunctions.ts
+    ./app/api/installer/health-check/route.ts
+
+  Client Component Browser:
+    ./context/boards/BoardsContext.tsx [Client Component Browser]
+    ./context/CRMContext.tsx [Client Component Browser]
+    ./app/(protected)/layout.tsx [Client Component Browser]
+    ./app/(protected)/layout.tsx [Server Component]
+
+  Client Component SSR:
+    ./context/boards/BoardsContext.tsx [Client Component SSR]
+    ./context/CRMContext.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Server Component]
+
+  Server Component:
+    ./context/boards/BoardsContext.tsx
+    ./features/settings/components/WebhooksSection.tsx
+    ./features/settings/SettingsPage.tsx
+    ./app/(protected)/settings/automations/page.tsx
+
+
+./context/boards/BoardsContext.tsx:5:3
+Ecmascript file had an error
+[0m [90m 3 |[39m   useContext[33m,[39m
+ [90m 4 |[39m   useMemo[33m,[39m
+[31m[1m>[22m[39m[90m 5 |[39m   useState[33m,[39m
+ [90m   |[39m   [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 6 |[39m   useEffect[33m,[39m
+ [90m 7 |[39m   useCallback[33m,[39m
+ [90m 8 |[39m   [33mReactNode[39m[33m,[39m[0m
+
+You're importing a component that needs `useState`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  App Route:
+    ./context/boards/BoardsContext.tsx
+    ./lib/installer/edgeFunctions.ts
+    ./app/api/installer/health-check/route.ts
+
+  Client Component Browser:
+    ./context/boards/BoardsContext.tsx [Client Component Browser]
+    ./context/CRMContext.tsx [Client Component Browser]
+    ./app/(protected)/layout.tsx [Client Component Browser]
+    ./app/(protected)/layout.tsx [Server Component]
+
+  Client Component SSR:
+    ./context/boards/BoardsContext.tsx [Client Component SSR]
+    ./context/CRMContext.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Server Component]
+
+  Server Component:
+    ./context/boards/BoardsContext.tsx
+    ./features/settings/components/WebhooksSection.tsx
+    ./features/settings/SettingsPage.tsx
+    ./app/(protected)/settings/automations/page.tsx
+
+
+./context/contacts/ContactsContext.tsx:2:3
+Ecmascript file had an error
+[0m [90m 1 |[39m [36mimport[39m [33mReact[39m[33m,[39m {
+[31m[1m>[22m[39m[90m 2 |[39m   createContext[33m,[39m
+ [90m   |[39m   [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 3 |[39m   useContext[33m,[39m
+ [90m 4 |[39m   useMemo[33m,[39m
+ [90m 5 |[39m   useCallback[33m,[39m[0m
+
+You're importing a component that needs `createContext`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  App Route:
+    ./context/contacts/ContactsContext.tsx
+    ./lib/installer/edgeFunctions.ts
+    ./app/api/installer/health-check/route.ts
+
+  Client Component Browser:
+    ./context/contacts/ContactsContext.tsx [Client Component Browser]
+    ./context/CRMContext.tsx [Client Component Browser]
+    ./app/(protected)/layout.tsx [Client Component Browser]
+    ./app/(protected)/layout.tsx [Server Component]
+
+  Server Component:
+    ./context/contacts/ContactsContext.tsx
+    ./context/CRMContext.tsx
+    ./features/settings/components/DataStorageSettings.tsx
+    ./features/settings/SettingsPage.tsx
+    ./app/(protected)/settings/automations/page.tsx
+
+  Client Component SSR:
+    ./context/contacts/ContactsContext.tsx [Client Component SSR]
+    ./context/CRMContext.tsx [Client Component SSR]
+    ./features/chat/components/ContactSidePanel.tsx [Client Component SSR]
+    ./features/chat/components/ChatWindow.tsx [Client Component SSR]
+    ./features/chat/components/ChatLayout.tsx [Client Component SSR]
+    ./features/chat/components/ChatLayout.tsx [Server Component]
+    ./app/(protected)/chat/page.tsx [Server Component]
+
+
+./context/deals/DealsContext.tsx:2:3
+Ecmascript file had an error
+[0m [90m 1 |[39m [36mimport[39m [33mReact[39m[33m,[39m {
+[31m[1m>[22m[39m[90m 2 |[39m   createContext[33m,[39m
+ [90m   |[39m   [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 3 |[39m   useContext[33m,[39m
+ [90m 4 |[39m   useMemo[33m,[39m
+ [90m 5 |[39m   useCallback[33m,[39m[0m
+
+You're importing a component that needs `createContext`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  App Route:
+    ./context/deals/DealsContext.tsx
+    ./lib/installer/edgeFunctions.ts
+    ./app/api/installer/health-check/route.ts
+
+  Client Component Browser:
+    ./context/deals/DealsContext.tsx [Client Component Browser]
+    ./context/CRMContext.tsx [Client Component Browser]
+    ./app/(protected)/layout.tsx [Client Component Browser]
+    ./app/(protected)/layout.tsx [Server Component]
+
+  Server Component:
+    ./context/deals/DealsContext.tsx
+    ./context/CRMContext.tsx
+    ./features/settings/components/DataStorageSettings.tsx
+    ./features/settings/SettingsPage.tsx
+    ./app/(protected)/settings/automations/page.tsx
+
+  Client Component SSR:
+    ./context/deals/DealsContext.tsx [Client Component SSR]
+    ./context/CRMContext.tsx [Client Component SSR]
+    ./features/chat/components/ContactSidePanel.tsx [Client Component SSR]
+    ./features/chat/components/ChatWindow.tsx [Client Component SSR]
+    ./features/chat/components/ChatLayout.tsx [Client Component SSR]
+    ./features/chat/components/ChatLayout.tsx [Server Component]
+    ./app/(protected)/chat/page.tsx [Server Component]
+
+
+./context/settings/SettingsContext.tsx:2:3
+Ecmascript file had an error
+[0m [90m 1 |[39m [36mimport[39m [33mReact[39m[33m,[39m {
+[31m[1m>[22m[39m[90m 2 |[39m   createContext[33m,[39m
+ [90m   |[39m   [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 3 |[39m   useContext[33m,[39m
+ [90m 4 |[39m   useMemo[33m,[39m
+ [90m 5 |[39m   useState[33m,[39m[0m
+
+You're importing a component that needs `createContext`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  App Route:
+    ./context/settings/SettingsContext.tsx
+    ./lib/installer/edgeFunctions.ts
+    ./app/api/installer/health-check/route.ts
+
+  Client Component Browser:
+    ./context/settings/SettingsContext.tsx [Client Component Browser]
+    ./context/CRMContext.tsx [Client Component Browser]
+    ./app/(protected)/layout.tsx [Client Component Browser]
+    ./app/(protected)/layout.tsx [Server Component]
+
+  Server Component:
+    ./context/settings/SettingsContext.tsx
+    ./context/CRMContext.tsx
+    ./features/settings/components/DataStorageSettings.tsx
+    ./features/settings/SettingsPage.tsx
+    ./app/(protected)/settings/automations/page.tsx
+
+  Client Component SSR:
+    ./context/settings/SettingsContext.tsx [Client Component SSR]
+    ./context/CRMContext.tsx [Client Component SSR]
+    ./features/chat/components/ContactSidePanel.tsx [Client Component SSR]
+    ./features/chat/components/ChatWindow.tsx [Client Component SSR]
+    ./features/chat/components/ChatLayout.tsx [Client Component SSR]
+    ./features/chat/components/ChatLayout.tsx [Server Component]
+    ./app/(protected)/chat/page.tsx [Server Component]
+
+
+./context/settings/SettingsContext.tsx:6:3
+Ecmascript file had an error
+[0m [90m 4 |[39m   useMemo[33m,[39m
+ [90m 5 |[39m   useState[33m,[39m
+[31m[1m>[22m[39m[90m 6 |[39m   useEffect[33m,[39m
+ [90m   |[39m   [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 7 |[39m   useCallback[33m,[39m
+ [90m 8 |[39m   [33mReactNode[39m[33m,[39m
+ [90m 9 |[39m   useRef[33m,[39m[0m
+
+You're importing a component that needs `useEffect`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  App Route:
+    ./context/settings/SettingsContext.tsx
+    ./lib/installer/edgeFunctions.ts
+    ./app/api/installer/health-check/route.ts
+
+  Client Component Browser:
+    ./context/settings/SettingsContext.tsx [Client Component Browser]
+    ./context/CRMContext.tsx [Client Component Browser]
+    ./app/(protected)/layout.tsx [Client Component Browser]
+    ./app/(protected)/layout.tsx [Server Component]
+
+  Server Component:
+    ./context/settings/SettingsContext.tsx
+    ./context/CRMContext.tsx
+    ./features/settings/components/DataStorageSettings.tsx
+    ./features/settings/SettingsPage.tsx
+    ./app/(protected)/settings/automations/page.tsx
+
+  Client Component SSR:
+    ./context/settings/SettingsContext.tsx [Client Component SSR]
+    ./context/CRMContext.tsx [Client Component SSR]
+    ./features/chat/components/ContactSidePanel.tsx [Client Component SSR]
+    ./features/chat/components/ChatWindow.tsx [Client Component SSR]
+    ./features/chat/components/ChatLayout.tsx [Client Component SSR]
+    ./features/chat/components/ChatLayout.tsx [Server Component]
+    ./app/(protected)/chat/page.tsx [Server Component]
+
+
+./context/settings/SettingsContext.tsx:11:10
+Ecmascript file had an error
+[0m [90m  9 |[39m   useRef[33m,[39m
+ [90m 10 |[39m } [36mfrom[39m [32m'react'[39m[33m;[39m
+[31m[1m>[22m[39m[90m 11 |[39m [36mimport[39m { usePathname } [36mfrom[39m [32m'next/navigation'[39m[33m;[39m
+ [90m    |[39m          [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 12 |[39m [36mimport[39m { [33mLifecycleStage[39m[33m,[39m [33mProduct[39m[33m,[39m [33mCustomFieldDefinition[39m[33m,[39m [33mLead[39m } [36mfrom[39m [32m'@/types'[39m[33m;[39m
+ [90m 13 |[39m [36mimport[39m { settingsService[33m,[39m lifecycleStagesService[33m,[39m productsService } [36mfrom[39m [32m'@/lib/supabase'[39m[33m;[39m
+ [90m 14 |[39m [36mimport[39m { useAuth } [36mfrom[39m [32m'../AuthContext'[39m[33m;[39m[0m
+
+You're importing a component that needs `usePathname`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  App Route:
+    ./context/settings/SettingsContext.tsx
+    ./lib/installer/edgeFunctions.ts
+    ./app/api/installer/health-check/route.ts
+
+  Client Component Browser:
+    ./context/settings/SettingsContext.tsx [Client Component Browser]
+    ./context/CRMContext.tsx [Client Component Browser]
+    ./app/(protected)/layout.tsx [Client Component Browser]
+    ./app/(protected)/layout.tsx [Server Component]
+
+  Server Component:
+    ./context/settings/SettingsContext.tsx
+    ./context/CRMContext.tsx
+    ./features/settings/components/DataStorageSettings.tsx
+    ./features/settings/SettingsPage.tsx
+    ./app/(protected)/settings/automations/page.tsx
+
+  Client Component SSR:
+    ./context/settings/SettingsContext.tsx [Client Component SSR]
+    ./context/CRMContext.tsx [Client Component SSR]
+    ./features/chat/components/ContactSidePanel.tsx [Client Component SSR]
+    ./features/chat/components/ChatWindow.tsx [Client Component SSR]
+    ./features/chat/components/ChatLayout.tsx [Client Component SSR]
+    ./features/chat/components/ChatLayout.tsx [Server Component]
+    ./app/(protected)/chat/page.tsx [Server Component]
+
+
+./context/settings/SettingsContext.tsx:9:3
+Ecmascript file had an error
+[0m [90m  7 |[39m   useCallback[33m,[39m
+ [90m  8 |[39m   [33mReactNode[39m[33m,[39m
+[31m[1m>[22m[39m[90m  9 |[39m   useRef[33m,[39m
+ [90m    |[39m   [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 10 |[39m } [36mfrom[39m [32m'react'[39m[33m;[39m
+ [90m 11 |[39m [36mimport[39m { usePathname } [36mfrom[39m [32m'next/navigation'[39m[33m;[39m
+ [90m 12 |[39m [36mimport[39m { [33mLifecycleStage[39m[33m,[39m [33mProduct[39m[33m,[39m [33mCustomFieldDefinition[39m[33m,[39m [33mLead[39m } [36mfrom[39m [32m'@/types'[39m[33m;[39m[0m
+
+You're importing a component that needs `useRef`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  App Route:
+    ./context/settings/SettingsContext.tsx
+    ./lib/installer/edgeFunctions.ts
+    ./app/api/installer/health-check/route.ts
+
+  Client Component Browser:
+    ./context/settings/SettingsContext.tsx [Client Component Browser]
+    ./context/CRMContext.tsx [Client Component Browser]
+    ./app/(protected)/layout.tsx [Client Component Browser]
+    ./app/(protected)/layout.tsx [Server Component]
+
+  Server Component:
+    ./context/settings/SettingsContext.tsx
+    ./context/CRMContext.tsx
+    ./features/settings/components/DataStorageSettings.tsx
+    ./features/settings/SettingsPage.tsx
+    ./app/(protected)/settings/automations/page.tsx
+
+  Client Component SSR:
+    ./context/settings/SettingsContext.tsx [Client Component SSR]
+    ./context/CRMContext.tsx [Client Component SSR]
+    ./features/chat/components/ContactSidePanel.tsx [Client Component SSR]
+    ./features/chat/components/ChatWindow.tsx [Client Component SSR]
+    ./features/chat/components/ChatLayout.tsx [Client Component SSR]
+    ./features/chat/components/ChatLayout.tsx [Server Component]
+    ./app/(protected)/chat/page.tsx [Server Component]
+
+
+./context/settings/SettingsContext.tsx:5:3
+Ecmascript file had an error
+[0m [90m 3 |[39m   useContext[33m,[39m
+ [90m 4 |[39m   useMemo[33m,[39m
+[31m[1m>[22m[39m[90m 5 |[39m   useState[33m,[39m
+ [90m   |[39m   [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 6 |[39m   useEffect[33m,[39m
+ [90m 7 |[39m   useCallback[33m,[39m
+ [90m 8 |[39m   [33mReactNode[39m[33m,[39m[0m
+
+You're importing a component that needs `useState`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  App Route:
+    ./context/settings/SettingsContext.tsx
+    ./lib/installer/edgeFunctions.ts
+    ./app/api/installer/health-check/route.ts
+
+  Client Component Browser:
+    ./context/settings/SettingsContext.tsx [Client Component Browser]
+    ./context/CRMContext.tsx [Client Component Browser]
+    ./app/(protected)/layout.tsx [Client Component Browser]
+    ./app/(protected)/layout.tsx [Server Component]
+
+  Server Component:
+    ./context/settings/SettingsContext.tsx
+    ./context/CRMContext.tsx
+    ./features/settings/components/DataStorageSettings.tsx
+    ./features/settings/SettingsPage.tsx
+    ./app/(protected)/settings/automations/page.tsx
+
+  Client Component SSR:
+    ./context/settings/SettingsContext.tsx [Client Component SSR]
+    ./context/CRMContext.tsx [Client Component SSR]
+    ./features/chat/components/ContactSidePanel.tsx [Client Component SSR]
+    ./features/chat/components/ChatWindow.tsx [Client Component SSR]
+    ./features/chat/components/ChatLayout.tsx [Client Component SSR]
+    ./features/chat/components/ChatLayout.tsx [Server Component]
+    ./app/(protected)/chat/page.tsx [Server Component]
+
+
+./features/automations/AutomationsListPage.tsx:1:17
+Ecmascript file had an error
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m [33mReact[39m[33m,[39m { useState } [36mfrom[39m [32m'react'[39m[33m;[39m
+ [90m   |[39m                 [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m { useAutomations } [36mfrom[39m [32m'@/lib/query/hooks/useAutomations'[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { [33mPlus[39m[33m,[39m [33mSettings2[39m[33m,[39m [33mPlayCircle[39m[33m,[39m [33mClock[39m[33m,[39m [33mSearch[39m[33m,[39m [33mMoreVertical[39m[33m,[39m [33mSearchX[39m[33m,[39m [33mMousePointerClick[39m[33m,[39m [33mZap[39m[33m,[39m [33mLoader2[39m } [36mfrom[39m [32m'lucide-react'[39m[33m;[39m
+ [90m 4 |[39m [90m// import { useNavigate } from 'react-router-dom'; se houver rotas. [39m[0m
+
+You're importing a component that needs `useState`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  App Route:
+    ./features/automations/AutomationsListPage.tsx
+    ./lib/installer/edgeFunctions.ts
+    ./app/api/installer/health-check/route.ts
+
+  Server Component:
+    ./features/automations/AutomationsListPage.tsx
+    ./features/automations/AutomationsManager.tsx
+    ./features/settings/SettingsPage.tsx
+    ./app/(protected)/settings/automations/page.tsx
+
+  Client Component Browser:
+    ./features/automations/AutomationsListPage.tsx [Client Component Browser]
+    ./features/automations/AutomationsManager.tsx [Client Component Browser]
+    ./features/settings/SettingsPage.tsx [Client Component Browser]
+    ./app/(protected)/settings/products/page.tsx [Client Component Browser]
+    ./app/(protected)/settings/products/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./features/automations/AutomationsListPage.tsx [Client Component SSR]
+    ./features/automations/AutomationsManager.tsx [Client Component SSR]
+    ./features/settings/SettingsPage.tsx [Client Component SSR]
+    ./lib/prefetch.ts [Client Component SSR]
+    ./components/Layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Server Component]
+
+
+./features/automations/AutomationsManager.tsx:1:17
+Ecmascript file had an error
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m [33mReact[39m[33m,[39m { useState } [36mfrom[39m [32m'react'[39m[33m;[39m
+ [90m   |[39m                 [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m { [33mAutomationsListPage[39m } [36mfrom[39m [32m'./AutomationsListPage'[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m [33mFlowBuilderPage[39m [36mfrom[39m [32m'./FlowBuilderPage'[39m[33m;[39m
+ [90m 4 |[39m[0m
+
+You're importing a component that needs `useState`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  App Route:
+    ./features/automations/AutomationsManager.tsx
+    ./lib/installer/edgeFunctions.ts
+    ./app/api/installer/health-check/route.ts
+
+  Server Component:
+    ./features/automations/AutomationsManager.tsx
+    ./features/settings/SettingsPage.tsx
+    ./app/(protected)/settings/automations/page.tsx
+
+  Client Component Browser:
+    ./features/automations/AutomationsManager.tsx [Client Component Browser]
+    ./features/settings/SettingsPage.tsx [Client Component Browser]
+    ./app/(protected)/settings/products/page.tsx [Client Component Browser]
+    ./app/(protected)/settings/products/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./features/automations/AutomationsManager.tsx [Client Component SSR]
+    ./features/settings/SettingsPage.tsx [Client Component SSR]
+    ./lib/prefetch.ts [Client Component SSR]
+    ./components/Layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Server Component]
+
+
+./features/automations/FlowBuilderPage.tsx:1:30
+Ecmascript file had an error
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m [33mReact[39m[33m,[39m { useCallback[33m,[39m useEffect[33m,[39m useState } [36mfrom[39m [32m'react'[39m[33m;[39m
+ [90m   |[39m                              [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m { [33mReactFlow[39m[33m,[39m [33mBackground[39m[33m,[39m [33mControls[39m[33m,[39m addEdge[33m,[39m [33mBackgroundVariant[39m[33m,[39m applyNodeChanges[33m,[39m applyEdgeChanges[33m,[39m [33mNodeChange[39m[33m,[39m [33mEdgeChange[39m[33m,[39m [33mConnection[39m[33m,[39m [33mEdge[39m[33m,[39m [33mNode[39m } [36mfrom[39m [32m'@xyflow/react'[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m [32m'@xyflow/react/dist/style.css'[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { useAutomations } [36mfrom[39m [32m'@/lib/query/hooks/useAutomations'[39m[33m;[39m[0m
+
+You're importing a component that needs `useEffect`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  App Route:
+    ./features/automations/FlowBuilderPage.tsx
+    ./lib/installer/edgeFunctions.ts
+    ./app/api/installer/health-check/route.ts
+
+  Server Component:
+    ./features/automations/FlowBuilderPage.tsx
+    ./features/automations/AutomationsManager.tsx
+    ./features/settings/SettingsPage.tsx
+    ./app/(protected)/settings/automations/page.tsx
+
+  Client Component Browser:
+    ./features/automations/FlowBuilderPage.tsx [Client Component Browser]
+    ./features/automations/AutomationsManager.tsx [Client Component Browser]
+    ./features/settings/SettingsPage.tsx [Client Component Browser]
+    ./app/(protected)/settings/products/page.tsx [Client Component Browser]
+    ./app/(protected)/settings/products/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./features/automations/FlowBuilderPage.tsx [Client Component SSR]
+    ./features/automations/AutomationsManager.tsx [Client Component SSR]
+    ./features/settings/SettingsPage.tsx [Client Component SSR]
+    ./lib/prefetch.ts [Client Component SSR]
+    ./components/Layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Server Component]
+
+
+./features/automations/FlowBuilderPage.tsx:1:41
+Ecmascript file had an error
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m [33mReact[39m[33m,[39m { useCallback[33m,[39m useEffect[33m,[39m useState } [36mfrom[39m [32m'react'[39m[33m;[39m
+ [90m   |[39m                                         [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m { [33mReactFlow[39m[33m,[39m [33mBackground[39m[33m,[39m [33mControls[39m[33m,[39m addEdge[33m,[39m [33mBackgroundVariant[39m[33m,[39m applyNodeChanges[33m,[39m applyEdgeChanges[33m,[39m [33mNodeChange[39m[33m,[39m [33mEdgeChange[39m[33m,[39m [33mConnection[39m[33m,[39m [33mEdge[39m[33m,[39m [33mNode[39m } [36mfrom[39m [32m'@xyflow/react'[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m [32m'@xyflow/react/dist/style.css'[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { useAutomations } [36mfrom[39m [32m'@/lib/query/hooks/useAutomations'[39m[33m;[39m[0m
+
+You're importing a component that needs `useState`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  App Route:
+    ./features/automations/FlowBuilderPage.tsx
+    ./lib/installer/edgeFunctions.ts
+    ./app/api/installer/health-check/route.ts
+
+  Server Component:
+    ./features/automations/FlowBuilderPage.tsx
+    ./features/automations/AutomationsManager.tsx
+    ./features/settings/SettingsPage.tsx
+    ./app/(protected)/settings/automations/page.tsx
+
+  Client Component Browser:
+    ./features/automations/FlowBuilderPage.tsx [Client Component Browser]
+    ./features/automations/AutomationsManager.tsx [Client Component Browser]
+    ./features/settings/SettingsPage.tsx [Client Component Browser]
+    ./app/(protected)/settings/products/page.tsx [Client Component Browser]
+    ./app/(protected)/settings/products/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./features/automations/FlowBuilderPage.tsx [Client Component SSR]
+    ./features/automations/AutomationsManager.tsx [Client Component SSR]
+    ./features/settings/SettingsPage.tsx [Client Component SSR]
+    ./lib/prefetch.ts [Client Component SSR]
+    ./components/Layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Server Component]
+
+
+./features/settings/SettingsPage.tsx:1:27
+Ecmascript file had an error
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m [33mReact[39m[33m,[39m { useState[33m,[39m useEffect } [36mfrom[39m [32m'react'[39m[33m;[39m
+ [90m   |[39m                           [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m { usePathname } [36mfrom[39m [32m'next/navigation'[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { useSettingsController } [36mfrom[39m [32m'./hooks/useSettingsController'[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { [33mTagsManager[39m } [36mfrom[39m [32m'./components/TagsManager'[39m[33m;[39m[0m
+
+You're importing a component that needs `useEffect`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  #1 [Server Component]:
+    ./features/settings/SettingsPage.tsx
+    ./app/(protected)/settings/automations/page.tsx
+
+  #2 [App Route]:
+    ./features/settings/SettingsPage.tsx
+    ./lib/installer/edgeFunctions.ts
+    ./app/api/installer/health-check/route.ts
+
+  #3 [Client Component Browser]:
+    ./features/settings/SettingsPage.tsx [Client Component Browser]
+    ./app/(protected)/settings/page.tsx [Client Component Browser]
+    ./app/(protected)/settings/page.tsx [Server Component]
+
+  #4 [Client Component Browser]:
+    ./features/settings/SettingsPage.tsx [Client Component Browser]
+    ./app/(protected)/settings/products/page.tsx [Client Component Browser]
+    ./app/(protected)/settings/products/page.tsx [Server Component]
+
+  #5 [Client Component SSR]:
+    ./features/settings/SettingsPage.tsx [Client Component SSR]
+    ./lib/prefetch.ts [Client Component SSR]
+    ./components/Layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Server Component]
+
+
+./features/settings/SettingsPage.tsx:2:10
+Ecmascript file had an error
+[0m [90m 1 |[39m [36mimport[39m [33mReact[39m[33m,[39m { useState[33m,[39m useEffect } [36mfrom[39m [32m'react'[39m[33m;[39m
+[31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { usePathname } [36mfrom[39m [32m'next/navigation'[39m[33m;[39m
+ [90m   |[39m          [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 3 |[39m [36mimport[39m { useSettingsController } [36mfrom[39m [32m'./hooks/useSettingsController'[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { [33mTagsManager[39m } [36mfrom[39m [32m'./components/TagsManager'[39m[33m;[39m
+ [90m 5 |[39m [36mimport[39m { [33mCustomFieldsManager[39m } [36mfrom[39m [32m'./components/CustomFieldsManager'[39m[33m;[39m[0m
+
+You're importing a component that needs `usePathname`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  #1 [Server Component]:
+    ./features/settings/SettingsPage.tsx
+    ./app/(protected)/settings/automations/page.tsx
+
+  #2 [App Route]:
+    ./features/settings/SettingsPage.tsx
+    ./lib/installer/edgeFunctions.ts
+    ./app/api/installer/health-check/route.ts
+
+  #3 [Client Component Browser]:
+    ./features/settings/SettingsPage.tsx [Client Component Browser]
+    ./app/(protected)/settings/page.tsx [Client Component Browser]
+    ./app/(protected)/settings/page.tsx [Server Component]
+
+  #4 [Client Component Browser]:
+    ./features/settings/SettingsPage.tsx [Client Component Browser]
+    ./app/(protected)/settings/products/page.tsx [Client Component Browser]
+    ./app/(protected)/settings/products/page.tsx [Server Component]
+
+  #5 [Client Component SSR]:
+    ./features/settings/SettingsPage.tsx [Client Component SSR]
+    ./lib/prefetch.ts [Client Component SSR]
+    ./components/Layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Server Component]
+
+
+./features/settings/SettingsPage.tsx:1:17
+Ecmascript file had an error
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m [33mReact[39m[33m,[39m { useState[33m,[39m useEffect } [36mfrom[39m [32m'react'[39m[33m;[39m
+ [90m   |[39m                 [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m { usePathname } [36mfrom[39m [32m'next/navigation'[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { useSettingsController } [36mfrom[39m [32m'./hooks/useSettingsController'[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { [33mTagsManager[39m } [36mfrom[39m [32m'./components/TagsManager'[39m[33m;[39m[0m
+
+You're importing a component that needs `useState`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  #1 [Server Component]:
+    ./features/settings/SettingsPage.tsx
+    ./app/(protected)/settings/automations/page.tsx
+
+  #2 [App Route]:
+    ./features/settings/SettingsPage.tsx
+    ./lib/installer/edgeFunctions.ts
+    ./app/api/installer/health-check/route.ts
+
+  #3 [Client Component Browser]:
+    ./features/settings/SettingsPage.tsx [Client Component Browser]
+    ./app/(protected)/settings/page.tsx [Client Component Browser]
+    ./app/(protected)/settings/page.tsx [Server Component]
+
+  #4 [Client Component Browser]:
+    ./features/settings/SettingsPage.tsx [Client Component Browser]
+    ./app/(protected)/settings/products/page.tsx [Client Component Browser]
+    ./app/(protected)/settings/products/page.tsx [Server Component]
+
+  #5 [Client Component SSR]:
+    ./features/settings/SettingsPage.tsx [Client Component SSR]
+    ./lib/prefetch.ts [Client Component SSR]
+    ./components/Layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Server Component]
+
+
+./features/settings/UsersPage.tsx:1:30
+Ecmascript file had an error
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m [33mReact[39m[33m,[39m { useCallback[33m,[39m useEffect[33m,[39m useState } [36mfrom[39m [32m'react'[39m[33m;[39m
+ [90m   |[39m                              [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m { supabase } [36mfrom[39m [32m'@/lib/supabase'[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { useAuth } [36mfrom[39m [32m'@/context/AuthContext'[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { useToast } [36mfrom[39m [32m'@/context/ToastContext'[39m[33m;[39m[0m
+
+You're importing a component that needs `useEffect`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  App Route:
+    ./features/settings/UsersPage.tsx
+    ./lib/installer/edgeFunctions.ts
+    ./app/api/installer/health-check/route.ts
+
+  Server Component:
+    ./features/settings/UsersPage.tsx
+    ./features/settings/SettingsPage.tsx
+    ./app/(protected)/settings/automations/page.tsx
+
+  Client Component Browser:
+    ./features/settings/UsersPage.tsx [Client Component Browser]
+    ./features/settings/SettingsPage.tsx [Client Component Browser]
+    ./app/(protected)/settings/products/page.tsx [Client Component Browser]
+    ./app/(protected)/settings/products/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./features/settings/UsersPage.tsx [Client Component SSR]
+    ./features/settings/SettingsPage.tsx [Client Component SSR]
+    ./lib/prefetch.ts [Client Component SSR]
+    ./components/Layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Server Component]
+
+
+./features/settings/UsersPage.tsx:1:41
+Ecmascript file had an error
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m [33mReact[39m[33m,[39m { useCallback[33m,[39m useEffect[33m,[39m useState } [36mfrom[39m [32m'react'[39m[33m;[39m
+ [90m   |[39m                                         [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m { supabase } [36mfrom[39m [32m'@/lib/supabase'[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { useAuth } [36mfrom[39m [32m'@/context/AuthContext'[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { useToast } [36mfrom[39m [32m'@/context/ToastContext'[39m[33m;[39m[0m
+
+You're importing a component that needs `useState`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  App Route:
+    ./features/settings/UsersPage.tsx
+    ./lib/installer/edgeFunctions.ts
+    ./app/api/installer/health-check/route.ts
+
+  Server Component:
+    ./features/settings/UsersPage.tsx
+    ./features/settings/SettingsPage.tsx
+    ./app/(protected)/settings/automations/page.tsx
+
+  Client Component Browser:
+    ./features/settings/UsersPage.tsx [Client Component Browser]
+    ./features/settings/SettingsPage.tsx [Client Component Browser]
+    ./app/(protected)/settings/products/page.tsx [Client Component Browser]
+    ./app/(protected)/settings/products/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./features/settings/UsersPage.tsx [Client Component SSR]
+    ./features/settings/SettingsPage.tsx [Client Component SSR]
+    ./lib/prefetch.ts [Client Component SSR]
+    ./components/Layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Server Component]
+
+
+./features/settings/components/ApiKeysSection.tsx:1:17
+Ecmascript file had an error
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m [33mReact[39m[33m,[39m { useEffect[33m,[39m useMemo[33m,[39m useState } [36mfrom[39m [32m'react'[39m[33m;[39m
+ [90m   |[39m                 [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m { [33mKey[39m[33m,[39m [33mCopy[39m[33m,[39m [33mExternalLink[39m[33m,[39m [33mCheckCircle2[39m[33m,[39m [33mPlus[39m[33m,[39m [33mTrash2[39m[33m,[39m [33mShieldCheck[39m[33m,[39m [33mRefreshCw[39m[33m,[39m [33mTerminalSquare[39m[33m,[39m [33mPlay[39m } [36mfrom[39m [32m'lucide-react'[39m[33m;[39m
+ [90m 3 |[39m
+ [90m 4 |[39m [36mimport[39m [33mConfirmModal[39m [36mfrom[39m [32m'@/components/ConfirmModal'[39m[33m;[39m[0m
+
+You're importing a component that needs `useEffect`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  App Route:
+    ./features/settings/components/ApiKeysSection.tsx
+    ./lib/installer/edgeFunctions.ts
+    ./app/api/installer/health-check/route.ts
+
+  Server Component:
+    ./features/settings/components/ApiKeysSection.tsx
+    ./features/settings/SettingsPage.tsx
+    ./app/(protected)/settings/automations/page.tsx
+
+  Client Component Browser:
+    ./features/settings/components/ApiKeysSection.tsx [Client Component Browser]
+    ./features/settings/SettingsPage.tsx [Client Component Browser]
+    ./app/(protected)/settings/products/page.tsx [Client Component Browser]
+    ./app/(protected)/settings/products/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./features/settings/components/ApiKeysSection.tsx [Client Component SSR]
+    ./features/settings/SettingsPage.tsx [Client Component SSR]
+    ./lib/prefetch.ts [Client Component SSR]
+    ./components/Layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Server Component]
+
+
+./features/settings/components/ApiKeysSection.tsx:1:37
+Ecmascript file had an error
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m [33mReact[39m[33m,[39m { useEffect[33m,[39m useMemo[33m,[39m useState } [36mfrom[39m [32m'react'[39m[33m;[39m
+ [90m   |[39m                                     [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m { [33mKey[39m[33m,[39m [33mCopy[39m[33m,[39m [33mExternalLink[39m[33m,[39m [33mCheckCircle2[39m[33m,[39m [33mPlus[39m[33m,[39m [33mTrash2[39m[33m,[39m [33mShieldCheck[39m[33m,[39m [33mRefreshCw[39m[33m,[39m [33mTerminalSquare[39m[33m,[39m [33mPlay[39m } [36mfrom[39m [32m'lucide-react'[39m[33m;[39m
+ [90m 3 |[39m
+ [90m 4 |[39m [36mimport[39m [33mConfirmModal[39m [36mfrom[39m [32m'@/components/ConfirmModal'[39m[33m;[39m[0m
+
+You're importing a component that needs `useState`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  App Route:
+    ./features/settings/components/ApiKeysSection.tsx
+    ./lib/installer/edgeFunctions.ts
+    ./app/api/installer/health-check/route.ts
+
+  Server Component:
+    ./features/settings/components/ApiKeysSection.tsx
+    ./features/settings/SettingsPage.tsx
+    ./app/(protected)/settings/automations/page.tsx
+
+  Client Component Browser:
+    ./features/settings/components/ApiKeysSection.tsx [Client Component Browser]
+    ./features/settings/SettingsPage.tsx [Client Component Browser]
+    ./app/(protected)/settings/products/page.tsx [Client Component Browser]
+    ./app/(protected)/settings/products/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./features/settings/components/ApiKeysSection.tsx [Client Component SSR]
+    ./features/settings/SettingsPage.tsx [Client Component SSR]
+    ./lib/prefetch.ts [Client Component SSR]
+    ./components/Layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Server Component]
+
+
+./features/settings/components/AuditLogDashboard.tsx:5:17
+Ecmascript file had an error
+[0m [90m 3 |[39m [90m * Refatorado para usar o hook useAuditLog (lógica de fetch removida do componente).[39m
+ [90m 4 |[39m [90m */[39m
+[31m[1m>[22m[39m[90m 5 |[39m [36mimport[39m [33mReact[39m[33m,[39m { useState } [36mfrom[39m [32m'react'[39m[33m;[39m
+ [90m   |[39m                 [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 6 |[39m [36mimport[39m {
+ [90m 7 |[39m   [33mShield[39m[33m,[39m
+ [90m 8 |[39m   [33mAlertTriangle[39m[33m,[39m[0m
+
+You're importing a component that needs `useState`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  App Route:
+    ./features/settings/components/AuditLogDashboard.tsx
+    ./lib/installer/edgeFunctions.ts
+    ./app/api/installer/health-check/route.ts
+
+  Server Component:
+    ./features/settings/components/AuditLogDashboard.tsx
+    ./features/settings/SettingsPage.tsx
+    ./app/(protected)/settings/automations/page.tsx
+
+  Client Component Browser:
+    ./features/settings/components/AuditLogDashboard.tsx [Client Component Browser]
+    ./features/settings/SettingsPage.tsx [Client Component Browser]
+    ./app/(protected)/settings/products/page.tsx [Client Component Browser]
+    ./app/(protected)/settings/products/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./features/settings/components/AuditLogDashboard.tsx [Client Component SSR]
+    ./features/settings/SettingsPage.tsx [Client Component SSR]
+    ./lib/prefetch.ts [Client Component SSR]
+    ./components/Layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Server Component]
+
+
+./features/settings/components/ContactCustomFieldsManager.tsx:1:17
+Ecmascript file had an error
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m [33mReact[39m[33m,[39m { useState } [36mfrom[39m [32m'react'[39m[33m;[39m
+ [90m   |[39m                 [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m { [33mPenTool[39m[33m,[39m [33mPencil[39m[33m,[39m [33mCheck[39m[33m,[39m [33mPlus[39m[33m,[39m [33mList[39m[33m,[39m [33mTag[39m[33m,[39m [33mTrash2[39m[33m,[39m [33mToggleLeft[39m[33m,[39m [33mLink[39m[33m,[39m [33mType[39m[33m,[39m [33mHash[39m[33m,[39m [33mCalendar[39m } [36mfrom[39m [32m'lucide-react'[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { [33mSettingsSection[39m } [36mfrom[39m [32m'./SettingsSection'[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { [33mContactCustomField[39m[33m,[39m [33mContactCustomFieldType[39m } [36mfrom[39m [32m'@/types'[39m[33m;[39m[0m
+
+You're importing a component that needs `useState`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  App Route:
+    ./features/settings/components/ContactCustomFieldsManager.tsx
+    ./lib/installer/edgeFunctions.ts
+    ./app/api/installer/health-check/route.ts
+
+  Server Component:
+    ./features/settings/components/ContactCustomFieldsManager.tsx
+    ./features/settings/SettingsPage.tsx
+    ./app/(protected)/settings/automations/page.tsx
+
+  Client Component Browser:
+    ./features/settings/components/ContactCustomFieldsManager.tsx [Client Component Browser]
+    ./features/settings/SettingsPage.tsx [Client Component Browser]
+    ./app/(protected)/settings/products/page.tsx [Client Component Browser]
+    ./app/(protected)/settings/products/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./features/settings/components/ContactCustomFieldsManager.tsx [Client Component SSR]
+    ./features/settings/SettingsPage.tsx [Client Component SSR]
+    ./lib/prefetch.ts [Client Component SSR]
+    ./components/Layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Server Component]
+
+
+./features/settings/components/DataStorageSettings.tsx:5:17
+Ecmascript file had an error
+[0m [90m 3 |[39m [90m// =============================================================================[39m
+ [90m 4 |[39m
+[31m[1m>[22m[39m[90m 5 |[39m [36mimport[39m [33mReact[39m[33m,[39m { useState } [36mfrom[39m [32m'react'[39m[33m;[39m
+ [90m   |[39m                 [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 6 |[39m [36mimport[39m { [33mDatabase[39m[33m,[39m [33mAlertTriangle[39m[33m,[39m [33mTrash2[39m[33m,[39m [33mLoader2[39m } [36mfrom[39m [32m'lucide-react'[39m[33m;[39m
+ [90m 7 |[39m [36mimport[39m { useCRM } [36mfrom[39m [32m'@/context/CRMContext'[39m[33m;[39m
+ [90m 8 |[39m [36mimport[39m { useAuth } [36mfrom[39m [32m'@/context/AuthContext'[39m[33m;[39m[0m
+
+You're importing a component that needs `useState`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  App Route:
+    ./features/settings/components/DataStorageSettings.tsx
+    ./lib/installer/edgeFunctions.ts
+    ./app/api/installer/health-check/route.ts
+
+  Server Component:
+    ./features/settings/components/DataStorageSettings.tsx
+    ./features/settings/SettingsPage.tsx
+    ./app/(protected)/settings/automations/page.tsx
+
+  Client Component Browser:
+    ./features/settings/components/DataStorageSettings.tsx [Client Component Browser]
+    ./features/settings/SettingsPage.tsx [Client Component Browser]
+    ./app/(protected)/settings/products/page.tsx [Client Component Browser]
+    ./app/(protected)/settings/products/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./features/settings/components/DataStorageSettings.tsx [Client Component SSR]
+    ./features/settings/SettingsPage.tsx [Client Component SSR]
+    ./lib/prefetch.ts [Client Component SSR]
+    ./components/Layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Server Component]
+
+
+./features/settings/components/McpSection.tsx:1:26
+Ecmascript file had an error
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m [33mReact[39m[33m,[39m { useMemo[33m,[39m useRef[33m,[39m useState } [36mfrom[39m [32m'react'[39m[33m;[39m
+ [90m   |[39m                          [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m { [33mServerCog[39m[33m,[39m [33mCopy[39m[33m,[39m [33mCheckCircle2[39m[33m,[39m [33mPlay[39m[33m,[39m [33mAlertTriangle[39m[33m,[39m [33mRefreshCw[39m[33m,[39m [33mChevronDown[39m } [36mfrom[39m [32m'lucide-react'[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { useOptionalToast } [36mfrom[39m [32m'@/context/ToastContext'[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { supabase } [36mfrom[39m [32m'@/lib/supabase/client'[39m[33m;[39m[0m
+
+You're importing a component that needs `useRef`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  App Route:
+    ./features/settings/components/McpSection.tsx
+    ./lib/installer/edgeFunctions.ts
+    ./app/api/installer/health-check/route.ts
+
+  Server Component:
+    ./features/settings/components/McpSection.tsx
+    ./features/settings/SettingsPage.tsx
+    ./app/(protected)/settings/automations/page.tsx
+
+  Client Component Browser:
+    ./features/settings/components/McpSection.tsx [Client Component Browser]
+    ./features/settings/SettingsPage.tsx [Client Component Browser]
+    ./app/(protected)/settings/products/page.tsx [Client Component Browser]
+    ./app/(protected)/settings/products/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./features/settings/components/McpSection.tsx [Client Component SSR]
+    ./features/settings/SettingsPage.tsx [Client Component SSR]
+    ./lib/prefetch.ts [Client Component SSR]
+    ./components/Layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Server Component]
+
+
+./features/settings/components/McpSection.tsx:1:34
+Ecmascript file had an error
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m [33mReact[39m[33m,[39m { useMemo[33m,[39m useRef[33m,[39m useState } [36mfrom[39m [32m'react'[39m[33m;[39m
+ [90m   |[39m                                  [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m { [33mServerCog[39m[33m,[39m [33mCopy[39m[33m,[39m [33mCheckCircle2[39m[33m,[39m [33mPlay[39m[33m,[39m [33mAlertTriangle[39m[33m,[39m [33mRefreshCw[39m[33m,[39m [33mChevronDown[39m } [36mfrom[39m [32m'lucide-react'[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { useOptionalToast } [36mfrom[39m [32m'@/context/ToastContext'[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { supabase } [36mfrom[39m [32m'@/lib/supabase/client'[39m[33m;[39m[0m
+
+You're importing a component that needs `useState`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  App Route:
+    ./features/settings/components/McpSection.tsx
+    ./lib/installer/edgeFunctions.ts
+    ./app/api/installer/health-check/route.ts
+
+  Server Component:
+    ./features/settings/components/McpSection.tsx
+    ./features/settings/SettingsPage.tsx
+    ./app/(protected)/settings/automations/page.tsx
+
+  Client Component Browser:
+    ./features/settings/components/McpSection.tsx [Client Component Browser]
+    ./features/settings/SettingsPage.tsx [Client Component Browser]
+    ./app/(protected)/settings/products/page.tsx [Client Component Browser]
+    ./app/(protected)/settings/products/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./features/settings/components/McpSection.tsx [Client Component SSR]
+    ./features/settings/SettingsPage.tsx [Client Component SSR]
+    ./lib/prefetch.ts [Client Component SSR]
+    ./components/Layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Server Component]
+
+
+./features/settings/components/OrganizationRoleSettings.tsx:1:17
+Ecmascript file had an error
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m [33mReact[39m[33m,[39m { useEffect[33m,[39m useState } [36mfrom[39m [32m'react'[39m[33m;[39m
+ [90m   |[39m                 [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m { useQuery[33m,[39m useMutation[33m,[39m useQueryClient } [36mfrom[39m [32m'@tanstack/react-query'[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { roleSettingsService[33m,[39m [33mRoleSettings[39m } [36mfrom[39m [32m'@/lib/supabase/roles'[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { [33mShield[39m[33m,[39m [33mSave[39m[33m,[39m [33mCheckCircle2[39m[33m,[39m [33mAlertCircle[39m } [36mfrom[39m [32m'lucide-react'[39m[33m;[39m[0m
+
+You're importing a component that needs `useEffect`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  App Route:
+    ./features/settings/components/OrganizationRoleSettings.tsx
+    ./lib/installer/edgeFunctions.ts
+    ./app/api/installer/health-check/route.ts
+
+  Server Component:
+    ./features/settings/components/OrganizationRoleSettings.tsx
+    ./features/settings/SettingsPage.tsx
+    ./app/(protected)/settings/automations/page.tsx
+
+  Client Component Browser:
+    ./features/settings/components/OrganizationRoleSettings.tsx [Client Component Browser]
+    ./features/settings/SettingsPage.tsx [Client Component Browser]
+    ./app/(protected)/settings/products/page.tsx [Client Component Browser]
+    ./app/(protected)/settings/products/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./features/settings/components/OrganizationRoleSettings.tsx [Client Component SSR]
+    ./features/settings/SettingsPage.tsx [Client Component SSR]
+    ./lib/prefetch.ts [Client Component SSR]
+    ./components/Layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Server Component]
+
+
+./features/settings/components/OrganizationRoleSettings.tsx:1:28
+Ecmascript file had an error
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m [33mReact[39m[33m,[39m { useEffect[33m,[39m useState } [36mfrom[39m [32m'react'[39m[33m;[39m
+ [90m   |[39m                            [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m { useQuery[33m,[39m useMutation[33m,[39m useQueryClient } [36mfrom[39m [32m'@tanstack/react-query'[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { roleSettingsService[33m,[39m [33mRoleSettings[39m } [36mfrom[39m [32m'@/lib/supabase/roles'[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { [33mShield[39m[33m,[39m [33mSave[39m[33m,[39m [33mCheckCircle2[39m[33m,[39m [33mAlertCircle[39m } [36mfrom[39m [32m'lucide-react'[39m[33m;[39m[0m
+
+You're importing a component that needs `useState`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  App Route:
+    ./features/settings/components/OrganizationRoleSettings.tsx
+    ./lib/installer/edgeFunctions.ts
+    ./app/api/installer/health-check/route.ts
+
+  Server Component:
+    ./features/settings/components/OrganizationRoleSettings.tsx
+    ./features/settings/SettingsPage.tsx
+    ./app/(protected)/settings/automations/page.tsx
+
+  Client Component Browser:
+    ./features/settings/components/OrganizationRoleSettings.tsx [Client Component Browser]
+    ./features/settings/SettingsPage.tsx [Client Component Browser]
+    ./app/(protected)/settings/products/page.tsx [Client Component Browser]
+    ./app/(protected)/settings/products/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./features/settings/components/OrganizationRoleSettings.tsx [Client Component SSR]
+    ./features/settings/SettingsPage.tsx [Client Component SSR]
+    ./lib/prefetch.ts [Client Component SSR]
+    ./components/Layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Server Component]
+
+
+./features/settings/components/ProductsCatalogManager.tsx:1:17
+Ecmascript file had an error
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m [33mReact[39m[33m,[39m { useEffect[33m,[39m useMemo[33m,[39m useState } [36mfrom[39m [32m'react'[39m[33m;[39m
+ [90m   |[39m                 [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m { [33mPackage[39m[33m,[39m [33mPencil[39m[33m,[39m [33mPlus[39m[33m,[39m [33mSave[39m[33m,[39m [33mTrash2[39m[33m,[39m [33mToggleLeft[39m[33m,[39m [33mToggleRight[39m[33m,[39m [33mX[39m } [36mfrom[39m [32m'lucide-react'[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { productsService } [36mfrom[39m [32m'@/lib/supabase'[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m type { [33mProduct[39m } [36mfrom[39m [32m'@/types'[39m[33m;[39m[0m
+
+You're importing a component that needs `useEffect`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  App Route:
+    ./features/settings/components/ProductsCatalogManager.tsx
+    ./lib/installer/edgeFunctions.ts
+    ./app/api/installer/health-check/route.ts
+
+  Server Component:
+    ./features/settings/components/ProductsCatalogManager.tsx
+    ./features/settings/SettingsPage.tsx
+    ./app/(protected)/settings/automations/page.tsx
+
+  Client Component Browser:
+    ./features/settings/components/ProductsCatalogManager.tsx [Client Component Browser]
+    ./features/settings/SettingsPage.tsx [Client Component Browser]
+    ./app/(protected)/settings/products/page.tsx [Client Component Browser]
+    ./app/(protected)/settings/products/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./features/settings/components/ProductsCatalogManager.tsx [Client Component SSR]
+    ./features/settings/SettingsPage.tsx [Client Component SSR]
+    ./lib/prefetch.ts [Client Component SSR]
+    ./components/Layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Server Component]
+
+
+./features/settings/components/ProductsCatalogManager.tsx:1:37
+Ecmascript file had an error
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m [33mReact[39m[33m,[39m { useEffect[33m,[39m useMemo[33m,[39m useState } [36mfrom[39m [32m'react'[39m[33m;[39m
+ [90m   |[39m                                     [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m { [33mPackage[39m[33m,[39m [33mPencil[39m[33m,[39m [33mPlus[39m[33m,[39m [33mSave[39m[33m,[39m [33mTrash2[39m[33m,[39m [33mToggleLeft[39m[33m,[39m [33mToggleRight[39m[33m,[39m [33mX[39m } [36mfrom[39m [32m'lucide-react'[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { productsService } [36mfrom[39m [32m'@/lib/supabase'[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m type { [33mProduct[39m } [36mfrom[39m [32m'@/types'[39m[33m;[39m[0m
+
+You're importing a component that needs `useState`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  App Route:
+    ./features/settings/components/ProductsCatalogManager.tsx
+    ./lib/installer/edgeFunctions.ts
+    ./app/api/installer/health-check/route.ts
+
+  Server Component:
+    ./features/settings/components/ProductsCatalogManager.tsx
+    ./features/settings/SettingsPage.tsx
+    ./app/(protected)/settings/automations/page.tsx
+
+  Client Component Browser:
+    ./features/settings/components/ProductsCatalogManager.tsx [Client Component Browser]
+    ./features/settings/SettingsPage.tsx [Client Component Browser]
+    ./app/(protected)/settings/products/page.tsx [Client Component Browser]
+    ./app/(protected)/settings/products/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./features/settings/components/ProductsCatalogManager.tsx [Client Component SSR]
+    ./features/settings/SettingsPage.tsx [Client Component SSR]
+    ./lib/prefetch.ts [Client Component SSR]
+    ./components/Layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Server Component]
+
+
+./features/settings/components/TeamPermissions.tsx:6:17
+Ecmascript file had an error
+[0m [90m 4 |[39m [90m * Admin/owner têm todas as permissões automaticamente (bloqueado para edição).[39m
+ [90m 5 |[39m [90m */[39m
+[31m[1m>[22m[39m[90m 6 |[39m [36mimport[39m [33mReact[39m[33m,[39m { useEffect[33m,[39m useState[33m,[39m useCallback } [36mfrom[39m [32m'react'[39m[33m;[39m
+ [90m   |[39m                 [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 7 |[39m [36mimport[39m { [33mShield[39m[33m,[39m [33mCheck[39m[33m,[39m [33mLoader2[39m[33m,[39m [33mRefreshCw[39m[33m,[39m [33mCrown[39m[33m,[39m [33mBriefcase[39m } [36mfrom[39m [32m'lucide-react'[39m[33m;[39m
+ [90m 8 |[39m [36mimport[39m { supabase } [36mfrom[39m [32m'@/lib/supabase/client'[39m[33m;[39m
+ [90m 9 |[39m [36mimport[39m { useAuth[33m,[39m type [33mUserPermission[39m } [36mfrom[39m [32m'@/context/AuthContext'[39m[33m;[39m[0m
+
+You're importing a component that needs `useEffect`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  App Route:
+    ./features/settings/components/TeamPermissions.tsx
+    ./lib/installer/edgeFunctions.ts
+    ./app/api/installer/health-check/route.ts
+
+  Server Component:
+    ./features/settings/components/TeamPermissions.tsx
+    ./features/settings/SettingsPage.tsx
+    ./app/(protected)/settings/automations/page.tsx
+
+  Client Component Browser:
+    ./features/settings/components/TeamPermissions.tsx [Client Component Browser]
+    ./features/settings/SettingsPage.tsx [Client Component Browser]
+    ./app/(protected)/settings/products/page.tsx [Client Component Browser]
+    ./app/(protected)/settings/products/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./features/settings/components/TeamPermissions.tsx [Client Component SSR]
+    ./features/settings/SettingsPage.tsx [Client Component SSR]
+    ./lib/prefetch.ts [Client Component SSR]
+    ./components/Layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Server Component]
+
+
+./features/settings/components/TeamPermissions.tsx:6:28
+Ecmascript file had an error
+[0m [90m 4 |[39m [90m * Admin/owner têm todas as permissões automaticamente (bloqueado para edição).[39m
+ [90m 5 |[39m [90m */[39m
+[31m[1m>[22m[39m[90m 6 |[39m [36mimport[39m [33mReact[39m[33m,[39m { useEffect[33m,[39m useState[33m,[39m useCallback } [36mfrom[39m [32m'react'[39m[33m;[39m
+ [90m   |[39m                            [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 7 |[39m [36mimport[39m { [33mShield[39m[33m,[39m [33mCheck[39m[33m,[39m [33mLoader2[39m[33m,[39m [33mRefreshCw[39m[33m,[39m [33mCrown[39m[33m,[39m [33mBriefcase[39m } [36mfrom[39m [32m'lucide-react'[39m[33m;[39m
+ [90m 8 |[39m [36mimport[39m { supabase } [36mfrom[39m [32m'@/lib/supabase/client'[39m[33m;[39m
+ [90m 9 |[39m [36mimport[39m { useAuth[33m,[39m type [33mUserPermission[39m } [36mfrom[39m [32m'@/context/AuthContext'[39m[33m;[39m[0m
+
+You're importing a component that needs `useState`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  App Route:
+    ./features/settings/components/TeamPermissions.tsx
+    ./lib/installer/edgeFunctions.ts
+    ./app/api/installer/health-check/route.ts
+
+  Server Component:
+    ./features/settings/components/TeamPermissions.tsx
+    ./features/settings/SettingsPage.tsx
+    ./app/(protected)/settings/automations/page.tsx
+
+  Client Component Browser:
+    ./features/settings/components/TeamPermissions.tsx [Client Component Browser]
+    ./features/settings/SettingsPage.tsx [Client Component Browser]
+    ./app/(protected)/settings/products/page.tsx [Client Component Browser]
+    ./app/(protected)/settings/products/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./features/settings/components/TeamPermissions.tsx [Client Component SSR]
+    ./features/settings/SettingsPage.tsx [Client Component SSR]
+    ./lib/prefetch.ts [Client Component SSR]
+    ./components/Layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Server Component]
+
+
+./features/settings/components/WebhooksSection.tsx:1:26
+Ecmascript file had an error
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m [33mReact[39m[33m,[39m { useMemo[33m,[39m useState } [36mfrom[39m [32m'react'[39m[33m;[39m
+ [90m   |[39m                          [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m { [33mWebhook[39m[33m,[39m [33mArrowRight[39m[33m,[39m [33mCopy[39m[33m,[39m [33mCheck[39m[33m,[39m [33mLink[39m [36mas[39m [33mLinkIcon[39m[33m,[39m [33mPencil[39m[33m,[39m [33mPower[39m[33m,[39m [33mTrash2[39m[33m,[39m [33mKeyRound[39m[33m,[39m [33mHelpCircle[39m } [36mfrom[39m [32m'lucide-react'[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { [33mSettingsSection[39m } [36mfrom[39m [32m'./SettingsSection'[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { [33mModal[39m } [36mfrom[39m [32m'@/components/ui/Modal'[39m[33m;[39m[0m
+
+You're importing a component that needs `useState`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  App Route:
+    ./features/settings/components/WebhooksSection.tsx
+    ./lib/installer/edgeFunctions.ts
+    ./app/api/installer/health-check/route.ts
+
+  Server Component:
+    ./features/settings/components/WebhooksSection.tsx
+    ./features/settings/SettingsPage.tsx
+    ./app/(protected)/settings/automations/page.tsx
+
+  Client Component Browser:
+    ./features/settings/components/WebhooksSection.tsx [Client Component Browser]
+    ./features/settings/SettingsPage.tsx [Client Component Browser]
+    ./app/(protected)/settings/products/page.tsx [Client Component Browser]
+    ./app/(protected)/settings/products/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./features/settings/components/WebhooksSection.tsx [Client Component SSR]
+    ./features/settings/SettingsPage.tsx [Client Component SSR]
+    ./lib/prefetch.ts [Client Component SSR]
+    ./components/Layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Server Component]
+
+
+./features/settings/hooks/useSettingsController.ts:1:10
+Ecmascript file had an error
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m { useState } [36mfrom[39m [32m'react'[39m[33m;[39m
+ [90m   |[39m          [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m { useToast } [36mfrom[39m [32m'@/context/ToastContext'[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { [33mCustomFieldDefinition[39m[33m,[39m [33mCustomFieldType[39m } [36mfrom[39m [32m'@/types'[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { usePersistedState } [36mfrom[39m [32m'@/hooks/usePersistedState'[39m[33m;[39m[0m
+
+You're importing a component that needs `useState`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  App Route:
+    ./features/settings/hooks/useSettingsController.ts
+    ./lib/installer/edgeFunctions.ts
+    ./app/api/installer/health-check/route.ts
+
+  Server Component:
+    ./features/settings/hooks/useSettingsController.ts
+    ./features/settings/SettingsPage.tsx
+    ./app/(protected)/settings/automations/page.tsx
+
+  Client Component Browser:
+    ./features/settings/hooks/useSettingsController.ts [Client Component Browser]
+    ./features/settings/SettingsPage.tsx [Client Component Browser]
+    ./app/(protected)/settings/products/page.tsx [Client Component Browser]
+    ./app/(protected)/settings/products/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./features/settings/hooks/useSettingsController.ts [Client Component SSR]
+    ./features/settings/SettingsPage.tsx [Client Component SSR]
+    ./lib/prefetch.ts [Client Component SSR]
+    ./components/Layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Server Component]
+
+
+./hooks/usePersistedState.ts:25:27
+Ecmascript file had an error
+[0m [90m 23 |[39m [90m */[39m
+ [90m 24 |[39m
+[31m[1m>[22m[39m[90m 25 |[39m [36mimport[39m [33mReact[39m[33m,[39m { useState[33m,[39m useEffect } [36mfrom[39m [32m'react'[39m[33m;[39m
+ [90m    |[39m                           [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 26 |[39m
+ [90m 27 |[39m [90m/**[39m
+ [90m 28 |[39m [90m * Hook para estado persistido em localStorage[39m[0m
+
+You're importing a component that needs `useEffect`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  App Route:
+    ./hooks/usePersistedState.ts
+    ./lib/installer/edgeFunctions.ts
+    ./app/api/installer/health-check/route.ts
+
+  Client Component Browser:
+    ./hooks/usePersistedState.ts [Client Component Browser]
+    ./context/ThemeContext.tsx [Client Component Browser]
+    ./app/(protected)/layout.tsx [Client Component Browser]
+    ./app/(protected)/layout.tsx [Server Component]
+
+  Client Component SSR:
+    ./hooks/usePersistedState.ts [Client Component SSR]
+    ./context/ThemeContext.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Server Component]
+
+  Server Component:
+    ./hooks/usePersistedState.ts
+    ./features/settings/hooks/useSettingsController.ts
+    ./features/settings/SettingsPage.tsx
+    ./app/(protected)/settings/automations/page.tsx
+
+
+./hooks/usePersistedState.ts:25:17
+Ecmascript file had an error
+[0m [90m 23 |[39m [90m */[39m
+ [90m 24 |[39m
+[31m[1m>[22m[39m[90m 25 |[39m [36mimport[39m [33mReact[39m[33m,[39m { useState[33m,[39m useEffect } [36mfrom[39m [32m'react'[39m[33m;[39m
+ [90m    |[39m                 [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 26 |[39m
+ [90m 27 |[39m [90m/**[39m
+ [90m 28 |[39m [90m * Hook para estado persistido em localStorage[39m[0m
+
+You're importing a component that needs `useState`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  App Route:
+    ./hooks/usePersistedState.ts
+    ./lib/installer/edgeFunctions.ts
+    ./app/api/installer/health-check/route.ts
+
+  Client Component Browser:
+    ./hooks/usePersistedState.ts [Client Component Browser]
+    ./context/ThemeContext.tsx [Client Component Browser]
+    ./app/(protected)/layout.tsx [Client Component Browser]
+    ./app/(protected)/layout.tsx [Server Component]
+
+  Client Component SSR:
+    ./hooks/usePersistedState.ts [Client Component SSR]
+    ./context/ThemeContext.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Server Component]
+
+  Server Component:
+    ./hooks/usePersistedState.ts
+    ./features/settings/hooks/useSettingsController.ts
+    ./features/settings/SettingsPage.tsx
+    ./app/(protected)/settings/automations/page.tsx
+
+
+./lib/a11y/hooks/useAnnounce.ts:1:31
+Ecmascript file had an error
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m { useCallback[33m,[39m useRef[33m,[39m useEffect } [36mfrom[39m [32m'react'[39m[33m;[39m
+ [90m   |[39m                               [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m
+ [90m 3 |[39m [36mexport[39m [36minterface[39m [33mUseAnnounceOptions[39m {
+ [90m 4 |[39m   [90m/** Politeness level */[39m[0m
+
+You're importing a component that needs `useEffect`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  App Route:
+    ./lib/a11y/hooks/useAnnounce.ts
+    ./lib/installer/edgeFunctions.ts
+    ./app/api/installer/health-check/route.ts
+
+  Client Component Browser:
+    ./lib/a11y/hooks/useAnnounce.ts [Client Component Browser]
+    ./lib/a11y/index.ts [Client Component Browser]
+    ./components/ui/Modal.tsx [Client Component Browser]
+    ./features/companies/CompaniesPage.tsx [Client Component Browser]
+    ./features/companies/CompaniesPage.tsx [Server Component]
+    ./app/(protected)/companies/page.tsx [Server Component]
+
+  Server Component:
+    ./lib/a11y/hooks/useAnnounce.ts
+    ./lib/a11y/index.ts
+    ./components/ConfirmModal.tsx
+    ./features/settings/components/WebhooksSection.tsx
+    ./features/settings/SettingsPage.tsx
+    ./app/(protected)/settings/automations/page.tsx
+
+  Client Component SSR:
+    ./lib/a11y/hooks/useAnnounce.ts [Client Component SSR]
+    ./lib/a11y/index.ts [Client Component SSR]
+    ./components/ui/Modal.tsx [Client Component SSR]
+    ./features/inbox/components/MessageComposerModal.tsx [Client Component SSR]
+    ./features/deals/cockpit/DealCockpitClient.tsx [Client Component SSR]
+    ./features/deals/cockpit/DealCockpitClient.tsx [Server Component]
+    ./app/(protected)/labs/deal-cockpit-mock/page.tsx [Server Component]
+
+
+./lib/a11y/hooks/useAnnounce.ts:1:23
+Ecmascript file had an error
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m { useCallback[33m,[39m useRef[33m,[39m useEffect } [36mfrom[39m [32m'react'[39m[33m;[39m
+ [90m   |[39m                       [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m
+ [90m 3 |[39m [36mexport[39m [36minterface[39m [33mUseAnnounceOptions[39m {
+ [90m 4 |[39m   [90m/** Politeness level */[39m[0m
+
+You're importing a component that needs `useRef`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  App Route:
+    ./lib/a11y/hooks/useAnnounce.ts
+    ./lib/installer/edgeFunctions.ts
+    ./app/api/installer/health-check/route.ts
+
+  Client Component Browser:
+    ./lib/a11y/hooks/useAnnounce.ts [Client Component Browser]
+    ./lib/a11y/index.ts [Client Component Browser]
+    ./components/ui/Modal.tsx [Client Component Browser]
+    ./features/companies/CompaniesPage.tsx [Client Component Browser]
+    ./features/companies/CompaniesPage.tsx [Server Component]
+    ./app/(protected)/companies/page.tsx [Server Component]
+
+  Server Component:
+    ./lib/a11y/hooks/useAnnounce.ts
+    ./lib/a11y/index.ts
+    ./components/ConfirmModal.tsx
+    ./features/settings/components/WebhooksSection.tsx
+    ./features/settings/SettingsPage.tsx
+    ./app/(protected)/settings/automations/page.tsx
+
+  Client Component SSR:
+    ./lib/a11y/hooks/useAnnounce.ts [Client Component SSR]
+    ./lib/a11y/index.ts [Client Component SSR]
+    ./components/ui/Modal.tsx [Client Component SSR]
+    ./features/inbox/components/MessageComposerModal.tsx [Client Component SSR]
+    ./features/deals/cockpit/DealCockpitClient.tsx [Client Component SSR]
+    ./features/deals/cockpit/DealCockpitClient.tsx [Server Component]
+    ./app/(protected)/labs/deal-cockpit-mock/page.tsx [Server Component]
+
+
+./lib/a11y/hooks/useFocusReturn.ts:1:10
+Ecmascript file had an error
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m { useEffect[33m,[39m useRef } [36mfrom[39m [32m'react'[39m[33m;[39m
+ [90m   |[39m          [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m
+ [90m 3 |[39m [36mexport[39m [36minterface[39m [33mUseFocusReturnOptions[39m {
+ [90m 4 |[39m   [90m/** Whether to restore focus on unmount */[39m[0m
+
+You're importing a component that needs `useEffect`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  App Route:
+    ./lib/a11y/hooks/useFocusReturn.ts
+    ./lib/installer/edgeFunctions.ts
+    ./app/api/installer/health-check/route.ts
+
+  Server Component:
+    ./lib/a11y/hooks/useFocusReturn.ts
+    ./components/ConfirmModal.tsx
+    ./features/settings/components/WebhooksSection.tsx
+    ./features/settings/SettingsPage.tsx
+    ./app/(protected)/settings/automations/page.tsx
+
+  Client Component Browser:
+    ./lib/a11y/hooks/useFocusReturn.ts [Client Component Browser]
+    ./components/ui/Modal.tsx [Client Component Browser]
+    ./features/chat/components/GroupImporter.tsx [Client Component Browser]
+    ./features/chat/components/ChatSessionList.tsx [Client Component Browser]
+    ./features/chat/components/ChatLayout.tsx [Client Component Browser]
+    ./features/chat/components/ChatLayout.tsx [Server Component]
+    ./app/(protected)/chat/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./lib/a11y/hooks/useFocusReturn.ts [Client Component SSR]
+    ./components/ui/Modal.tsx [Client Component SSR]
+    ./features/chat/components/GroupImporter.tsx [Client Component SSR]
+    ./features/chat/components/ChatSessionList.tsx [Client Component SSR]
+    ./features/chat/components/ChatLayout.tsx [Client Component SSR]
+    ./features/chat/components/ChatLayout.tsx [Server Component]
+    ./app/(protected)/chat/page.tsx [Server Component]
+
+
+./lib/a11y/hooks/useFocusReturn.ts:1:21
+Ecmascript file had an error
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m { useEffect[33m,[39m useRef } [36mfrom[39m [32m'react'[39m[33m;[39m
+ [90m   |[39m                     [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m
+ [90m 3 |[39m [36mexport[39m [36minterface[39m [33mUseFocusReturnOptions[39m {
+ [90m 4 |[39m   [90m/** Whether to restore focus on unmount */[39m[0m
+
+You're importing a component that needs `useRef`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  App Route:
+    ./lib/a11y/hooks/useFocusReturn.ts
+    ./lib/installer/edgeFunctions.ts
+    ./app/api/installer/health-check/route.ts
+
+  Server Component:
+    ./lib/a11y/hooks/useFocusReturn.ts
+    ./components/ConfirmModal.tsx
+    ./features/settings/components/WebhooksSection.tsx
+    ./features/settings/SettingsPage.tsx
+    ./app/(protected)/settings/automations/page.tsx
+
+  Client Component Browser:
+    ./lib/a11y/hooks/useFocusReturn.ts [Client Component Browser]
+    ./components/ui/Modal.tsx [Client Component Browser]
+    ./features/chat/components/GroupImporter.tsx [Client Component Browser]
+    ./features/chat/components/ChatSessionList.tsx [Client Component Browser]
+    ./features/chat/components/ChatLayout.tsx [Client Component Browser]
+    ./features/chat/components/ChatLayout.tsx [Server Component]
+    ./app/(protected)/chat/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./lib/a11y/hooks/useFocusReturn.ts [Client Component SSR]
+    ./components/ui/Modal.tsx [Client Component SSR]
+    ./features/chat/components/GroupImporter.tsx [Client Component SSR]
+    ./features/chat/components/ChatSessionList.tsx [Client Component SSR]
+    ./features/chat/components/ChatLayout.tsx [Client Component SSR]
+    ./features/chat/components/ChatLayout.tsx [Server Component]
+    ./app/(protected)/chat/page.tsx [Server Component]
+
+
+./lib/a11y/hooks/useFormErrorFocus.ts:1:23
+Ecmascript file had an error
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m { useCallback[33m,[39m useRef } [36mfrom[39m [32m'react'[39m[33m;[39m
+ [90m   |[39m                       [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m
+ [90m 3 |[39m [36minterface[39m [33mUseFormErrorFocusOptions[39m {
+ [90m 4 |[39m   [90m/** Selector for form fields with errors (default: '[aria-invalid="true"]') */[39m[0m
+
+You're importing a component that needs `useRef`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  App Route:
+    ./lib/a11y/hooks/useFormErrorFocus.ts
+    ./lib/installer/edgeFunctions.ts
+    ./app/api/installer/health-check/route.ts
+
+  Client Component Browser:
+    ./lib/a11y/hooks/useFormErrorFocus.ts [Client Component Browser]
+    ./lib/a11y/index.ts [Client Component Browser]
+    ./components/ui/Modal.tsx [Client Component Browser]
+    ./features/companies/CompaniesPage.tsx [Client Component Browser]
+    ./features/companies/CompaniesPage.tsx [Server Component]
+    ./app/(protected)/companies/page.tsx [Server Component]
+
+  Server Component:
+    ./lib/a11y/hooks/useFormErrorFocus.ts
+    ./lib/a11y/index.ts
+    ./components/ConfirmModal.tsx
+    ./features/settings/components/WebhooksSection.tsx
+    ./features/settings/SettingsPage.tsx
+    ./app/(protected)/settings/automations/page.tsx
+
+  Client Component SSR:
+    ./lib/a11y/hooks/useFormErrorFocus.ts [Client Component SSR]
+    ./lib/a11y/index.ts [Client Component SSR]
+    ./components/ui/Modal.tsx [Client Component SSR]
+    ./features/inbox/components/MessageComposerModal.tsx [Client Component SSR]
+    ./features/deals/cockpit/DealCockpitClient.tsx [Client Component SSR]
+    ./features/deals/cockpit/DealCockpitClient.tsx [Server Component]
+    ./app/(protected)/labs/deal-cockpit-mock/page.tsx [Server Component]
+
+
+./lib/a11y/hooks/useKeyboardShortcut.ts:1:10
+Ecmascript file had an error
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m { useEffect[33m,[39m useCallback } [36mfrom[39m [32m'react'[39m[33m;[39m
+ [90m   |[39m          [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m
+ [90m 3 |[39m [36mexport[39m [36minterface[39m [33mKeyboardShortcut[39m {
+ [90m 4 |[39m   [90m/** Key to listen for (e.g., 'Escape', 'Enter', 'k') */[39m[0m
+
+You're importing a component that needs `useEffect`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  App Route:
+    ./lib/a11y/hooks/useKeyboardShortcut.ts
+    ./lib/installer/edgeFunctions.ts
+    ./app/api/installer/health-check/route.ts
+
+  Client Component Browser:
+    ./lib/a11y/hooks/useKeyboardShortcut.ts [Client Component Browser]
+    ./lib/a11y/index.ts [Client Component Browser]
+    ./components/ui/Modal.tsx [Client Component Browser]
+    ./features/companies/CompaniesPage.tsx [Client Component Browser]
+    ./features/companies/CompaniesPage.tsx [Server Component]
+    ./app/(protected)/companies/page.tsx [Server Component]
+
+  Server Component:
+    ./lib/a11y/hooks/useKeyboardShortcut.ts
+    ./lib/a11y/index.ts
+    ./components/ConfirmModal.tsx
+    ./features/settings/components/WebhooksSection.tsx
+    ./features/settings/SettingsPage.tsx
+    ./app/(protected)/settings/automations/page.tsx
+
+  Client Component SSR:
+    ./lib/a11y/hooks/useKeyboardShortcut.ts [Client Component SSR]
+    ./lib/a11y/index.ts [Client Component SSR]
+    ./components/ui/Modal.tsx [Client Component SSR]
+    ./features/inbox/components/MessageComposerModal.tsx [Client Component SSR]
+    ./features/deals/cockpit/DealCockpitClient.tsx [Client Component SSR]
+    ./features/deals/cockpit/DealCockpitClient.tsx [Server Component]
+    ./app/(protected)/labs/deal-cockpit-mock/page.tsx [Server Component]
+
+
+./lib/query/hooks/useAuditLog.ts:7:20
+Ecmascript file had an error
+[0m [90m  5 |[39m [90m * O componente AuditLogDashboard consume este hook em vez de fazer fetches inline.[39m
+ [90m  6 |[39m [90m */[39m
+[31m[1m>[22m[39m[90m  7 |[39m [36mimport[39m { useState[33m,[39m useEffect[33m,[39m useCallback } [36mfrom[39m [32m'react'[39m[33m;[39m
+ [90m    |[39m                    [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m  8 |[39m [36mimport[39m { supabase } [36mfrom[39m [32m'@/lib/supabase/client'[39m[33m;[39m
+ [90m  9 |[39m [36mimport[39m { useAuth } [36mfrom[39m [32m'@/context/AuthContext'[39m[33m;[39m
+ [90m 10 |[39m[0m
+
+You're importing a component that needs `useEffect`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  App Route:
+    ./lib/query/hooks/useAuditLog.ts
+    ./lib/installer/edgeFunctions.ts
+    ./app/api/installer/health-check/route.ts
+
+  Server Component:
+    ./lib/query/hooks/useAuditLog.ts
+    ./features/settings/components/AuditLogDashboard.tsx
+    ./features/settings/SettingsPage.tsx
+    ./app/(protected)/settings/automations/page.tsx
+
+  Client Component Browser:
+    ./lib/query/hooks/useAuditLog.ts [Client Component Browser]
+    ./features/settings/components/AuditLogDashboard.tsx [Client Component Browser]
+    ./features/settings/SettingsPage.tsx [Client Component Browser]
+    ./app/(protected)/settings/products/page.tsx [Client Component Browser]
+    ./app/(protected)/settings/products/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./lib/query/hooks/useAuditLog.ts [Client Component SSR]
+    ./features/settings/components/AuditLogDashboard.tsx [Client Component SSR]
+    ./features/settings/SettingsPage.tsx [Client Component SSR]
+    ./lib/prefetch.ts [Client Component SSR]
+    ./components/Layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Server Component]
+
+
+./lib/query/hooks/useAuditLog.ts:7:10
+Ecmascript file had an error
+[0m [90m  5 |[39m [90m * O componente AuditLogDashboard consume este hook em vez de fazer fetches inline.[39m
+ [90m  6 |[39m [90m */[39m
+[31m[1m>[22m[39m[90m  7 |[39m [36mimport[39m { useState[33m,[39m useEffect[33m,[39m useCallback } [36mfrom[39m [32m'react'[39m[33m;[39m
+ [90m    |[39m          [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m  8 |[39m [36mimport[39m { supabase } [36mfrom[39m [32m'@/lib/supabase/client'[39m[33m;[39m
+ [90m  9 |[39m [36mimport[39m { useAuth } [36mfrom[39m [32m'@/context/AuthContext'[39m[33m;[39m
+ [90m 10 |[39m[0m
+
+You're importing a component that needs `useState`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  App Route:
+    ./lib/query/hooks/useAuditLog.ts
+    ./lib/installer/edgeFunctions.ts
+    ./app/api/installer/health-check/route.ts
+
+  Server Component:
+    ./lib/query/hooks/useAuditLog.ts
+    ./features/settings/components/AuditLogDashboard.tsx
+    ./features/settings/SettingsPage.tsx
+    ./app/(protected)/settings/automations/page.tsx
+
+  Client Component Browser:
+    ./lib/query/hooks/useAuditLog.ts [Client Component Browser]
+    ./features/settings/components/AuditLogDashboard.tsx [Client Component Browser]
+    ./features/settings/SettingsPage.tsx [Client Component Browser]
+    ./app/(protected)/settings/products/page.tsx [Client Component Browser]
+    ./app/(protected)/settings/products/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./lib/query/hooks/useAuditLog.ts [Client Component SSR]
+    ./features/settings/components/AuditLogDashboard.tsx [Client Component SSR]
+    ./features/settings/SettingsPage.tsx [Client Component SSR]
+    ./lib/prefetch.ts [Client Component SSR]
+    ./components/Layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Server Component]
+
+
+./lib/query/hooks/useAutomations.ts:1:33
+Ecmascript file had an error
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m { useState[33m,[39m useCallback[33m,[39m useEffect } [36mfrom[39m [32m'react'[39m[33m;[39m
+ [90m   |[39m                                 [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m { supabase } [36mfrom[39m [32m'@/lib/supabase/client'[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { useAuth } [36mfrom[39m [32m'@/context/AuthContext'[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { useToast } [36mfrom[39m [32m'@/context/ToastContext'[39m[33m;[39m[0m
+
+You're importing a component that needs `useEffect`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  App Route:
+    ./lib/query/hooks/useAutomations.ts
+    ./lib/installer/edgeFunctions.ts
+    ./app/api/installer/health-check/route.ts
+
+  Server Component:
+    ./lib/query/hooks/useAutomations.ts
+    ./features/automations/FlowBuilderPage.tsx
+    ./features/automations/AutomationsManager.tsx
+    ./features/settings/SettingsPage.tsx
+    ./app/(protected)/settings/automations/page.tsx
+
+  Client Component Browser:
+    ./lib/query/hooks/useAutomations.ts [Client Component Browser]
+    ./features/automations/FlowBuilderPage.tsx [Client Component Browser]
+    ./features/automations/AutomationsManager.tsx [Client Component Browser]
+    ./features/settings/SettingsPage.tsx [Client Component Browser]
+    ./app/(protected)/settings/products/page.tsx [Client Component Browser]
+    ./app/(protected)/settings/products/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./lib/query/hooks/useAutomations.ts [Client Component SSR]
+    ./features/automations/FlowBuilderPage.tsx [Client Component SSR]
+    ./features/automations/AutomationsManager.tsx [Client Component SSR]
+    ./features/settings/SettingsPage.tsx [Client Component SSR]
+    ./lib/prefetch.ts [Client Component SSR]
+    ./components/Layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Server Component]
+
+
+./lib/query/hooks/useAutomations.ts:1:10
+Ecmascript file had an error
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m { useState[33m,[39m useCallback[33m,[39m useEffect } [36mfrom[39m [32m'react'[39m[33m;[39m
+ [90m   |[39m          [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m { supabase } [36mfrom[39m [32m'@/lib/supabase/client'[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { useAuth } [36mfrom[39m [32m'@/context/AuthContext'[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { useToast } [36mfrom[39m [32m'@/context/ToastContext'[39m[33m;[39m[0m
+
+You're importing a component that needs `useState`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  App Route:
+    ./lib/query/hooks/useAutomations.ts
+    ./lib/installer/edgeFunctions.ts
+    ./app/api/installer/health-check/route.ts
+
+  Server Component:
+    ./lib/query/hooks/useAutomations.ts
+    ./features/automations/FlowBuilderPage.tsx
+    ./features/automations/AutomationsManager.tsx
+    ./features/settings/SettingsPage.tsx
+    ./app/(protected)/settings/automations/page.tsx
+
+  Client Component Browser:
+    ./lib/query/hooks/useAutomations.ts [Client Component Browser]
+    ./features/automations/FlowBuilderPage.tsx [Client Component Browser]
+    ./features/automations/AutomationsManager.tsx [Client Component Browser]
+    ./features/settings/SettingsPage.tsx [Client Component Browser]
+    ./app/(protected)/settings/products/page.tsx [Client Component Browser]
+    ./app/(protected)/settings/products/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./lib/query/hooks/useAutomations.ts [Client Component SSR]
+    ./features/automations/FlowBuilderPage.tsx [Client Component SSR]
+    ./features/automations/AutomationsManager.tsx [Client Component SSR]
+    ./features/settings/SettingsPage.tsx [Client Component SSR]
+    ./lib/prefetch.ts [Client Component SSR]
+    ./components/Layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Client Component SSR]
+    ./app/(protected)/layout.tsx [Server Component]
+
+
+./lib/realtime/useRealtimeSync.ts:11:10
+Ecmascript file had an error
+[0m [90m  9 |[39m [90m *   useRealtimeSync(['deals', 'activities']);  // Multiple tables[39m
+ [90m 10 |[39m [90m */[39m
+[31m[1m>[22m[39m[90m 11 |[39m [36mimport[39m { useEffect[33m,[39m useRef[33m,[39m useState } [36mfrom[39m [32m'react'[39m[33m;[39m
+ [90m    |[39m          [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 12 |[39m [36mimport[39m { useQueryClient } [36mfrom[39m [32m'@tanstack/react-query'[39m[33m;[39m
+ [90m 13 |[39m [36mimport[39m { [33mRealtimeChannel[39m[33m,[39m [33mRealtimePostgresChangesPayload[39m } [36mfrom[39m [32m'@supabase/supabase-js'[39m[33m;[39m
+ [90m 14 |[39m [36mimport[39m { supabase } [36mfrom[39m [32m'@/lib/supabase'[39m[33m;[39m[0m
+
+You're importing a component that needs `useEffect`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  App Route:
+    ./lib/realtime/useRealtimeSync.ts
+    ./lib/installer/edgeFunctions.ts
+    ./app/api/installer/health-check/route.ts
+
+  Server Component:
+    ./lib/realtime/useRealtimeSync.ts
+    ./lib/realtime/index.ts
+    ./lib/supabase.ts
+    ./features/settings/components/DataStorageSettings.tsx
+    ./features/settings/SettingsPage.tsx
+    ./app/(protected)/settings/automations/page.tsx
+
+  Client Component Browser:
+    ./lib/realtime/useRealtimeSync.ts [Client Component Browser]
+    ./lib/realtime/index.ts [Client Component Browser]
+    ./lib/supabase.ts [Client Component Browser]
+    ./lib/query/hooks/useContactsQuery.ts [Client Component Browser]
+    ./features/companies/components/ContactsTab.tsx [Client Component Browser]
+    ./features/companies/CompanyDetailsPage.tsx [Client Component Browser]
+    ./features/companies/CompanyDetailsPage.tsx [Server Component]
+    ./app/(protected)/companies/[id]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./lib/realtime/useRealtimeSync.ts [Client Component SSR]
+    ./lib/realtime/index.ts [Client Component SSR]
+    ./lib/supabase.ts [Client Component SSR]
+    ./lib/query/hooks/useContactsQuery.ts [Client Component SSR]
+    ./features/companies/components/ContactsTab.tsx [Client Component SSR]
+    ./features/companies/CompanyDetailsPage.tsx [Client Component SSR]
+    ./features/companies/CompanyDetailsPage.tsx [Server Component]
+    ./app/(protected)/companies/[id]/page.tsx [Server Component]
+
+
+./lib/realtime/useRealtimeSync.ts:11:21
+Ecmascript file had an error
+[0m [90m  9 |[39m [90m *   useRealtimeSync(['deals', 'activities']);  // Multiple tables[39m
+ [90m 10 |[39m [90m */[39m
+[31m[1m>[22m[39m[90m 11 |[39m [36mimport[39m { useEffect[33m,[39m useRef[33m,[39m useState } [36mfrom[39m [32m'react'[39m[33m;[39m
+ [90m    |[39m                     [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 12 |[39m [36mimport[39m { useQueryClient } [36mfrom[39m [32m'@tanstack/react-query'[39m[33m;[39m
+ [90m 13 |[39m [36mimport[39m { [33mRealtimeChannel[39m[33m,[39m [33mRealtimePostgresChangesPayload[39m } [36mfrom[39m [32m'@supabase/supabase-js'[39m[33m;[39m
+ [90m 14 |[39m [36mimport[39m { supabase } [36mfrom[39m [32m'@/lib/supabase'[39m[33m;[39m[0m
+
+You're importing a component that needs `useRef`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  App Route:
+    ./lib/realtime/useRealtimeSync.ts
+    ./lib/installer/edgeFunctions.ts
+    ./app/api/installer/health-check/route.ts
+
+  Server Component:
+    ./lib/realtime/useRealtimeSync.ts
+    ./lib/realtime/index.ts
+    ./lib/supabase.ts
+    ./features/settings/components/DataStorageSettings.tsx
+    ./features/settings/SettingsPage.tsx
+    ./app/(protected)/settings/automations/page.tsx
+
+  Client Component Browser:
+    ./lib/realtime/useRealtimeSync.ts [Client Component Browser]
+    ./lib/realtime/index.ts [Client Component Browser]
+    ./lib/supabase.ts [Client Component Browser]
+    ./lib/query/hooks/useContactsQuery.ts [Client Component Browser]
+    ./features/companies/components/ContactsTab.tsx [Client Component Browser]
+    ./features/companies/CompanyDetailsPage.tsx [Client Component Browser]
+    ./features/companies/CompanyDetailsPage.tsx [Server Component]
+    ./app/(protected)/companies/[id]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./lib/realtime/useRealtimeSync.ts [Client Component SSR]
+    ./lib/realtime/index.ts [Client Component SSR]
+    ./lib/supabase.ts [Client Component SSR]
+    ./lib/query/hooks/useContactsQuery.ts [Client Component SSR]
+    ./features/companies/components/ContactsTab.tsx [Client Component SSR]
+    ./features/companies/CompanyDetailsPage.tsx [Client Component SSR]
+    ./features/companies/CompanyDetailsPage.tsx [Server Component]
+    ./app/(protected)/companies/[id]/page.tsx [Server Component]
+
+
+./lib/realtime/useRealtimeSync.ts:11:29
+Ecmascript file had an error
+[0m [90m  9 |[39m [90m *   useRealtimeSync(['deals', 'activities']);  // Multiple tables[39m
+ [90m 10 |[39m [90m */[39m
+[31m[1m>[22m[39m[90m 11 |[39m [36mimport[39m { useEffect[33m,[39m useRef[33m,[39m useState } [36mfrom[39m [32m'react'[39m[33m;[39m
+ [90m    |[39m                             [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 12 |[39m [36mimport[39m { useQueryClient } [36mfrom[39m [32m'@tanstack/react-query'[39m[33m;[39m
+ [90m 13 |[39m [36mimport[39m { [33mRealtimeChannel[39m[33m,[39m [33mRealtimePostgresChangesPayload[39m } [36mfrom[39m [32m'@supabase/supabase-js'[39m[33m;[39m
+ [90m 14 |[39m [36mimport[39m { supabase } [36mfrom[39m [32m'@/lib/supabase'[39m[33m;[39m[0m
+
+You're importing a component that needs `useState`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  App Route:
+    ./lib/realtime/useRealtimeSync.ts
+    ./lib/installer/edgeFunctions.ts
+    ./app/api/installer/health-check/route.ts
+
+  Server Component:
+    ./lib/realtime/useRealtimeSync.ts
+    ./lib/realtime/index.ts
+    ./lib/supabase.ts
+    ./features/settings/components/DataStorageSettings.tsx
+    ./features/settings/SettingsPage.tsx
+    ./app/(protected)/settings/automations/page.tsx
+
+  Client Component Browser:
+    ./lib/realtime/useRealtimeSync.ts [Client Component Browser]
+    ./lib/realtime/index.ts [Client Component Browser]
+    ./lib/supabase.ts [Client Component Browser]
+    ./lib/query/hooks/useContactsQuery.ts [Client Component Browser]
+    ./features/companies/components/ContactsTab.tsx [Client Component Browser]
+    ./features/companies/CompanyDetailsPage.tsx [Client Component Browser]
+    ./features/companies/CompanyDetailsPage.tsx [Server Component]
+    ./app/(protected)/companies/[id]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./lib/realtime/useRealtimeSync.ts [Client Component SSR]
+    ./lib/realtime/index.ts [Client Component SSR]
+    ./lib/supabase.ts [Client Component SSR]
+    ./lib/query/hooks/useContactsQuery.ts [Client Component SSR]
+    ./features/companies/components/ContactsTab.tsx [Client Component SSR]
+    ./features/companies/CompanyDetailsPage.tsx [Client Component SSR]
+    ./features/companies/CompanyDetailsPage.tsx [Server Component]
+    ./app/(protected)/companies/[id]/page.tsx [Server Component]
+
+
+    at <unknown> (./app/(protected)/settings/automations/page.tsx:8:22)
+    at <unknown> (./components/ConfirmModal.tsx:39:24)
+    at <unknown> (./components/ui/Modal.tsx:11:37)
+    at <unknown> (./context/AuthContext.tsx:30:17)
+    at <unknown> (./context/AuthContext.tsx:30:44)
+    at <unknown> (./context/AuthContext.tsx:30:55)
+    at <unknown> (./context/CRMContext.tsx:30:17)
+    at <unknown> (./context/CRMContext.tsx:30:53)
+    at <unknown> (./context/CRMContext.tsx:30:75)
+    at <unknown> (./context/ToastContext.tsx:41:17)
+    at <unknown> (./context/ToastContext.tsx:41:44)
+    at <unknown> (./context/activities/ActivitiesContext.tsx:2:3)
+    at <unknown> (./context/boards/BoardsContext.tsx:2:3)
+    at <unknown> (./context/boards/BoardsContext.tsx:6:3)
+    at <unknown> (./context/boards/BoardsContext.tsx:5:3)
+    at <unknown> (./context/contacts/ContactsContext.tsx:2:3)
+    at <unknown> (./context/deals/DealsContext.tsx:2:3)
+    at <unknown> (./context/settings/SettingsContext.tsx:2:3)
+    at <unknown> (./context/settings/SettingsContext.tsx:6:3)
+    at <unknown> (./context/settings/SettingsContext.tsx:11:10)
+    at <unknown> (./context/settings/SettingsContext.tsx:9:3)
+    at <unknown> (./context/settings/SettingsContext.tsx:5:3)
+    at <unknown> (./features/automations/AutomationsListPage.tsx:1:17)
+    at <unknown> (./features/automations/AutomationsManager.tsx:1:17)
+    at <unknown> (./features/automations/FlowBuilderPage.tsx:1:30)
+    at <unknown> (./features/automations/FlowBuilderPage.tsx:1:41)
+    at <unknown> (./features/settings/SettingsPage.tsx:1:27)
+    at <unknown> (./features/settings/SettingsPage.tsx:2:10)
+    at <unknown> (./features/settings/SettingsPage.tsx:1:17)
+    at <unknown> (./features/settings/UsersPage.tsx:1:30)
+    at <unknown> (./features/settings/UsersPage.tsx:1:41)
+    at <unknown> (./features/settings/components/ApiKeysSection.tsx:1:17)
+    at <unknown> (./features/settings/components/ApiKeysSection.tsx:1:37)
+    at <unknown> (./features/settings/components/AuditLogDashboard.tsx:5:17)
+    at <unknown> (./features/settings/components/ContactCustomFieldsManager.tsx:1:17)
+    at <unknown> (./features/settings/components/DataStorageSettings.tsx:5:17)
+    at <unknown> (./features/settings/components/McpSection.tsx:1:26)
+    at <unknown> (./features/settings/components/McpSection.tsx:1:34)
+    at <unknown> (./features/settings/components/OrganizationRoleSettings.tsx:1:17)
+    at <unknown> (./features/settings/components/OrganizationRoleSettings.tsx:1:28)
+    at <unknown> (./features/settings/components/ProductsCatalogManager.tsx:1:17)
+    at <unknown> (./features/settings/components/ProductsCatalogManager.tsx:1:37)
+    at <unknown> (./features/settings/components/TeamPermissions.tsx:6:17)
+    at <unknown> (./features/settings/components/TeamPermissions.tsx:6:28)
+    at <unknown> (./features/settings/components/WebhooksSection.tsx:1:26)
+    at <unknown> (./features/settings/hooks/useSettingsController.ts:1:10)
+    at <unknown> (./hooks/usePersistedState.ts:25:27)
+    at <unknown> (./hooks/usePersistedState.ts:25:17)
+    at <unknown> (./lib/a11y/hooks/useAnnounce.ts:1:31)
+    at <unknown> (./lib/a11y/hooks/useAnnounce.ts:1:23)
+    at <unknown> (./lib/a11y/hooks/useFocusReturn.ts:1:10)
+    at <unknown> (./lib/a11y/hooks/useFocusReturn.ts:1:21)
+    at <unknown> (./lib/a11y/hooks/useFormErrorFocus.ts:1:23)
+    at <unknown> (./lib/a11y/hooks/useKeyboardShortcut.ts:1:10)
+    at <unknown> (./lib/query/hooks/useAuditLog.ts:7:20)
+    at <unknown> (./lib/query/hooks/useAuditLog.ts:7:10)
+    at <unknown> (./lib/query/hooks/useAutomations.ts:1:33)
+    at <unknown> (./lib/query/hooks/useAutomations.ts:1:10)
+    at <unknown> (./lib/realtime/useRealtimeSync.ts:11:10)
+    at <unknown> (./lib/realtime/useRealtimeSync.ts:11:21)
+    at <unknown> (./lib/realtime/useRealtimeSync.ts:11:29)

@@ -1,9 +1,6 @@
-import dynamic from 'next/dynamic';
-import { Metadata } from 'next';
+"use client";
 
-export const metadata: Metadata = {
-    title: 'Automações | Flux Leads CRM',
-};
+import dynamic from 'next/dynamic';
 
 const SettingsPage = dynamic(
     () => import('@/features/settings/SettingsPage'),

@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useMemo, useState } from 'react';
 import { Webhook, ArrowRight, Copy, Check, Link as LinkIcon, Pencil, Power, Trash2, KeyRound, HelpCircle } from 'lucide-react';
 import { SettingsSection } from './SettingsSection';

@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState } from 'react';
 import { PenTool, Pencil, Check, Plus, List, Tag, Trash2, ToggleLeft, Link, Type, Hash, Calendar } from 'lucide-react';
 import { SettingsSection } from './SettingsSection';

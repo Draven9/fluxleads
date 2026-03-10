@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * Reusable Modal component with consistent styling
  * 

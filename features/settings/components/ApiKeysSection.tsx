@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useEffect, useMemo, useState } from 'react';
 import { Key, Copy, ExternalLink, CheckCircle2, Plus, Trash2, ShieldCheck, RefreshCw, TerminalSquare, Play } from 'lucide-react';
 

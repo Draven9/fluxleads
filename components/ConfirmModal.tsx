@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * @fileoverview Modal de Confirmação Acessível
  * 

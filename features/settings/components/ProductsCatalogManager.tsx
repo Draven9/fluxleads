@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useEffect, useMemo, useState } from 'react';
 import { Package, Pencil, Plus, Save, Trash2, ToggleLeft, ToggleRight, X } from 'lucide-react';
 import { productsService } from '@/lib/supabase';

@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * Audit Log Dashboard — 5.4
  * Refatorado para usar o hook useAuditLog (lógica de fetch removida do componente).

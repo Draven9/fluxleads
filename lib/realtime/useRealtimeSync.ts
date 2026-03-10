@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * Supabase Realtime Sync Hook
  *

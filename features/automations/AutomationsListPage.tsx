@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState } from 'react';
 import { useAutomations } from '@/lib/query/hooks/useAutomations';
 import { Plus, Settings2, PlayCircle, Clock, Search, MoreVertical, SearchX, MousePointerClick, Zap, Loader2 } from 'lucide-react';

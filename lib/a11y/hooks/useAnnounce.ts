@@ -1,3 +1,5 @@
+"use client";
+
 import { useCallback, useRef, useEffect } from 'react';
 
 export interface UseAnnounceOptions {

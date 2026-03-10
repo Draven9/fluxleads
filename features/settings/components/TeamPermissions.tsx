@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * TeamPermissions — 5.3
  * Gerenciamento visual de permissões granulares por membro da equipe.
