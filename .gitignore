@@ -47,3 +47,5 @@ supabase/.branches
 !.agent/tools/n8n-mcp-client/
 .env*.local
 .env.production.check
+.temp_evolution_labs/
+.tempuazapi/

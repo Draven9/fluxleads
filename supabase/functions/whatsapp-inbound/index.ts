@@ -28,7 +28,7 @@ interface NormalizedMessage {
 function normalizeUazapi(body: any): NormalizedMessage | null {
     // uazapi sends: { instanceToken, chatid, text, sender, senderName, fromMe, messageType, ... }
     const fromMe = body.fromMe === true || body.from_me === true;
-    if (fromMe) return null; // skip messages sent by us
+    // Se não quiséssemos sincronizar o celular: if (fromMe) return null;
 
     const phone = (body.sender || body.chatid || '').replace('@s.whatsapp.net', '').replace('@g.us', '');
     const isGroup = (body.chatid || '').includes('@g.us');
@@ -37,13 +37,13 @@ function normalizeUazapi(body: any): NormalizedMessage | null {
         phone,
         name: body.senderName || body.pushName || phone,
         text: body.text || body.caption || '',
-        direction: 'inbound',
+        direction: fromMe ? 'outbound' : 'inbound',
         message_type: body.messageType || 'text',
         external_id: body.messageId || body.id || null,
         is_group: isGroup,
         group_id: isGroup ? body.chatid : null,
         media_url: body.fileURL || body.mediaUrl || null,
-        from_me: false,
+        from_me: fromMe,
     };
 }
 
@@ -53,7 +53,7 @@ function normalizeEvolution(body: any): NormalizedMessage | null {
     if (!data) return null;
 
     const fromMe = data.key?.fromMe === true;
-    if (fromMe) return null;
+    // Sem 'return null' para aceitarmos mensagens do próprio numero
 
     const remoteJid = data.key?.remoteJid || '';
     const isGroup = remoteJid.includes('@g.us');
@@ -73,13 +73,13 @@ function normalizeEvolution(body: any): NormalizedMessage | null {
         phone,
         name: data.pushName || phone,
         text,
-        direction: 'inbound',
+        direction: fromMe ? 'outbound' : 'inbound',
         message_type: messageType,
         external_id: data.key?.id || null,
         is_group: isGroup,
         group_id: isGroup ? remoteJid : null,
         media_url: data.message?.imageMessage?.url || data.message?.audioMessage?.url || null,
-        from_me: false,
+        from_me: fromMe,
     };
 }
 
@@ -210,16 +210,44 @@ Deno.serve(async (req: Request) => {
                 }
             }
 
-            await supabase.from('messages').insert({
-                organization_id: orgId,
-                session_id: sessionId,
-                direction: normalized.direction,
-                content: normalized.text,
-                messsage_type: normalized.message_type,
-                media_url: normalized.media_url,
-                status: 'delivered',
-                external_id: normalized.external_id,
-            });
+            // If it's an outbound message (fromMe === true), try to link it to an existing CRM-originated message
+            let linkedExisting = false;
+            if (normalized.from_me && normalized.external_id) {
+                // Find a recent outbound message without an external_id that matches the text
+                const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+
+                const { data: candidates } = await supabase
+                    .from('messages')
+                    .select('id')
+                    .eq('session_id', sessionId)
+                    .eq('direction', 'outbound')
+                    .is('external_id', null)
+                    .eq('content', normalized.text)
+                    .gte('created_at', twoMinutesAgo)
+                    .order('created_at', { ascending: false })
+                    .limit(1);
+
+                if (candidates && candidates.length > 0) {
+                    await supabase.from('messages').update({
+                        external_id: normalized.external_id,
+                        status: 'delivered'
+                    }).eq('id', candidates[0].id);
+                    linkedExisting = true;
+                }
+            }
+
+            if (!linkedExisting) {
+                await supabase.from('messages').insert({
+                    organization_id: orgId,
+                    session_id: sessionId,
+                    direction: normalized.direction,
+                    content: normalized.text,
+                    message_type: normalized.message_type,
+                    media_url: normalized.media_url,
+                    status: normalized.from_me ? 'sent' : 'delivered',
+                    external_id: normalized.external_id,
+                });
+            }
         }
 
         // ── 4. Audit Log ───────────────────────────────────────────────────────
