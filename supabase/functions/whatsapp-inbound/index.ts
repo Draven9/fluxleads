@@ -180,13 +180,14 @@ Deno.serve(async (req: Request) => {
             } else {
                 const { data: newSession } = await supabase
                     .from('chat_sessions')
-                    .insert({
+                    .upsert({
                         organization_id: orgId,
                         contact_id: contactId,
                         provider: 'whatsapp',
                         provider_id: normalized.is_group ? normalized.group_id : normalized.phone,
                         whatsapp_source_id: sourceId,
-                    })
+                        updated_at: new Date().toISOString()
+                    }, { onConflict: 'organization_id,contact_id', ignoreDuplicates: false })
                     .select('id')
                     .single();
                 sessionId = newSession?.id ?? null;
@@ -222,7 +223,7 @@ Deno.serve(async (req: Request) => {
         }
 
         // ── 4. Audit Log ───────────────────────────────────────────────────────
-        await supabase.from('webhook_events_in').insert({
+        const { error: auditErr } = await supabase.from('webhook_events_in').insert({
             organization_id: orgId,
             source_id: sourceId,
             provider: 'whatsapp',
@@ -232,6 +233,9 @@ Deno.serve(async (req: Request) => {
             status: 'processed',
             created_contact_id: contactId,
         });
+        if (auditErr) {
+            console.error('[whatsapp-inbound] Warning: Failed to insert audit log', auditErr.message);
+        }
 
         return new Response(JSON.stringify({ ok: true }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }

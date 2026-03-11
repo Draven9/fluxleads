@@ -31,8 +31,9 @@ export function useChatSessions() {
         fetchSessions();
 
         // Realtime Subscription — canal único por organização para evitar colisão
+        const channelId = `chat_sessions_list_${organizationId}_${Math.random().toString(36).substring(7)}`;
         const channel = supabase
-            .channel(`chat_sessions_list_${organizationId}`)
+            .channel(channelId)
             .on(
                 'postgres_changes',
                 {

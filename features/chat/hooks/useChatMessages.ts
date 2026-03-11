@@ -57,8 +57,9 @@ export function useChatMessages(sessionId: string | null) {
             .then();
 
         // Realtime Subscription
+        const channelId = `chat_messages_${sessionId}_${Math.random().toString(36).substring(7)}`;
         const channel = supabase
-            .channel(`chat_messages_${sessionId}`)
+            .channel(channelId)
             .on(
                 'postgres_changes',
                 {
