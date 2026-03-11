@@ -26,23 +26,33 @@ interface NormalizedMessage {
 }
 
 function normalizeUazapi(body: any): NormalizedMessage | null {
-    // uazapi sends: { instanceToken, chatid, text, sender, senderName, fromMe, messageType, ... }
-    const fromMe = body.fromMe === true || body.from_me === true;
-    // Se não quiséssemos sincronizar o celular: if (fromMe) return null;
+    // Nova estrutura uazapi reportada: { EventType: "messages", message: { chatid, content, fromMe, senderName, type, messageid, etc } }
 
-    const phone = (body.sender || body.chatid || '').replace('@s.whatsapp.net', '').replace('@g.us', '');
-    const isGroup = (body.chatid || '').includes('@g.us');
+    // Ignora eventos que não são de mensagens, caso a webhook mande status etc.
+    if (body.EventType && body.EventType !== 'messages') return null;
+
+    // Se o webhook vier sem o object message, caímos fora também
+    const msg = body.message || body;
+
+    const fromMe = msg.fromMe === true || msg.from_me === true;
+
+    // uazapi chatid: 553588043756@s.whatsapp.net
+    const phone = (msg.sender || msg.chatid || '').replace('@s.whatsapp.net', '').replace('@g.us', '').split(':')[0];
+    const isGroup = (msg.chatid || '').includes('@g.us');
+
+    // "type": "text", "content": "Opaaa"
+    const messageType = msg.type || msg.messageType || 'text';
 
     return {
         phone,
-        name: body.senderName || body.pushName || phone,
-        text: body.text || body.caption || '',
+        name: msg.senderName || msg.pushName || body.chat?.name || phone,
+        text: msg.content || msg.text || msg.caption || '',
         direction: fromMe ? 'outbound' : 'inbound',
-        message_type: body.messageType || 'text',
-        external_id: body.messageId || body.id || null,
+        message_type: messageType,
+        external_id: msg.messageid || msg.messageId || msg.id || null,
         is_group: isGroup,
-        group_id: isGroup ? body.chatid : null,
-        media_url: body.fileURL || body.mediaUrl || null,
+        group_id: isGroup ? msg.chatid : null,
+        media_url: msg.fileURL || msg.mediaUrl || null,
         from_me: fromMe,
     };
 }

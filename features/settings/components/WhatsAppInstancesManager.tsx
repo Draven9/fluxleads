@@ -10,8 +10,8 @@ import { useAuth } from '@/context/AuthContext';
 
 const StatusBadge = ({ connected }: { connected: boolean }) => (
     <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${connected
-            ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-            : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
+        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+        : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
         }`}>
         {connected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
         {connected ? 'Conectado' : 'Desconectado'}
@@ -220,11 +220,22 @@ export const WhatsAppInstancesManager: React.FC = () => {
 
     const checkStatus = async (source: WhatsAppSource) => {
         setCheckingStatus(s => ({ ...s, [source.id]: true }));
-        const { data } = await whatsappService.instanceStatus(source.id);
-        const connected = !!(data && !data.error &&
-            (data.connected === true || data.status === 'open' || data.instanceStatus?.status === 'open'));
-        setStatuses(s => ({ ...s, [source.id]: connected }));
-        setCheckingStatus(s => ({ ...s, [source.id]: false }));
+        try {
+            const { data } = await whatsappService.instanceStatus(source.id);
+            // Se o retorno for erro 404 ou erro genérico do proxy mas é Uazapi
+            if (source.provider_type === 'uazapi' && data?.error) {
+                // Falso positivo: a API de envio funciona mas a de status não existe
+                setStatuses(s => ({ ...s, [source.id]: true }));
+            } else {
+                const connected = !!(data && !data.error &&
+                    (data.connected === true || data.status === 'open' || data.instanceStatus?.status === 'open' || data.state === 'open'));
+                setStatuses(s => ({ ...s, [source.id]: connected }));
+            }
+        } catch (e) {
+            setStatuses(s => ({ ...s, [source.id]: false }));
+        } finally {
+            setCheckingStatus(s => ({ ...s, [source.id]: false }));
+        }
     };
 
     const handleDelete = async (id: string) => {
