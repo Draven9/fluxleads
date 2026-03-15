@@ -188,7 +188,7 @@ Deno.serve(async (req: Request) => {
                     .update({ updated_at: new Date().toISOString(), whatsapp_source_id: sourceId })
                     .eq('id', sessionId);
             } else {
-                const { data: newSession } = await supabase
+                const { data: newSession, error: upserr } = await supabase
                     .from('chat_sessions')
                     .upsert({
                         organization_id: orgId,
@@ -200,6 +200,10 @@ Deno.serve(async (req: Request) => {
                     }, { onConflict: 'organization_id,contact_id', ignoreDuplicates: false })
                     .select('id')
                     .single();
+                if (upserr) {
+                    console.error('[webhook] ERROR UPSERT SESSION:', upserr);
+                    return new Response(JSON.stringify({ error: upserr }), { status: 500 });
+                }
                 sessionId = newSession?.id ?? null;
             }
         }
