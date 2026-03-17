@@ -39,6 +39,28 @@ export default function AdminPage() {
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
+  const [impersonating, setImpersonating] = useState<string | null>(null);
+
+  const handleImpersonate = async (orgId: string) => {
+    setImpersonating(orgId);
+    setFeedback(null);
+    try {
+      const res = await fetch('/api/admin/impersonate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orgId })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erro ao alternar empresa');
+      
+      // Force a full location reload to reset contexts, caches, and RLS scopes completely
+      window.location.href = '/dashboard';
+    } catch (err) {
+      setFeedback({ type: 'error', message: String(err) });
+      setImpersonating(null);
+    }
+  };
+
   // Guard: only admin/owner
   useEffect(() => {
     if (!authLoading && profile && !['admin', 'owner'].includes(profile.role)) {
@@ -268,7 +290,7 @@ export default function AdminPage() {
                         <div>
                           <p className="font-semibold text-slate-900 dark:text-white">{org.name}</p>
                           {isCurrentOrg && (
-                            <span className="text-xs text-primary-600 dark:text-primary-400 font-medium">Sua empresa</span>
+                            <span className="text-xs text-primary-600 dark:text-primary-400 font-medium">Sua empresa atual</span>
                           )}
                         </div>
                       </div>
@@ -286,13 +308,26 @@ export default function AdminPage() {
                       {formatDate(org.created_at)}
                     </td>
                     <td className="px-5 py-4 text-right">
-                      <button
-                        onClick={() => router.push(`/admin/organizations/${org.id}`)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg transition-colors"
-                      >
-                        <Eye size={14} />
-                        Detalhes
-                      </button>
+                      <div className="flex items-center justify-end gap-2">
+                        {!isCurrentOrg && (
+                          <button
+                            onClick={() => handleImpersonate(org.id)}
+                            disabled={impersonating === org.id}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:text-white dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+                            title="Entrar no sistema desta empresa"
+                          >
+                            {impersonating === org.id ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+                            Acessar
+                          </button>
+                        )}
+                        <button
+                          onClick={() => router.push(`/admin/organizations/${org.id}`)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg transition-colors cursor-pointer"
+                        >
+                          <Eye size={14} />
+                          Detalhes
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
