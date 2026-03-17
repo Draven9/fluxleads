@@ -48,6 +48,7 @@
     "**/lib/**/test/**",
     "supabase/functions/**",
     ".next/types/validator.ts",
-    "references/**"
+    "references/**",
+    "scripts/**"
   ]
 }
