@@ -51,6 +51,7 @@ import {
   MessageCircle,
   Briefcase,
   Zap,
+  Building2,
 } from 'lucide-react';
 import { useCRM } from '../context/CRMContext';
 import { useAuth } from '../context/AuthContext';
@@ -276,7 +277,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             )}
           </div>
 
-          <nav className={`flex-1 p-4 space-y-2 flex flex-col ${sidebarCollapsed ? 'items-center px-2' : ''}`} aria-label="Navegação do sistema">
+          <nav className={`flex-1 p-4 space-y-2 flex flex-col overflow-y-auto min-h-0 ${sidebarCollapsed ? 'items-center px-2' : ''}`} aria-label="Navegação do sistema">
             {[
               { to: '/inbox', icon: Inbox, label: 'Inbox', prefetch: 'inbox' as const },
               { to: '/chat', icon: MessageSquare, label: 'Mensagens', prefetch: 'chat' as const },
@@ -403,6 +404,16 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     className={`absolute bottom-full mb-2 z-50 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden animate-in slide-in-from-bottom-2 fade-in duration-150 ${sidebarCollapsed ? 'left-0 w-48' : 'left-0 right-0'}`}
                   >
                     <div className="p-1">
+                      {['admin', 'owner'].includes(profile?.role ?? '') && (
+                        <Link
+                          href="/admin"
+                          onClick={() => setIsUserMenuOpen(false)}
+                          className="flex items-center gap-3 px-3 py-2.5 text-sm text-primary-700 dark:text-primary-300 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg transition-colors focus-visible-ring"
+                        >
+                          <Building2 className="w-4 h-4 text-primary-500" />
+                          Painel de Empresas
+                        </Link>
+                      )}
                       <Link
                         href="/profile"
                         onClick={() => setIsUserMenuOpen(false)}
