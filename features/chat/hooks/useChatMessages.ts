@@ -16,6 +16,9 @@ export function useChatMessages(sessionId: string | null) {
     // Track pending optimistic message IDs so we can replace them
     // when the real INSERT event arrives from Supabase Realtime.
     const pendingTempIds = useRef<Set<string>>(new Set());
+    
+    // Store latest fetched message date for polling
+    const lastMessageDateRef = useRef(new Date().toISOString());
 
     // Fetch Messages (Initial Load)
     useEffect(() => {
@@ -26,6 +29,7 @@ export function useChatMessages(sessionId: string | null) {
         setHasMore(true);
         setPage(0);
         pendingTempIds.current.clear();
+        lastMessageDateRef.current = new Date().toISOString();
 
         const fetchInitialMessages = async () => {
             setLoading(true);
@@ -39,8 +43,12 @@ export function useChatMessages(sessionId: string | null) {
             if (error) {
                 toast.error('Erro ao carregar mensagens.');
             } else {
+                const fetched = data as Message[];
+                if (fetched.length > 0) {
+                    lastMessageDateRef.current = fetched[0].created_at;
+                }
                 // Reverse to display chronologically (oldest at top)
-                setMessages((data as Message[]).reverse());
+                setMessages(fetched.reverse());
                 setHasMore(data.length === MESSAGES_PER_PAGE);
                 setPage(1);
             }
@@ -70,6 +78,9 @@ export function useChatMessages(sessionId: string | null) {
                 },
                 (payload) => {
                     const newMsg = payload.new as Message;
+                    if (newMsg.created_at > lastMessageDateRef.current) {
+                        lastMessageDateRef.current = newMsg.created_at;
+                    }
                     setMessages((prev) => {
                         // If we have a pending optimistic message, replace it
                         // with the confirmed real message from the DB.
@@ -89,8 +100,41 @@ export function useChatMessages(sessionId: string | null) {
             )
             .subscribe();
 
+        // Fallback HTTP Polling mechanism (in case WebSocket is blocked by Antivirus/AdBlock/Network)
+        const pollInterval = setInterval(async () => {
+            const { data } = await supabase
+                .from('messages')
+                .select('*, reply_to_message_id')
+                .eq('session_id', sessionId)
+                .gt('created_at', lastMessageDateRef.current)
+                .order('created_at', { ascending: true });
+
+            if (data && data.length > 0) {
+                lastMessageDateRef.current = data[data.length - 1].created_at;
+                setMessages((prev) => {
+                    const newMessages = data.filter((nMsg: any) => !prev.some(pMsg => pMsg.id === nMsg.id));
+                    if (newMessages.length === 0) return prev;
+
+                    let updated = [...prev];
+                    for (const nMsg of newMessages) {
+                        if (pendingTempIds.current.size > 0) {
+                             const tempId = pendingTempIds.current.values().next().value;
+                             if (tempId) {
+                                 pendingTempIds.current.delete(tempId);
+                                 updated = updated.map(m => m.id === tempId ? (nMsg as Message) : m);
+                                 continue;
+                             }
+                        }
+                        updated.push(nMsg as Message);
+                    }
+                    return updated;
+                });
+            }
+        }, 4000);
+
         return () => {
             supabase.removeChannel(channel);
+            clearInterval(pollInterval);
         };
     }, [sessionId, organizationId]);
 

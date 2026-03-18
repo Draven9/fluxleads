@@ -289,7 +289,7 @@ Deno.serve(async (req: Request) => {
                         name: sessionName,
                         whatsapp_source_id: sourceId,
                         updated_at: new Date().toISOString()
-                    }, { onConflict: 'organization_id,contact_id', ignoreDuplicates: false })
+                    }, { onConflict: 'organization_id,provider_id', ignoreDuplicates: false })
                     .select('id')
                     .single();
                 if (upserr) {

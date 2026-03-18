@@ -73,8 +73,45 @@ export function useChatSessions() {
             )
             .subscribe();
 
+        // Fallback HTTP Polling mechanism (in case WebSocket is blocked by Antivirus/AdBlock/Network)
+        const pollInterval = setInterval(async () => {
+            const { data } = await supabase
+                .from('chat_sessions')
+                .select('*, contact:contacts(*)')
+                .eq('organization_id', organizationId)
+                .order('last_message_at', { ascending: false })
+                .limit(50); // Get latest 50 to sync state efficiently
+
+            if (data && data.length > 0) {
+                setSessions((prev) => {
+                    let updated = [...prev];
+                    let hasChanges = false;
+                    for (const serverSession of data) {
+                        const existing = updated.find(s => s.id === serverSession.id);
+                        if (!existing) {
+                            hasChanges = true;
+                            updated.push(serverSession as ChatSession);
+                        } else if (
+                            existing.last_message_at !== serverSession.last_message_at ||
+                            existing.unread_count !== serverSession.unread_count ||
+                            existing.is_marked_unread !== serverSession.is_marked_unread
+                        ) {
+                            hasChanges = true;
+                            // update existing
+                            updated = updated.map(s => s.id === existing.id ? { ...s, ...serverSession } as ChatSession : s);
+                        }
+                    }
+                    if (hasChanges) {
+                        return updated.sort((a, b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime());
+                    }
+                    return prev;
+                });
+            }
+        }, 5000);
+
         return () => {
             supabase.removeChannel(channel);
+            clearInterval(pollInterval);
         };
     }, [organizationId]);
 
@@ -98,7 +135,7 @@ export function useChatSessions() {
                     updated_at: new Date().toISOString(),
                 },
                 {
-                    onConflict: 'organization_id,contact_id',
+                    onConflict: 'organization_id,provider_id',
                     ignoreDuplicates: false,
                 }
             )
