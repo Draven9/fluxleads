@@ -7,6 +7,7 @@ export interface ChatSession {
     deal_id?: string;
     provider: 'whatsapp' | 'instagram' | 'facebook' | 'email';
     provider_id: string; // remoteJid
+    name?: string | null; // custom display name (groups or overrides)
     last_message_at: string;
     unread_count: number;
     created_at: string;
@@ -34,4 +35,6 @@ export interface Message {
     external_id?: string;
     created_at: string;
     reply_to_message_id?: string | null;
+    sender_name?: string | null; // name of the sender inside a group
+    sender_phone?: string | null; // phone of the sender inside a group
 }

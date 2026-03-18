@@ -21,8 +21,11 @@ interface NormalizedMessage {
     external_id: string | null;
     is_group: boolean;
     group_id: string | null;
+    group_name: string | null;  // human-readable group name
     media_url: string | null;
     from_me: boolean;
+    sender_phone: string | null; // phone of sender inside group
+    sender_name: string | null;  // name of sender inside group
 }
 
 function normalizeUazapi(body: any): NormalizedMessage | null {
@@ -36,24 +39,40 @@ function normalizeUazapi(body: any): NormalizedMessage | null {
 
     const fromMe = msg.fromMe === true || msg.from_me === true;
 
-    // uazapi chatid: 553588043756@s.whatsapp.net
-    const phone = (msg.sender || msg.chatid || '').replace('@s.whatsapp.net', '').replace('@g.us', '').split(':')[0];
     const isGroup = (msg.chatid || '').includes('@g.us');
+
+    // Sender details in groups
+    const senderJid = isGroup ? (msg.sender || '') : '';
+    const senderPhone = isGroup
+        ? senderJid.replace('@s.whatsapp.net', '').replace('@g.us', '') || null
+        : null;
+    const senderName = isGroup ? (msg.senderName || msg.pushName || null) : null;
+
+    // Group name from body.chat.name (Uazapi includes it in the webhook payload)
+    const groupName = isGroup ? (body.chat?.name || body.groupName || null) : null;
+
+    // For groups: phone = group number; for individuals: phone = sender
+    const phone = isGroup
+        ? (msg.chatid || '').replace('@g.us', '')
+        : (msg.sender || msg.chatid || '').replace('@s.whatsapp.net', '').split(':')[0];
 
     // "type": "text", "content": "Opaaa"
     const messageType = msg.type || msg.messageType || 'text';
 
     return {
         phone,
-        name: msg.senderName || msg.pushName || body.chat?.name || phone,
+        name: isGroup ? (groupName || phone) : (msg.senderName || msg.pushName || body.chat?.name || phone),
         text: msg.content || msg.text || msg.caption || '',
         direction: fromMe ? 'outbound' : 'inbound',
         message_type: messageType,
         external_id: msg.messageid || msg.messageId || msg.id || null,
         is_group: isGroup,
         group_id: isGroup ? msg.chatid : null,
+        group_name: groupName,
         media_url: msg.fileURL || msg.mediaUrl || null,
         from_me: fromMe,
+        sender_phone: senderPhone,
+        sender_name: senderName,
     };
 }
 
@@ -68,6 +87,19 @@ function normalizeEvolution(body: any): NormalizedMessage | null {
     const remoteJid = data.key?.remoteJid || '';
     const isGroup = remoteJid.includes('@g.us');
     const phone = remoteJid.replace('@s.whatsapp.net', '').replace('@g.us', '');
+
+    // In groups, 'participant' is the actual sender JID; pushName is their display name
+    const participantJid = data.participant || '';
+    const senderPhone = isGroup
+        ? participantJid.replace('@s.whatsapp.net', '').replace('@g.us', '') || null
+        : null;
+    const senderName = isGroup ? (data.pushName || null) : null;
+
+    // Group name: Evolution may include it in body.data.groupMetadata or body.groupName
+    const groupName = isGroup
+        ? (body.data?.groupMetadata?.subject || body.groupName || data.groupName || null)
+        : null;
+
     const text = data.message?.conversation
         || data.message?.extendedTextMessage?.text
         || data.message?.imageMessage?.caption
@@ -81,15 +113,18 @@ function normalizeEvolution(body: any): NormalizedMessage | null {
 
     return {
         phone,
-        name: data.pushName || phone,
+        name: isGroup ? (groupName || phone) : (data.pushName || phone),
         text,
         direction: fromMe ? 'outbound' : 'inbound',
         message_type: messageType,
         external_id: data.key?.id || null,
         is_group: isGroup,
         group_id: isGroup ? remoteJid : null,
+        group_name: groupName,
         media_url: data.message?.imageMessage?.url || data.message?.audioMessage?.url || null,
         from_me: fromMe,
+        sender_phone: senderPhone,
+        sender_name: senderName,
     };
 }
 
@@ -220,18 +255,28 @@ Deno.serve(async (req: Request) => {
         // ── 2. Upsert Chat Session ─────────────────────────────────────────────
         let sessionId: string | null = null;
         {
+            const sessionProviderId = normalized.is_group ? normalized.group_id : normalized.phone;
+            const sessionName = normalized.is_group
+                ? (normalized.group_name || normalized.name || null)
+                : null; // contacts use their contacts.name join
+
             const { data: existingSession } = await supabase
                 .from('chat_sessions')
                 .select('id')
                 .eq('organization_id', orgId)
-                .eq('provider_id', normalized.is_group ? normalized.group_id : normalized.phone)
+                .eq('provider_id', sessionProviderId)
                 .maybeSingle();
 
             if (existingSession) {
                 sessionId = existingSession.id;
+                // Update name if we now have one and it wasn't saved before
                 await supabase
                     .from('chat_sessions')
-                    .update({ updated_at: new Date().toISOString(), whatsapp_source_id: sourceId })
+                    .update({
+                        updated_at: new Date().toISOString(),
+                        whatsapp_source_id: sourceId,
+                        ...(sessionName ? { name: sessionName } : {}),
+                    })
                     .eq('id', sessionId);
             } else {
                 const { data: newSession, error: upserr } = await supabase
@@ -240,7 +285,8 @@ Deno.serve(async (req: Request) => {
                         organization_id: orgId,
                         contact_id: contactId,
                         provider: 'whatsapp',
-                        provider_id: normalized.is_group ? normalized.group_id : normalized.phone,
+                        provider_id: sessionProviderId,
+                        name: sessionName,
                         whatsapp_source_id: sourceId,
                         updated_at: new Date().toISOString()
                     }, { onConflict: 'organization_id,contact_id', ignoreDuplicates: false })
@@ -306,6 +352,8 @@ Deno.serve(async (req: Request) => {
                     media_url: normalized.media_url,
                     status: normalized.from_me ? 'sent' : 'delivered',
                     external_id: normalized.external_id,
+                    sender_name: normalized.sender_name,
+                    sender_phone: normalized.sender_phone,
                 });
             }
         }

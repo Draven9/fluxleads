@@ -27,6 +27,7 @@ export const ChatSessionList: React.FC<ChatSessionListProps> = ({ selectedSessio
             const q = searchQuery.toLowerCase();
             return (
                 s.contact?.name?.toLowerCase().includes(q) ||
+                s.name?.toLowerCase().includes(q) ||
                 s.contact?.phone?.toLowerCase().includes(q) ||
                 s.provider_id?.toLowerCase().includes(q)
             );
@@ -136,7 +137,7 @@ export const ChatSessionList: React.FC<ChatSessionListProps> = ({ selectedSessio
                                         <div className="flex-1 min-w-0">
                                             <div className="flex justify-between items-center mb-1">
                                                 <h4 className={`text-sm truncate ${isUnread ? 'font-bold text-slate-900 dark:text-white' : 'font-semibold text-slate-800 dark:text-slate-100'}`}>
-                                                    {session.contact?.name || session.provider_id || 'Desconhecido'}
+                                                    {session.contact?.name || session.name || session.provider_id || 'Desconhecido'}
                                                 </h4>
                                                 <span className={`text-xs whitespace-nowrap ml-2 ${isUnread ? 'text-green-600 font-bold' : 'text-slate-500 dark:text-slate-400'}`}>
                                                     {formatTime(session.last_message_at)}
