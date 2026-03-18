@@ -157,17 +157,63 @@ Deno.serve(async (req: Request) => {
             if (existingContact) {
                 contactId = existingContact.id;
             } else {
-                const { data: newContact } = await supabase
+                // Upsert ignoring duplicates to safely handle race conditions
+                const { data: newContact, error: contactErr } = await supabase
                     .from('contacts')
-                    .insert({
+                    .upsert({
                         organization_id: orgId,
                         name: normalized.name,
                         phone: normalized.phone,
                         source: `whatsapp_${providerType}`,
-                    })
+                    }, { onConflict: 'organization_id,phone', ignoreDuplicates: true })
                     .select('id')
-                    .single();
-                contactId = newContact?.id ?? null;
+                    .maybeSingle();
+
+                if (newContact) {
+                    contactId = newContact.id;
+                } else if (contactErr) {
+                    console.error('[webhook] ERROR UPSERT CONTACT:', contactErr);
+                }
+
+                // If it ignored duplicate but returned no data, fetch again
+                if (!contactId && !contactErr) {
+                    const { data: checkAgain } = await supabase
+                        .from('contacts')
+                        .select('id')
+                        .eq('phone', normalized.phone)
+                        .eq('organization_id', orgId)
+                        .maybeSingle();
+                    contactId = checkAgain?.id ?? null;
+                }
+            }
+        }
+
+        // ── 1.5. Upsert Deal (If Source Has Default Board) ─────────────────────
+        if (contactId && source.entry_board_id && source.entry_stage_id) {
+            const { data: existingDeals } = await supabase
+                .from('deals')
+                .select('id')
+                .eq('contact_id', contactId)
+                .eq('board_id', source.entry_board_id)
+                .eq('is_won', false)
+                .eq('is_lost', false)
+                .limit(1);
+
+            if (!existingDeals || existingDeals.length === 0) {
+                // To avoid multiple deals in the same second, we can't strict upsert without a unique constraint.
+                // But this fallback is enough to reduce probability. 
+                await supabase.from('deals').insert({
+                    organization_id: orgId,
+                    contact_id: contactId,
+                    board_id: source.entry_board_id,
+                    stage_id: source.entry_stage_id,
+                    title: normalized.name || normalized.phone,
+                    value: 0,
+                    probability: 0,
+                    priority: 'medium',
+                    is_won: false,
+                    is_lost: false,
+                });
             }
         }
 

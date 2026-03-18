@@ -80,9 +80,9 @@ const AddInstanceForm: React.FC<AddFormProps> = ({ organizationId, onSaved, onCa
 
         // Need entry_board_id and entry_stage_id (required). Get first board+stage from org.
         const { data: board } = await supabase
-            .from('boards').select('id').eq('organization_id', organizationId).limit(1).single();
+            .from('boards').select('id').eq('organization_id', organizationId).limit(1).maybeSingle();
         const { data: stage } = board
-            ? await supabase.from('board_stages').select('id').eq('board_id', board.id).limit(1).single()
+            ? await supabase.from('board_stages').select('id').eq('board_id', board.id).limit(1).maybeSingle()
             : { data: null };
 
         const { error: dbErr } = await supabase.from('integration_inbound_sources').insert({
@@ -138,7 +138,7 @@ const AddInstanceForm: React.FC<AddFormProps> = ({ organizationId, onSaved, onCa
                 <div className="space-y-3">
                     <div>
                         <label className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1 block">Token da instância *</label>
-                        <input className={input} placeholder="Token copiado do painel uazapi" value={form.token} onChange={e => setForm(f => ({ ...f, token: e.target.value }))} />
+                        <input type="password" className={input} placeholder="Token copiado do painel uazapi" value={form.token} onChange={e => setForm(f => ({ ...f, token: e.target.value }))} />
                     </div>
                     <div>
                         <label className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1 block">URL Base</label>
@@ -154,7 +154,7 @@ const AddInstanceForm: React.FC<AddFormProps> = ({ organizationId, onSaved, onCa
                     <div className="grid grid-cols-2 gap-3">
                         <div>
                             <label className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1 block">API Key *</label>
-                            <input className={input} placeholder="apikey do painel" value={form.apiKey} onChange={e => setForm(f => ({ ...f, apiKey: e.target.value }))} />
+                            <input type="password" className={input} placeholder="apikey do painel" value={form.apiKey} onChange={e => setForm(f => ({ ...f, apiKey: e.target.value }))} />
                         </div>
                         <div>
                             <label className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1 block">Nome da Instância *</label>

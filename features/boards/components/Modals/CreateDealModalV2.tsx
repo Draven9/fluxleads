@@ -57,8 +57,8 @@ export const CreateDealModalV2: React.FC<CreateDealModalV2Props> = ({ isOpen, on
       return;
     }
 
-    const companyId = 'c-' + crypto.randomUUID().substring(0, 8);
-    const contactId = 'p-' + crypto.randomUUID().substring(0, 8);
+    const companyId = crypto.randomUUID();
+    const contactId = crypto.randomUUID();
 
     // Usa o primeiro estágio do board ativo
     const firstStage = activeBoard.stages[0];

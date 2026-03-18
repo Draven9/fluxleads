@@ -1,6 +1,32 @@
 import { supabase } from '@/lib/supabase/client';
 import { CRMCompany } from '@/types/types';
 
+// =============================================================================
+// Organization inference (client-side, RLS-safe)
+// =============================================================================
+let cachedOrgId: string | null = null;
+let cachedOrgUserId: string | null = null;
+
+async function getCurrentOrganizationId(): Promise<string | null> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  if (cachedOrgUserId === user.id && cachedOrgId) return cachedOrgId;
+
+  const { data: profile, error } = await supabase
+    .from('profiles')
+    .select('organization_id')
+    .eq('id', user.id)
+    .single();
+
+  if (error || !profile) return null;
+
+  const orgId = (profile as any).organization_id;
+  cachedOrgUserId = user.id;
+  cachedOrgId = orgId;
+  return orgId;
+}
+
 // Helper to transform snake_case DB object to camelCase frontend object
 const transformCompany = (dbCompany: any): CRMCompany => ({
     id: dbCompany.id,
@@ -36,13 +62,16 @@ export const companiesService = {
     },
 
     async create(company: Partial<CRMCompany>) {
+        const orgId = await getCurrentOrganizationId();
+        if (!orgId) throw new Error("Organização não identificada.");
+
         // Map camelCase back to snake_case for DB
         const dbPayload = {
+            organization_id: orgId,
             name: company.name,
             industry: company.industry,
             website: company.website,
             status: company.status,
-            // organization_id is usually handled by RLS or default, but can be passed if needed
         };
 
         const { data, error } = await supabase

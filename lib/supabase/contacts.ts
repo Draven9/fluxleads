@@ -17,6 +17,34 @@ import { Contact, CRMCompany, OrganizationId, PaginationState, PaginatedResponse
 import { sanitizeUUID, sanitizeText, sanitizeNumber } from './utils';
 import { normalizePhoneE164 } from '@/lib/phone';
 
+// =============================================================================
+// Organization inference (client-side, RLS-safe)
+// =============================================================================
+let cachedOrgId: string | null = null;
+let cachedOrgUserId: string | null = null;
+
+async function getCurrentOrganizationId(): Promise<string | null> {
+  if (!supabase) return null;
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  if (cachedOrgUserId === user.id && cachedOrgId) return cachedOrgId;
+
+  const { data: profile, error } = await supabase
+    .from('profiles')
+    .select('organization_id')
+    .eq('id', user.id)
+    .single();
+
+  if (error) return null;
+
+  const orgId = sanitizeUUID((profile as any)?.organization_id);
+  cachedOrgUserId = user.id;
+  cachedOrgId = orgId;
+  return orgId;
+}
+
 // ============================================
 // CONTACTS SERVICE
 // ============================================
@@ -367,7 +395,12 @@ export const contactsService = {
         return { data: null, error: new Error('Supabase não configurado') };
       }
       const phoneE164 = normalizePhoneE164(contact.phone);
+      const orgId = await getCurrentOrganizationId();
+      if (!orgId) {
+        return { data: null, error: new Error('Organização não identificada para este contato.') };
+      }
       const insertData = {
+        organization_id: orgId,
         name: contact.name,
         email: sanitizeText(contact.email),
         phone: sanitizeText(phoneE164),
@@ -561,7 +594,12 @@ export const companiesService = {
       if (!supabase) {
         return { data: null, error: new Error('Supabase não configurado') };
       }
+      const orgId = await getCurrentOrganizationId();
+      if (!orgId) {
+        return { data: null, error: new Error('Organização não identificada para esta empresa.') };
+      }
       const insertData = {
+        organization_id: orgId,
         name: company.name,
         industry: sanitizeText(company.industry),
         website: sanitizeText(company.website),

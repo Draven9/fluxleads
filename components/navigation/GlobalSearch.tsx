@@ -27,15 +27,22 @@ export const GlobalSearch: React.FC = () => {
 
     // Debounce and search
     useEffect(() => {
+        let isActive = true;
+
         const fetchResults = async () => {
             if (!query.trim() || !organizationId) {
-                setResults([]);
-                setIsOpen(false);
+                if (isActive) {
+                    setResults([]);
+                    setIsOpen(false);
+                    setIsLoading(false);
+                }
                 return;
             }
 
-            setIsLoading(true);
-            setIsOpen(true);
+            if (isActive) {
+                setIsLoading(true);
+                setIsOpen(true);
+            }
 
             try {
                 const { data, error } = await supabase.rpc('search_global', {
@@ -43,18 +50,26 @@ export const GlobalSearch: React.FC = () => {
                     p_query: query.trim()
                 });
 
+                if (!isActive) return;
+
                 if (error) throw error;
                 setResults(data || []);
             } catch (err) {
+                if (!isActive) return;
                 console.error('Error in global search:', err);
                 setResults([]);
             } finally {
-                setIsLoading(false);
+                if (isActive) {
+                    setIsLoading(false);
+                }
             }
         };
 
-        const timeoutId = setTimeout(fetchResults, 300);
-        return () => clearTimeout(timeoutId);
+        const timeoutId = setTimeout(fetchResults, 400);
+        return () => {
+            isActive = false;
+            clearTimeout(timeoutId);
+        };
     }, [query, organizationId]);
 
     // Close on click outside

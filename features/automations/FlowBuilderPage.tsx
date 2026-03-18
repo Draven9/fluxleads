@@ -182,24 +182,42 @@ export const FlowBuilderPage: React.FC<FlowBuilderPageProps> = ({ automationId, 
         [automationId, automations],
     );
 
+    const [isInitialized, setIsInitialized] = useState(false);
+
+    // Load automation state — runs ONCE when automation object changes identity
     useEffect(() => {
         if (automation) {
             setName(automation.name);
             setTriggerType(automation.trigger_type);
-            setNodes((automation.nodes as any) || buildInitialNodes(automation.trigger_type));
-            setEdges((automation.edges as any) || []);
+            setNodes((automation.nodes as Node[]) || buildInitialNodes(automation.trigger_type));
+            setEdges((automation.edges as Edge[]) || []);
         } else {
             setNodes(buildInitialNodes('lead_created'));
             setEdges([]);
         }
-    }, [automation]);
+        setIsInitialized(true);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [automationId]); // intentionally depends only on automationId to avoid resetting on every re-render
 
-    // Sync trigger node label when triggerType changes (new flow only)
+    // When user changes triggerType, ONLY update the trigger node label — do NOT reset all nodes
     useEffect(() => {
-        if (!automationId) {
-            setNodes(buildInitialNodes(triggerType));
-        }
-    }, [triggerType, automationId]);
+        if (!isInitialized) return;
+
+        setNodes(prev => {
+            const exists = prev.find(n => n.id === 'trigger-1');
+            if (exists) {
+                // Only update label of the existing trigger node
+                return prev.map(n =>
+                    n.id === 'trigger-1'
+                        ? { ...n, data: { ...n.data, label: triggerLabel(triggerType) } }
+                        : n,
+                );
+            }
+            // First paint if somehow empty
+            return buildInitialNodes(triggerType);
+        });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [triggerType]);
 
     const onNodesChange = useCallback(
         (changes: NodeChange[]) => setNodes(nds => applyNodeChanges(changes, nds)),
