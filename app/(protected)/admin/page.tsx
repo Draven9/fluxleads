@@ -13,9 +13,9 @@ interface Organization {
   id: string;
   name: string;
   created_at: string;
-  profiles: OrgCount[];
-  contacts: OrgCount[];
-  deals: OrgCount[];
+  users_count: OrgCount[];
+  contacts_count: OrgCount[];
+  deals_count: OrgCount[];
 }
 
 interface NewTenantForm {
@@ -276,9 +276,9 @@ export default function AdminPage() {
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {orgs.map((org) => {
-                const users = org.profiles?.[0]?.count ?? 0;
-                const contacts = org.contacts?.[0]?.count ?? 0;
-                const deals = org.deals?.[0]?.count ?? 0;
+                const users = org.users_count?.[0]?.count ?? 0;
+                const contacts = org.contacts_count?.[0]?.count ?? 0;
+                const deals = org.deals_count?.[0]?.count ?? 0;
                 const isCurrentOrg = org.id === profile?.organization_id;
                 return (
                   <tr key={org.id} className={`hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors ${isCurrentOrg ? 'bg-primary-50/50 dark:bg-primary-900/10' : ''}`}>

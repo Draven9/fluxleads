@@ -39,9 +39,9 @@ export async function GET() {
         id,
         name,
         created_at,
-        profiles:profiles(count),
-        contacts:contacts(count),
-        deals:deals(count)
+        users_count:profiles(count),
+        contacts_count:contacts(count),
+        deals_count:deals(count)
       `)
       .is('deleted_at', null)
       .order('created_at', { ascending: false });
