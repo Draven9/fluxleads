@@ -245,7 +245,7 @@ export const WhatsAppInstancesManager: React.FC = () => {
     };
 
     const webhookUrl = (id: string) =>
-        `${SUPABASE_URL}/functions/v1/whatsapp-inbound?source=${id}`;
+        `${SUPABASE_URL.trim()}/functions/v1/whatsapp-inbound?source=${id}`;
 
     return (
         <div className="space-y-4">

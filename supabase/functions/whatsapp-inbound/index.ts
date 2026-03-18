@@ -81,13 +81,6 @@ function normalizeEvolution(body: any): NormalizedMessage | null {
     const data = body?.data;
     if (!data) return null;
 
-    // Skip delivery/read receipts — these are status updates, not new messages.
-    // DELIVERY_ACK = delivered to device, SERVER_ACK = received by server, READ = read receipt.
-    const receiptStatuses = ['DELIVERY_ACK', 'SERVER_ACK', 'READ', 'PLAYED', 'INACTIVE'];
-    if (data.status && receiptStatuses.includes(data.status)) {
-        return null;
-    }
-
     const fromMe = data.key?.fromMe === true;
 
     const remoteJid = data.key?.remoteJid || '';
