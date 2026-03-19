@@ -228,7 +228,15 @@ export const WhatsAppInstancesManager: React.FC = () => {
                 setStatuses(s => ({ ...s, [source.id]: true }));
             } else {
                 const connected = !!(data && !data.error &&
-                    (data.connected === true || data.status === 'open' || data.instanceStatus?.status === 'open' || data.state === 'open'));
+                    (
+                        data.connected === true || 
+                        data.status === 'open' || 
+                        data.instanceStatus?.status === 'open' || 
+                        data.state === 'open' ||
+                        (Array.isArray(data) && data.length > 0 && data[0]?.instance?.status === 'open') ||
+                        (Array.isArray(data) && data.length > 0 && data[0]?.connectionStatus === 'OPEN') // fallback for newer evolution versions
+                    )
+                );
                 setStatuses(s => ({ ...s, [source.id]: connected }));
             }
         } catch (e) {

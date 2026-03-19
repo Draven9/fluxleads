@@ -168,7 +168,6 @@ Deno.serve(async (req: Request) => {
         if (content && !media_url) {
             messagePayload = { text: content };
         } else if (media_url) {
-            // Media map: supabase uses image, video, audio, document
             const fbTypeMap: Record<string, string> = {
                 'image': 'image',
                 'video': 'video',
@@ -181,14 +180,9 @@ Deno.serve(async (req: Request) => {
             messagePayload = {
                 attachment: {
                     type: mappedType,
-                    payload: {
-                        url: media_url,
-                        is_reusable: true
-                    }
+                    payload: { url: media_url, is_reusable: true }
                 }
             };
-            // Graph API (especially Instagram) often doesn't allow caption with attachments natively in a single message easily
-            // We'll send just the attachment for now. If content exists, it would require a second message.
         }
 
         const fbReqBody = {
@@ -210,16 +204,12 @@ Deno.serve(async (req: Request) => {
 
             if (!fbRes.ok) {
                 console.error("Meta Graph API delivery failed:", fbData);
-                // We'll return 200 to UI but log the error so we don't crash the UI optimistic update completely
-                // In a perfect world, we'd update message status to 'failed'
                 await supabase.from('messages').update({ status: 'failed' }).eq('id', message.id);
                 return json(400, { error: 'Failed to send via Meta Graph API', details: fbData });
             }
 
-            // Successfully sent via Graph API
             await supabase.from('messages').update({ status: 'delivered', external_id: fbData.message_id }).eq('id', message.id);
 
-            // If we had text + media, send the text separately
             if (content && media_url) {
                 const fbReqBodyText = {
                     recipient: { id: session.provider_id },
@@ -244,7 +234,59 @@ Deno.serve(async (req: Request) => {
     }
     // --- END META DIRECT INTEGRATION ---
 
-    // 5. Send to External Webhook (n8n/Evolution) para WhatsApp
+    // --- NATIVE WHATSAPP INTEGRATION (EVOLUTION / UAZAPI) ---
+    if (session.provider === 'whatsapp') {
+        const { data: sources } = await supabase
+            .from('integration_inbound_sources')
+            .select('*')
+            .eq('organization_id', organization_id)
+            .eq('active', true);
+
+        if (sources && sources.length > 0) {
+            const source = sources[0]; // use the primary active source (usually only one per org right now)
+            
+            // Determine action (sendText, sendMedia, sendAudio)
+            let proxyAction = 'sendText';
+            if (media_url) {
+                // Determine whether it's an audio (PTT) or media (document, image, video)
+                proxyAction = message_type === 'audio' ? 'sendAudio' : 'sendMedia';
+            }
+
+            const proxyBody = {
+                action: proxyAction,
+                sourceId: source.id,
+                phone: contactPhone,
+                content: content,
+                mediaUrl: media_url,
+                mediaType: message_type,
+                // optionally extract caption if it's media
+                caption: (media_url && content) ? content : undefined
+            };
+
+            const { data: proxyData, error: proxyError } = await supabase.functions.invoke('whatsapp-proxy', {
+                body: proxyBody,
+                headers: { Authorization: authHeader }
+            });
+
+            if (proxyError || proxyData?.error) {
+                console.error("Native WhatsApp delivery failed:", proxyError || proxyData?.error);
+                await supabase.from('messages').update({ status: 'failed' }).eq('id', message.id);
+                
+                // If it fails, we will NOT fallback to n8n webhook (we assume native routing is intentional)
+                return json(500, { error: 'Failed to send via Native WhatsApp integration', details: proxyError || proxyData?.error });
+            }
+
+            await supabase.from('messages').update({ status: 'delivered' }).eq('id', message.id);
+            return json(200, { ok: true, message: "Message sent via Native WhatsApp integration" });
+        }
+    }
+    // --- END NATIVE WHATSAPP INTEGRATION ---
+
+    // 5. Fallback for External Webhook (n8n)
+    if (!endpoint) {
+        return json(200, { ok: true, warning: "No active native integration or outbound webhook configured. Message saved locally." });
+    }
+
     const payload = {
         event: "chat.new_message",
         data: {
