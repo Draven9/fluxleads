@@ -4,6 +4,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Board } from '@/types';
 import { BoardSelector } from '../BoardSelector';
 import { FilterBar, FilterDefinition, ActiveFilter } from '@/components/ui/FilterBar';
+import { useOrganizationTags } from '@/lib/query/hooks';
 interface KanbanHeaderProps {
     // Boards
     boards: Board[];
@@ -22,6 +23,10 @@ interface KanbanHeaderProps {
     setOwnerFilter: (filter: 'all' | 'mine') => void;
     statusFilter: 'open' | 'won' | 'lost' | 'all';
     setStatusFilter: (filter: 'open' | 'won' | 'lost' | 'all') => void;
+    tagFilter: string;
+    setTagFilter: (tag: string) => void;
+    channelFilter: string;
+    setChannelFilter: (channel: string) => void;
     onNewDeal: () => void;
     onExportDeals?: () => void;
 }
@@ -70,9 +75,13 @@ export const KanbanHeader: React.FC<KanbanHeaderProps> = ({
     searchTerm, setSearchTerm,
     ownerFilter, setOwnerFilter,
     statusFilter, setStatusFilter,
+    tagFilter, setTagFilter,
+    channelFilter, setChannelFilter,
     onNewDeal,
     onExportDeals
 }) => {
+    const { data: orgTags = [] } = useOrganizationTags();
+
     const filterDefinitions: FilterDefinition[] = [
         {
             id: 'status',
@@ -93,7 +102,25 @@ export const KanbanHeader: React.FC<KanbanHeaderProps> = ({
                 { label: 'Todos', value: 'all' },
                 { label: 'Meus Negócios', value: 'mine' },
             ]
-        }
+        },
+        {
+            id: 'tag',
+            label: 'Tag',
+            type: 'select',
+            options: orgTags.map(t => ({ label: t.name, value: t.name })),
+        },
+        {
+            id: 'channel',
+            label: 'Canal',
+            type: 'select',
+            options: [
+                { label: 'WhatsApp', value: 'whatsapp' },
+                { label: 'E-mail', value: 'email' },
+                { label: 'Telefone', value: 'telefone' },
+                { label: 'Presencial', value: 'presencial' },
+                { label: 'Outro', value: 'outro' },
+            ]
+        },
     ];
 
     const activeFilters: ActiveFilter[] = [];
@@ -105,20 +132,33 @@ export const KanbanHeader: React.FC<KanbanHeaderProps> = ({
         const label = filterDefinitions[1].options?.find(o => o.value === ownerFilter)?.label;
         activeFilters.push({ id: 'owner', value: ownerFilter, labelDisplay: label });
     }
+    if (tagFilter) {
+        activeFilters.push({ id: 'tag', value: tagFilter, labelDisplay: `Tag: ${tagFilter}` });
+    }
+    if (channelFilter) {
+        const label = filterDefinitions[3].options?.find(o => o.value === channelFilter)?.label;
+        activeFilters.push({ id: 'channel', value: channelFilter, labelDisplay: label ? `Canal: ${label}` : channelFilter });
+    }
 
     const handleAddFilter = (f: ActiveFilter) => {
         if (f.id === 'status') setStatusFilter(f.value);
         if (f.id === 'owner') setOwnerFilter(f.value);
+        if (f.id === 'tag') setTagFilter(f.value);
+        if (f.id === 'channel') setChannelFilter(f.value);
     };
 
     const handleRemoveFilter = (id: string) => {
         if (id === 'status') setStatusFilter('open');
         if (id === 'owner') setOwnerFilter('all');
+        if (id === 'tag') setTagFilter('');
+        if (id === 'channel') setChannelFilter('');
     };
 
     const handleClearFilters = () => {
         setStatusFilter('open');
         setOwnerFilter('all');
+        setTagFilter('');
+        setChannelFilter('');
         setSearchTerm('');
     };
 

@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "supabase-fluxleads": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@supabase/mcp-server-supabase@latest",
+        "--access-token",
+        "sbp_45921d026915247f2904eb7a5a099f04d7d8f928"
+      ],
+      "type": "stdio"
+    }
+  }
+}

@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { X, User, Phone, Mail, Building2, Calendar, FileText, Activity as ActivityIcon, Settings2, Clock } from 'lucide-react';
+import { X, User, Phone, Mail, Building2, Calendar, FileText, Activity as ActivityIcon, Settings2, Clock, UserCheck, UserX } from 'lucide-react';
 import { Contact } from '@/types';
 import { useActivitiesByContact } from '@/lib/query/hooks/useActivitiesQuery';
 import { useContactCustomFields, useContactCustomValues } from '@/lib/query/hooks/useContactCustomFields';
-import { useContacts } from '@/lib/query/hooks/useContactsQuery';
+import { useContacts, useUpdateContact } from '@/lib/query/hooks/useContactsQuery';
 import { triggerN8nWebhook } from '@/app/actions/triggerN8n';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -31,6 +31,7 @@ export const ContactSidePanel: React.FC<ContactSidePanelProps> = ({
     // let's use a query hook to get the contact, or we could just use the `useContacts` cache.
     const { data: contacts = [] } = useContacts();
     const contact = contacts.find(c => c.id === contactId);
+    const updateContact = useUpdateContact();
 
     const { data: activities = [], isLoading: loadingActivities } = useActivitiesByContact(contactId || undefined);
 
@@ -176,6 +177,38 @@ export const ContactSidePanel: React.FC<ContactSidePanelProps> = ({
                                             {format(new Date(contact.createdAt), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
                                         </p>
                                     </div>
+                                </div>
+                            </div>
+
+                            {/* STATUS DO CONTATO */}
+                            <div className="p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5">
+                                <p className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-3">Status do Cliente</p>
+                                <div className="flex items-center justify-between">
+                                    <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold ${
+                                        contact.status === 'ACTIVE'
+                                            ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                                            : contact.status === 'INACTIVE'
+                                            ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
+                                            : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                                    }`}>
+                                        {contact.status === 'ACTIVE' ? <UserCheck size={12} /> : <UserX size={12} />}
+                                        {contact.status === 'ACTIVE' ? 'Ativo' : contact.status === 'INACTIVE' ? 'Inativo' : 'Perdido (Churn)'}
+                                    </span>
+                                    {contact.status === 'ACTIVE' ? (
+                                        <button
+                                            onClick={() => updateContact.mutate({ id: contact.id, updates: { status: 'INACTIVE' } })}
+                                            className="text-xs px-3 py-1.5 rounded-lg bg-yellow-50 text-yellow-700 hover:bg-yellow-100 dark:bg-yellow-900/20 dark:text-yellow-400 dark:hover:bg-yellow-900/40 font-medium transition-colors border border-yellow-200 dark:border-yellow-800/30"
+                                        >
+                                            Desativar cliente
+                                        </button>
+                                    ) : (
+                                        <button
+                                            onClick={() => updateContact.mutate({ id: contact.id, updates: { status: 'ACTIVE' } })}
+                                            className="text-xs px-3 py-1.5 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 dark:bg-green-900/20 dark:text-green-400 dark:hover:bg-green-900/40 font-medium transition-colors border border-green-200 dark:border-green-800/30"
+                                        >
+                                            Reativar cliente
+                                        </button>
+                                    )}
                                 </div>
                             </div>
 

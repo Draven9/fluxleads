@@ -79,3 +79,11 @@ export {
   useMoveDeal,
   useMoveDealSimple,
 } from './useMoveDeal';
+
+// Organization Tags
+export {
+  useOrganizationTags,
+  useCreateOrganizationTag,
+  useUpdateOrganizationTag,
+  useDeleteOrganizationTag,
+} from './useOrganizationTagsQuery';

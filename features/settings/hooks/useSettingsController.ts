@@ -1,24 +1,16 @@
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 import { useToast } from '@/context/ToastContext';
 import { CustomFieldDefinition, CustomFieldType } from '@/types';
 import { usePersistedState } from '@/hooks/usePersistedState';
-import { useAuth } from '@/context/AuthContext';
-import { supabase } from '@/lib/supabase/client';
-
-interface DbTag {
-  id: string;
-  name: string;
-  color: string;
-}
+import { useOrganizationTags, useCreateOrganizationTag, useDeleteOrganizationTag } from '@/lib/query/hooks';
 
 /**
  * Hook React `useSettingsController` que encapsula uma lógica reutilizável.
  */
 export const useSettingsController = () => {
   const { addToast } = useToast();
-  const { organizationId } = useAuth();
 
   // General Settings
   const [defaultRoute, setDefaultRoute] = usePersistedState<string>('crm_default_route', '/boards');
@@ -32,34 +24,13 @@ export const useSettingsController = () => {
   const [newFieldOptions, setNewFieldOptions] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  // Tags State (Supabase)
-  const [availableTags, setAvailableTags] = useState<string[]>([]);
-  const [tagsLoading, setTagsLoading] = useState(false);
+  // Tags State (Supabase via organization_tags table)
+  const { data: orgTags = [], isLoading: tagsLoading } = useOrganizationTags();
+  const createOrgTag = useCreateOrganizationTag();
+  const deleteOrgTag = useDeleteOrganizationTag();
   const [newTagName, setNewTagName] = useState('');
 
-  // Load tags from DB
-  const loadTags = useCallback(async () => {
-    if (!organizationId) return;
-    setTagsLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('tags')
-        .select('id, name, color')
-        .eq('organization_id', organizationId)
-        .order('name', { ascending: true });
-
-      if (error) throw error;
-      setAvailableTags((data as DbTag[]).map(t => t.name));
-    } catch (err) {
-      console.error('Error loading tags:', err);
-    } finally {
-      setTagsLoading(false);
-    }
-  }, [organizationId]);
-
-  useEffect(() => {
-    loadTags();
-  }, [loadTags]);
+  const availableTags = orgTags.map(t => t.name);
 
   // Custom Fields Logic
   const startEditingField = (field: CustomFieldDefinition) => {
@@ -127,59 +98,30 @@ export const useSettingsController = () => {
     addToast('Campo personalizado removido.', 'info');
   };
 
-  // Tags Logic — Supabase-backed
-  const handleAddTag = async () => {
+  // Tags Logic — Supabase-backed via organization_tags
+  const handleAddTag = () => {
     const name = newTagName.trim();
-    if (!name || !organizationId) return;
-
-    // Optimistic update
-    setAvailableTags(prev => [...prev, name].sort());
+    if (!name) return;
     setNewTagName('');
-
-    try {
-      const { error } = await supabase
-        .from('tags')
-        .insert({ name, organization_id: organizationId, color: 'bg-gray-500' });
-
-      if (error) {
-        if (error.code === '23505') {
-          // Duplicate — already exists, just sync
+    createOrgTag.mutate({ name }, {
+      onSuccess: () => addToast(`Tag "${name}" adicionada!`, 'success'),
+      onError: (err: any) => {
+        if (err?.code === '23505') {
           addToast(`Tag "${name}" já existe.`, 'info');
         } else {
-          throw error;
+          addToast('Erro ao adicionar tag.', 'error');
         }
-      } else {
-        addToast(`Tag "${name}" adicionada!`, 'success');
-      }
-    } catch (err) {
-      console.error('Error adding tag:', err);
-      // Rollback optimistic update
-      setAvailableTags(prev => prev.filter(t => t !== name));
-      addToast('Erro ao adicionar tag.', 'error');
-    }
+      },
+    });
   };
 
-  const handleRemoveTag = async (tag: string) => {
-    if (!organizationId) return;
-
-    // Optimistic update
-    setAvailableTags(prev => prev.filter(t => t !== tag));
-
-    try {
-      const { error } = await supabase
-        .from('tags')
-        .delete()
-        .eq('name', tag)
-        .eq('organization_id', organizationId);
-
-      if (error) throw error;
-      addToast(`Tag "${tag}" removida.`, 'info');
-    } catch (err) {
-      console.error('Error removing tag:', err);
-      // Rollback optimistic update
-      setAvailableTags(prev => [...prev, tag].sort());
-      addToast('Erro ao remover tag.', 'error');
-    }
+  const handleRemoveTag = (tag: string) => {
+    const orgTag = orgTags.find(t => t.name === tag);
+    if (!orgTag) return;
+    deleteOrgTag.mutate(orgTag.id, {
+      onSuccess: () => addToast(`Tag "${tag}" removida.`, 'info'),
+      onError: () => addToast('Erro ao remover tag.', 'error'),
+    });
   };
 
   return {

@@ -144,6 +144,8 @@ export const useBoardsController = () => {
     start: searchParams.get('dateStart') || '',
     end: searchParams.get('dateEnd') || '',
   });
+  const [tagFilter, setTagFilter] = useState(searchParams.get('tag') || '');
+  const [channelFilter, setChannelFilter] = useState(searchParams.get('channel') || '');
 
   // Track initial load to prevent premature URL updates
   const isInitialMount = useRef(true);
@@ -488,7 +490,10 @@ export const useBoardsController = () => {
         }
       }
 
-      return matchesSearch && matchesOwner && matchesDate && matchesStatus && matchesRecent;
+      const matchesTag = !tagFilter || (l.tags || []).some(t => t.toLowerCase() === tagFilter.toLowerCase());
+      const matchesChannel = !channelFilter || ((l as any).channel || '') === channelFilter;
+
+      return matchesSearch && matchesOwner && matchesDate && matchesStatus && matchesRecent && matchesTag && matchesChannel;
     }).map(deal => {
       // Enrich owner info if it matches current user
       if (deal.ownerId === profile?.id || deal.ownerId === (profile as any)?.user_id) { // Fallback for some profile types
@@ -502,7 +507,7 @@ export const useBoardsController = () => {
       }
       return deal;
     });
-  }, [deals, searchTerm, ownerFilter, dateRange, statusFilter, profile]);
+  }, [deals, searchTerm, ownerFilter, dateRange, statusFilter, tagFilter, channelFilter, profile]);
 
   // Drag & Drop Handlers
   const handleDragStart = (e: React.DragEvent, id: string, title: string) => {
@@ -932,6 +937,10 @@ export const useBoardsController = () => {
     setStatusFilter,
     dateRange,
     setDateRange,
+    tagFilter,
+    setTagFilter,
+    channelFilter,
+    setChannelFilter,
 
     draggingId,
     selectedDealId,

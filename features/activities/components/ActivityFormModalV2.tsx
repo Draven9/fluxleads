@@ -1,5 +1,5 @@
 import React from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Activity, Deal } from '@/types';
 import { Modal, ModalForm } from '@/components/ui/Modal';
@@ -9,6 +9,7 @@ import {
   TextareaField,
   SubmitButton,
 } from '@/components/ui/FormField';
+import { DealSearchCombobox } from '@/components/ui/DealSearchCombobox';
 import { activityFormSchema } from '@/lib/validations/schemas';
 import type { ActivityFormData } from '@/lib/validations/schemas';
 
@@ -81,6 +82,7 @@ export const ActivityFormModalV2: React.FC<ActivityFormModalV2Props> = ({
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors, isSubmitting },
     reset,
   } = form;
@@ -105,11 +107,6 @@ export const ActivityFormModalV2: React.FC<ActivityFormModalV2Props> = ({
     reset();
   };
 
-  const dealOptions = deals.map(deal => ({
-    value: deal.id,
-    label: deal.title,
-  }));
-
   return (
     <Modal
       isOpen={isOpen}
@@ -131,13 +128,23 @@ export const ActivityFormModalV2: React.FC<ActivityFormModalV2Props> = ({
             error={errors.type}
             registration={register('type')}
           />
-          <SelectField
-            label="Negócio Relacionado"
-            options={dealOptions}
-            placeholder="Selecione..."
-            error={errors.dealId}
-            registration={register('dealId')}
-          />
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+              Negócio Relacionado
+            </label>
+            <Controller
+              name="dealId"
+              control={control}
+              render={({ field }) => (
+                <DealSearchCombobox
+                  deals={deals}
+                  value={field.value}
+                  onChange={field.onChange}
+                  error={errors.dealId?.message}
+                />
+              )}
+            />
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">

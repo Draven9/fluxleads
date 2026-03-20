@@ -8,7 +8,8 @@ import { LossReasonModal } from '@/components/ui/LossReasonModal';
 import { useMoveDealSimple } from '@/lib/query/hooks';
 import { FocusTrap, useFocusReturn } from '@/lib/a11y';
 import { Activity } from '@/types';
-import { usePersistedState } from '@/hooks/usePersistedState';
+import { useOrganizationTags, useCreateOrganizationTag } from '@/lib/query/hooks';
+import { useProfiles } from '@/lib/query/hooks/useProfilesQuery';
 import { useResponsiveMode } from '@/hooks/useResponsiveMode';
 import { DealSheet } from '../DealSheet';
 import { DealChecklist } from '../DealChecklist';
@@ -37,6 +38,7 @@ import {
   Tag as TagIcon,
   Plus,
   MessageCircle,
+  ArrowRight,
 } from 'lucide-react';
 import { StageProgressBar } from '../StageProgressBar';
 import { ActivityRow } from '@/features/activities/components/ActivityRow';
@@ -87,6 +89,7 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({ dealId, isOpen
   } = useCRM();
   const { profile } = useAuth();
   const { addToast } = useToast();
+  const { data: profiles = [] } = useProfiles();
 
   // Performance: avoid repeated `find(...)` on large arrays.
   const dealsById = useMemo(() => new Map(deals.map((d) => [d.id, d])), [deals]);
@@ -134,13 +137,14 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({ dealId, isOpen
   const [pendingLostStageId, setPendingLostStageId] = useState<string | null>(null);
   const [lossReasonOrigin, setLossReasonOrigin] = useState<'button' | 'stage'>('button');
 
-  // Tags suggestions (local for now; Settings UI writes to the same key)
-  const [availableTags, setAvailableTags] = usePersistedState<string[]>('crm_tags', []);
+  const { data: orgTags = [] } = useOrganizationTags();
+  const createOrgTag = useCreateOrganizationTag();
   const [tagQuery, setTagQuery] = useState('');
 
   const normalizeTag = (value: string) => value.trim().replace(/\s+/g, ' ');
   const tagsLower = useMemo(() => new Set((deal?.tags || []).map(t => t.toLowerCase())), [deal?.tags]);
-  const availableTagsLower = useMemo(() => new Set((availableTags || []).map(t => t.toLowerCase())), [availableTags]);
+  const availableTags = useMemo(() => orgTags.map(t => t.name), [orgTags]);
+  const availableTagsLower = useMemo(() => new Set(availableTags.map(t => t.toLowerCase())), [availableTags]);
 
   // Helper functions removed as they are now handled by ActivityRow component
 
@@ -198,12 +202,11 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({ dealId, isOpen
     if (tagsLower.has(next.toLowerCase())) return;
 
     const current = deal.tags || [];
-    const nextTags = [...current, next];
-    updateDeal(deal.id, { tags: nextTags });
+    updateDeal(deal.id, { tags: [...current, next] });
 
-    // Keep suggestions up-to-date (case-insensitive)
+    // If this tag doesn't exist in org tags yet, create it in the DB
     if (!availableTagsLower.has(next.toLowerCase())) {
-      setAvailableTags(prev => [...(prev || []), next]);
+      createOrgTag.mutate({ name: next });
     }
 
     setTagQuery('');
@@ -678,7 +681,30 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({ dealId, isOpen
                     <span className="text-slate-500">Probabilidade</span>
                     <span className="text-slate-900 dark:text-white">{deal.probability}%</span>
                   </div>
+                  {stageLabel && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-500">Etapa atual</span>
+                      <span className="text-slate-900 dark:text-white font-medium">{stageLabel}</span>
+                    </div>
+                  )}
                 </div>
+              </div>
+
+              {/* RESPONSÁVEL */}
+              <div className="pt-4 border-t border-slate-100 dark:border-white/5">
+                <h3 className="text-xs font-bold text-slate-400 uppercase mb-2 flex items-center gap-2">
+                  <User size={14} /> Responsável
+                </h3>
+                <select
+                  value={deal.ownerId ?? ''}
+                  onChange={(e) => updateDeal(deal.id, { ownerId: e.target.value || undefined })}
+                  className="w-full bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-primary-500"
+                >
+                  <option value="">Sem responsável</option>
+                  {profiles.map((p) => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
               </div>
 
               {/* TAGS */}
@@ -855,12 +881,12 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({ dealId, isOpen
                   </div>
 
                   <div className="space-y-3 pl-4 border-l border-slate-200 dark:border-slate-800">
-                    {dealActivities.length === 0 && (
+                    {dealActivities.filter(a => a.type !== 'STATUS_CHANGE').length === 0 && (
                       <p className="text-sm text-slate-500 italic pl-4">
                         Nenhuma atividade registrada.
                       </p>
                     )}
-                    {dealActivities.map(activity => (
+                    {dealActivities.filter(a => a.type !== 'STATUS_CHANGE').map(activity => (
                       <ActivityRow
                         key={activity.id}
                         activity={activity}
@@ -875,6 +901,29 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({ dealId, isOpen
                       />
                     ))}
                   </div>
+
+                  {/* HISTÓRICO DE ETAPAS */}
+                  {dealActivities.filter(a => a.type === 'STATUS_CHANGE').length > 0 && (
+                    <div className="mt-4">
+                      <h4 className="text-xs font-bold text-slate-400 uppercase mb-2 flex items-center gap-2">
+                        <ArrowRight size={12} /> Histórico de Etapas
+                      </h4>
+                      <div className="space-y-2 pl-4 border-l border-slate-200 dark:border-slate-800">
+                        {dealActivities
+                          .filter(a => a.type === 'STATUS_CHANGE')
+                          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                          .map(activity => (
+                            <div key={activity.id} className="flex items-start gap-3 text-sm">
+                              <div className="w-2 h-2 rounded-full bg-primary-400 mt-1.5 shrink-0 -ml-5" />
+                              <div>
+                                <p className="text-slate-700 dark:text-slate-200 font-medium">{activity.title}</p>
+                                <p className="text-slate-400 text-xs">{PT_BR_DATE_FORMATTER.format(new Date(activity.date))}</p>
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 

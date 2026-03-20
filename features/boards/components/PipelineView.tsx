@@ -47,6 +47,10 @@ interface PipelineViewProps {
   setOwnerFilter: (filter: 'all' | 'mine') => void;
   statusFilter: 'open' | 'won' | 'lost' | 'all';
   setStatusFilter: (filter: 'open' | 'won' | 'lost' | 'all') => void;
+  tagFilter: string;
+  setTagFilter: (tag: string) => void;
+  channelFilter: string;
+  setChannelFilter: (channel: string) => void;
   draggingId: string | null;
   selectedDealId: string | null;
   setSelectedDealId: (id: string | null) => void;
@@ -222,6 +226,10 @@ export const PipelineView: React.FC<PipelineViewProps> = ({
   setOwnerFilter,
   statusFilter,
   setStatusFilter,
+  tagFilter,
+  setTagFilter,
+  channelFilter,
+  setChannelFilter,
   draggingId,
   selectedDealId,
   setSelectedDealId,
@@ -341,6 +349,10 @@ export const PipelineView: React.FC<PipelineViewProps> = ({
             setOwnerFilter={setOwnerFilter}
             statusFilter={statusFilter}
             setStatusFilter={setStatusFilter}
+            tagFilter={tagFilter}
+            setTagFilter={setTagFilter}
+            channelFilter={channelFilter}
+            setChannelFilter={setChannelFilter}
             onNewDeal={() => setIsCreateModalOpen(true)}
             onExportDeals={handleExportDeals}
           />
