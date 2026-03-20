@@ -97,6 +97,13 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
                 : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 rounded-tl-none'
                 }`}>
 
+                {/* Sender name in groups (inbound only) */}
+                {!isOutbound && message.sender_name && (
+                    <p className="text-xs font-semibold text-green-600 dark:text-green-400 mb-1">
+                        {message.sender_name}
+                    </p>
+                )}
+
                 {/* Quoted Message */}
                 {quotedMessage && (
                     <div className={`mb-2 p-2 rounded-lg text-xs border-l-4 cursor-pointer opacity-90 ${isOutbound

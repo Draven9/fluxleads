@@ -365,28 +365,48 @@ Deno.serve(async (req: Request) => {
         let sessionId: string | null = null;
         {
             const sessionProviderId = normalized.is_group ? normalized.group_id : normalized.phone;
-            const sessionName = normalized.is_group
-                ? (normalized.group_name || normalized.name || null)
-                : null;
+
+            // Only use an actual group name (not the phone number fallback)
+            // normalized.group_name is null when not provided in the webhook payload
+            const incomingGroupName = normalized.is_group ? normalized.group_name : null;
 
             const { data: existingSession } = await supabase
                 .from('chat_sessions')
-                .select('id')
+                .select('id, name')
                 .eq('organization_id', orgId)
                 .eq('provider_id', sessionProviderId)
                 .maybeSingle();
 
             if (existingSession) {
                 sessionId = existingSession.id;
+
+                // Determine the best name to save:
+                // 1. Use incoming group name from webhook (if present)
+                // 2. If session has no name yet, try fetching from Evolution API
+                // 3. If session already has a name, preserve it (never overwrite with null/phone)
+                let nameToSave: string | null = null;
+                if (incomingGroupName) {
+                    nameToSave = incomingGroupName;
+                } else if (!existingSession.name && normalized.is_group && providerType === 'evolution') {
+                    nameToSave = await fetchGroupNameFromEvolution(sessionProviderId!, source);
+                }
+                // If nameToSave is null, skip the name field — existing name is preserved
+
                 await supabase
                     .from('chat_sessions')
                     .update({
                         updated_at: new Date().toISOString(),
                         whatsapp_source_id: sourceId,
-                        ...(sessionName ? { name: sessionName } : {}),
+                        ...(nameToSave ? { name: nameToSave } : {}),
                     })
                     .eq('id', sessionId);
             } else {
+                // New session: try to get group name if not in payload
+                let newSessionName = incomingGroupName;
+                if (!newSessionName && normalized.is_group && providerType === 'evolution') {
+                    newSessionName = await fetchGroupNameFromEvolution(sessionProviderId!, source);
+                }
+
                 const { data: newSession, error: upserr } = await supabase
                     .from('chat_sessions')
                     .upsert({
@@ -394,7 +414,7 @@ Deno.serve(async (req: Request) => {
                         contact_id: contactId,
                         provider: 'whatsapp',
                         provider_id: sessionProviderId,
-                        name: sessionName,
+                        name: newSessionName,
                         whatsapp_source_id: sourceId,
                         updated_at: new Date().toISOString()
                     }, { onConflict: 'organization_id,provider_id', ignoreDuplicates: false })
