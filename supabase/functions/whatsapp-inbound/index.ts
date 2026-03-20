@@ -10,7 +10,7 @@ const supabase = createClient(
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 );
 
-// ─── Payload Normalizers ────────────────────────────────────────────────────
+// ─── Payload Normalizers ──────────────────────────────────────────────────────
 
 interface NormalizedMessage {
     phone: string;
@@ -21,42 +21,38 @@ interface NormalizedMessage {
     external_id: string | null;
     is_group: boolean;
     group_id: string | null;
-    group_name: string | null;  // human-readable group name
+    group_name: string | null;
     media_url: string | null;
+    media_mime_type: string | null;
     from_me: boolean;
-    sender_phone: string | null; // phone of sender inside group
-    sender_name: string | null;  // name of sender inside group
+    sender_phone: string | null;
+    sender_name: string | null;
+    // Evolution-specific for media download
+    evolution_base_url?: string | null;
+    evolution_api_key?: string | null;
+    evolution_instance_name?: string | null;
+    evolution_message_key?: any;
 }
 
 function normalizeUazapi(body: any): NormalizedMessage | null {
-    // Nova estrutura uazapi reportada: { EventType: "messages", message: { chatid, content, fromMe, senderName, type, messageid, etc } }
-
-    // Ignora eventos que não são de mensagens, caso a webhook mande status etc.
     if (body.EventType && body.EventType !== 'messages') return null;
 
-    // Se o webhook vier sem o object message, caímos fora também
     const msg = body.message || body;
-
     const fromMe = msg.fromMe === true || msg.from_me === true;
-
     const isGroup = (msg.chatid || '').includes('@g.us');
 
-    // Sender details in groups
     const senderJid = isGroup ? (msg.sender || '') : '';
     const senderPhone = isGroup
         ? senderJid.replace('@s.whatsapp.net', '').replace('@g.us', '') || null
         : null;
     const senderName = isGroup ? (msg.senderName || msg.pushName || null) : null;
 
-    // Group name from body.chat.name (Uazapi includes it in the webhook payload)
     const groupName = isGroup ? (body.chat?.name || body.groupName || null) : null;
 
-    // For groups: phone = group number; for individuals: phone = sender
     const phone = isGroup
         ? (msg.chatid || '').replace('@g.us', '')
         : (msg.sender || msg.chatid || '').replace('@s.whatsapp.net', '').split(':')[0];
 
-    // "type": "text", "content": "Opaaa"
     const messageType = msg.type || msg.messageType || 'text';
 
     return {
@@ -70,31 +66,28 @@ function normalizeUazapi(body: any): NormalizedMessage | null {
         group_id: isGroup ? msg.chatid : null,
         group_name: groupName,
         media_url: msg.fileURL || msg.mediaUrl || null,
+        media_mime_type: null,
         from_me: fromMe,
         sender_phone: senderPhone,
         sender_name: senderName,
     };
 }
 
-function normalizeEvolution(body: any): NormalizedMessage | null {
-    // Evolution sends: { data: { key: { remoteJid, fromMe, id }, pushName, message: { conversation } } }
+function normalizeEvolution(body: any, source: any): NormalizedMessage | null {
     const data = body?.data;
     if (!data) return null;
 
     const fromMe = data.key?.fromMe === true;
-
     const remoteJid = data.key?.remoteJid || '';
     const isGroup = remoteJid.includes('@g.us');
     const phone = remoteJid.replace('@s.whatsapp.net', '').replace('@g.us', '');
 
-    // In groups, 'participant' is the actual sender JID; pushName is their display name
     const participantJid = data.participant || '';
     const senderPhone = isGroup
         ? participantJid.replace('@s.whatsapp.net', '').replace('@g.us', '') || null
         : null;
     const senderName = isGroup ? (data.pushName || null) : null;
 
-    // Group name: Evolution may include it in body.data.groupMetadata or body.groupName
     const groupName = isGroup
         ? (body.data?.groupMetadata?.subject || body.groupName || data.groupName || null)
         : null;
@@ -102,13 +95,33 @@ function normalizeEvolution(body: any): NormalizedMessage | null {
     const text = data.message?.conversation
         || data.message?.extendedTextMessage?.text
         || data.message?.imageMessage?.caption
+        || data.message?.videoMessage?.caption
+        || data.message?.documentMessage?.caption
         || '';
 
     let messageType = 'text';
-    if (data.message?.imageMessage) messageType = 'image';
-    else if (data.message?.audioMessage) messageType = 'audio';
-    else if (data.message?.videoMessage) messageType = 'video';
-    else if (data.message?.documentMessage) messageType = 'document';
+    let mediaMimeType: string | null = null;
+    let mediaUrl: string | null = null;
+
+    if (data.message?.imageMessage) {
+        messageType = 'image';
+        mediaMimeType = data.message.imageMessage.mimetype || 'image/jpeg';
+        mediaUrl = data.message.imageMessage.url || null;
+    } else if (data.message?.audioMessage) {
+        messageType = 'audio';
+        mediaMimeType = data.message.audioMessage.mimetype || 'audio/ogg';
+        mediaUrl = data.message.audioMessage.url || null;
+    } else if (data.message?.videoMessage) {
+        messageType = 'video';
+        mediaMimeType = data.message.videoMessage.mimetype || 'video/mp4';
+        mediaUrl = data.message.videoMessage.url || null;
+    } else if (data.message?.documentMessage) {
+        messageType = 'document';
+        mediaMimeType = data.message.documentMessage.mimetype || 'application/octet-stream';
+        mediaUrl = data.message.documentMessage.url || null;
+    }
+
+    const cfg = source?.configuration || {};
 
     return {
         phone,
@@ -120,14 +133,103 @@ function normalizeEvolution(body: any): NormalizedMessage | null {
         is_group: isGroup,
         group_id: isGroup ? remoteJid : null,
         group_name: groupName,
-        media_url: data.message?.imageMessage?.url || data.message?.audioMessage?.url || null,
+        media_url: mediaUrl,
+        media_mime_type: mediaMimeType,
         from_me: fromMe,
         sender_phone: senderPhone,
         sender_name: senderName,
+        evolution_base_url: cfg.baseUrl || null,
+        evolution_api_key: cfg.apiKey || null,
+        evolution_instance_name: cfg.instanceName || null,
+        evolution_message_key: data.key || null,
     };
 }
 
-// ─── Main Handler ────────────────────────────────────────────────────────────
+// ─── Media Download & Upload ──────────────────────────────────────────────────
+
+async function downloadAndUploadMedia(normalized: NormalizedMessage): Promise<string | null> {
+    if (!normalized.media_url && !normalized.evolution_message_key) return null;
+
+    try {
+        let fileBytes: Uint8Array | null = null;
+        let mimeType = normalized.media_mime_type || 'application/octet-stream';
+
+        // Try Evolution API base64 endpoint first (most reliable)
+        if (normalized.evolution_base_url && normalized.evolution_api_key && normalized.evolution_instance_name && normalized.evolution_message_key) {
+            const base = normalized.evolution_base_url.replace(/\/$/, '');
+            const instance = normalized.evolution_instance_name;
+            const apiKey = normalized.evolution_api_key;
+
+            const resp = await fetch(
+                `${base}/chat/getBase64FromMediaMessage/${instance}`,
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'apikey': apiKey },
+                    body: JSON.stringify({ message: { key: normalized.evolution_message_key }, convertToMp4: false }),
+                }
+            );
+
+            if (resp.ok) {
+                const json = await resp.json();
+                if (json.base64) {
+                    mimeType = json.mimetype || mimeType;
+                    const b64 = json.base64.replace(/^data:[^;]+;base64,/, '');
+                    const binaryStr = atob(b64);
+                    fileBytes = new Uint8Array(binaryStr.length);
+                    for (let i = 0; i < binaryStr.length; i++) {
+                        fileBytes[i] = binaryStr.charCodeAt(i);
+                    }
+                }
+            } else {
+                console.warn('[media] Evolution base64 endpoint failed:', resp.status, await resp.text());
+            }
+        }
+
+        // Fallback: download directly from the media_url
+        if (!fileBytes && normalized.media_url) {
+            const resp = await fetch(normalized.media_url);
+            if (!resp.ok) {
+                console.warn('[media] Direct URL download failed:', resp.status);
+                return normalized.media_url;
+            }
+            const buffer = await resp.arrayBuffer();
+            fileBytes = new Uint8Array(buffer);
+            mimeType = resp.headers.get('content-type') || mimeType;
+        }
+
+        if (!fileBytes) return normalized.media_url;
+
+        const extMap: Record<string, string> = {
+            'image/jpeg': 'jpg', 'image/jpg': 'jpg', 'image/png': 'png', 'image/gif': 'gif', 'image/webp': 'webp',
+            'audio/ogg': 'ogg', 'audio/mpeg': 'mp3', 'audio/mp4': 'm4a', 'audio/webm': 'webm',
+            'video/mp4': 'mp4', 'video/webm': 'webm', 'video/ogg': 'ogv',
+            'application/pdf': 'pdf',
+        };
+        const ext = extMap[mimeType] || 'bin';
+        const filename = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+        const storagePath = `whatsapp/${filename}`;
+
+        const { error: uploadErr } = await supabase.storage
+            .from('chat-media')
+            .upload(storagePath, fileBytes, { contentType: mimeType, upsert: false });
+
+        if (uploadErr) {
+            console.error('[media] Upload error:', uploadErr);
+            return normalized.media_url;
+        }
+
+        const { data: publicData } = supabase.storage
+            .from('chat-media')
+            .getPublicUrl(storagePath);
+
+        return publicData?.publicUrl || normalized.media_url;
+    } catch (err) {
+        console.error('[media] downloadAndUploadMedia error:', err);
+        return normalized.media_url;
+    }
+}
+
+// ─── Main Handler ─────────────────────────────────────────────────────────────
 
 Deno.serve(async (req: Request) => {
     if (req.method === 'OPTIONS') {
@@ -144,7 +246,6 @@ Deno.serve(async (req: Request) => {
             });
         }
 
-        // Resolve the integration source
         const { data: source, error: srcErr } = await supabase
             .from('integration_inbound_sources')
             .select('*')
@@ -161,16 +262,23 @@ Deno.serve(async (req: Request) => {
         const body = await req.json();
         const providerType: string = source.provider_type || 'uazapi';
 
-        // Normalize by provider
         let normalized: NormalizedMessage | null = null;
         if (providerType === 'uazapi') {
             normalized = normalizeUazapi(body);
         } else if (providerType === 'evolution') {
-            normalized = normalizeEvolution(body);
+            normalized = normalizeEvolution(body, source);
         }
 
         if (!normalized) {
-            // fromMe or unrecognized — acknowledge without processing
+            await supabase.from('webhook_events_in').insert({
+                organization_id: source.organization_id,
+                source_id: sourceId,
+                provider: 'whatsapp',
+                provider_type: providerType,
+                payload: body,
+                status: 'skipped'
+            });
+
             return new Response(JSON.stringify({ ok: true, skipped: true }), {
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' }
             });
@@ -178,7 +286,13 @@ Deno.serve(async (req: Request) => {
 
         const orgId = source.organization_id;
 
-        // ── 1. Upsert Contact ──────────────────────────────────────────────────
+        // ── Upload media to Supabase Storage ──────────────────────────────────
+        if (normalized.media_url || (normalized.evolution_message_key && normalized.message_type !== 'text')) {
+            const persistentUrl = await downloadAndUploadMedia(normalized);
+            normalized.media_url = persistentUrl;
+        }
+
+        // ── 1. Upsert Contact ─────────────────────────────────────────────────
         let contactId: string | null = null;
         if (!normalized.is_group) {
             const { data: existingContact } = await supabase
@@ -191,7 +305,6 @@ Deno.serve(async (req: Request) => {
             if (existingContact) {
                 contactId = existingContact.id;
             } else {
-                // Upsert ignoring duplicates to safely handle race conditions
                 const { data: newContact, error: contactErr } = await supabase
                     .from('contacts')
                     .upsert({
@@ -209,7 +322,6 @@ Deno.serve(async (req: Request) => {
                     console.error('[webhook] ERROR UPSERT CONTACT:', contactErr);
                 }
 
-                // If it ignored duplicate but returned no data, fetch again
                 if (!contactId && !contactErr) {
                     const { data: checkAgain } = await supabase
                         .from('contacts')
@@ -222,7 +334,7 @@ Deno.serve(async (req: Request) => {
             }
         }
 
-        // ── 1.5. Upsert Deal (If Source Has Default Board) ─────────────────────
+        // ── 1.5. Upsert Deal ──────────────────────────────────────────────────
         if (contactId && source.entry_board_id && source.entry_stage_id) {
             const { data: existingDeals } = await supabase
                 .from('deals')
@@ -234,8 +346,6 @@ Deno.serve(async (req: Request) => {
                 .limit(1);
 
             if (!existingDeals || existingDeals.length === 0) {
-                // To avoid multiple deals in the same second, we can't strict upsert without a unique constraint.
-                // But this fallback is enough to reduce probability. 
                 await supabase.from('deals').insert({
                     organization_id: orgId,
                     contact_id: contactId,
@@ -251,13 +361,13 @@ Deno.serve(async (req: Request) => {
             }
         }
 
-        // ── 2. Upsert Chat Session ─────────────────────────────────────────────
+        // ── 2. Upsert Chat Session ────────────────────────────────────────────
         let sessionId: string | null = null;
         {
             const sessionProviderId = normalized.is_group ? normalized.group_id : normalized.phone;
             const sessionName = normalized.is_group
                 ? (normalized.group_name || normalized.name || null)
-                : null; // contacts use their contacts.name join
+                : null;
 
             const { data: existingSession } = await supabase
                 .from('chat_sessions')
@@ -268,7 +378,6 @@ Deno.serve(async (req: Request) => {
 
             if (existingSession) {
                 sessionId = existingSession.id;
-                // Update name if we now have one and it wasn't saved before
                 await supabase
                     .from('chat_sessions')
                     .update({
@@ -299,9 +408,8 @@ Deno.serve(async (req: Request) => {
             }
         }
 
-        // ── 3. Insert Message ──────────────────────────────────────────────────
+        // ── 3. Insert Message ─────────────────────────────────────────────────
         if (sessionId) {
-            // Dedupe by external_id
             if (normalized.external_id) {
                 const { count } = await supabase
                     .from('messages')
@@ -315,12 +423,9 @@ Deno.serve(async (req: Request) => {
                 }
             }
 
-            // If it's an outbound message (fromMe === true), try to link it to an existing CRM-originated message
             let linkedExisting = false;
             if (normalized.from_me && normalized.external_id) {
-                // Find a recent outbound message without an external_id that matches the text
                 const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
-
                 const { data: candidates } = await supabase
                     .from('messages')
                     .select('id')
@@ -342,7 +447,7 @@ Deno.serve(async (req: Request) => {
             }
 
             if (!linkedExisting) {
-                await supabase.from('messages').insert({
+                const { error: msgErr } = await supabase.from('messages').insert({
                     organization_id: orgId,
                     session_id: sessionId,
                     direction: normalized.direction,
@@ -354,10 +459,14 @@ Deno.serve(async (req: Request) => {
                     sender_name: normalized.sender_name,
                     sender_phone: normalized.sender_phone,
                 });
+
+                if (msgErr) {
+                    console.error('[Inbound] Error inserting message:', msgErr);
+                }
             }
         }
 
-        // ── 4. Audit Log ───────────────────────────────────────────────────────
+        // ── 4. Audit Log ──────────────────────────────────────────────────────
         const { error: auditErr } = await supabase.from('webhook_events_in').insert({
             organization_id: orgId,
             source_id: sourceId,
@@ -369,7 +478,7 @@ Deno.serve(async (req: Request) => {
             created_contact_id: contactId,
         });
         if (auditErr) {
-            console.error('[whatsapp-inbound] Warning: Failed to insert audit log', auditErr.message);
+            console.warn('[whatsapp-inbound] Warning: Failed to insert audit log', auditErr.message);
         }
 
         return new Response(JSON.stringify({ ok: true }), {

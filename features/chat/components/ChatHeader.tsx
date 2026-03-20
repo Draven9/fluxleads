@@ -53,7 +53,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({ session, onBack, onToggl
                 </div>
 
                 <div>
-                    <h3 className="font-semibold text-slate-800 dark:text-white">{session.contact?.name || session.provider_id}</h3>
+                    <h3 className="font-semibold text-slate-800 dark:text-white">{session.name || session.contact?.name || session.provider_id}</h3>
                     <span className="text-xs text-slate-500 dark:text-slate-400 capitalize">{session.provider} • {session.contact?.phone || session.provider_id}</span>
                 </div>
             </div>
