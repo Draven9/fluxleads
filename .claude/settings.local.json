@@ -15,7 +15,10 @@
       "Bash(xargs grep:*)",
       "mcp__supabase-fluxleads__execute_sql",
       "mcp__supabase-fluxleads__apply_migration",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "mcp__supabase-fluxleads__list_migrations",
+      "Bash(find \"d:\\\\Sites e Clientes\\\\Eric Mídias\\\\Flux Comunicação-20240126T173950Z-001\\\\fluxleads\\\\supabase\\\\functions\" -name \"*.ts\" -exec basename {})",
+      "Bash(grep -l \"ScheduleMessageModal\\\\|Clock\\\\|schedule\" \"d:\\\\Sites e Clientes\\\\Eric Mídias\\\\Flux Comunicação-20240126T173950Z-001\\\\fluxleads\\\\features\\\\chat\\\\components\"*.tsx)"
     ]
   }
 }

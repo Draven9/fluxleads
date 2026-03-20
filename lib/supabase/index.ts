@@ -7,3 +7,4 @@ export { productsService } from './products';
 export { settingsService, lifecycleStagesService } from './settings';
 export { tagsService } from './tags';
 export type { OrganizationTag } from './tags';
+export { dealCustomFieldsService } from './deal_custom_fields';

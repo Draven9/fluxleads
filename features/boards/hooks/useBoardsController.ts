@@ -21,6 +21,7 @@ import { useToast } from '@/context/ToastContext';
 import { useAuth } from '@/context/AuthContext';
 import { useCRM } from '@/context/CRMContext';
 import { useAI } from '@/context/AIContext';
+import { useDealCustomFields } from '@/lib/query/hooks';
 
 /**
  * Função pública `isDealRotting` do projeto.
@@ -146,6 +147,7 @@ export const useBoardsController = () => {
   });
   const [tagFilter, setTagFilter] = useState(searchParams.get('tag') || '');
   const [channelFilter, setChannelFilter] = useState(searchParams.get('channel') || '');
+  const [customFieldFilters, setCustomFieldFiltersState] = useState<Record<string, string>>({});
 
   // Track initial load to prevent premature URL updates
   const isInitialMount = useRef(true);
@@ -361,8 +363,17 @@ export const useBoardsController = () => {
   // Enable realtime sync for Kanban
   useRealtimeSyncKanban();
 
-  // Custom field definitions (TODO: migrate to query)
-  const customFieldDefinitions: CustomFieldDefinition[] = [];
+  // Custom field definitions — DB-backed
+  const { fields: customFieldDefinitions } = useDealCustomFields();
+
+  // Helper to set/clear a single custom field filter
+  const setCustomFieldFilter = (fieldKey: string, value: string) => {
+    setCustomFieldFiltersState(prev =>
+      value ? { ...prev, [fieldKey]: value } : Object.fromEntries(Object.entries(prev).filter(([k]) => k !== fieldKey))
+    );
+  };
+
+  const clearCustomFieldFilters = () => setCustomFieldFiltersState({});
 
   //View State
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
@@ -493,7 +504,13 @@ export const useBoardsController = () => {
       const matchesTag = !tagFilter || (l.tags || []).some(t => t.toLowerCase() === tagFilter.toLowerCase());
       const matchesChannel = !channelFilter || ((l as any).channel || '') === channelFilter;
 
-      return matchesSearch && matchesOwner && matchesDate && matchesStatus && matchesRecent && matchesTag && matchesChannel;
+      const matchesCustomFields = Object.entries(customFieldFilters).every(([key, filterVal]) => {
+        if (!filterVal) return true;
+        const fieldVal = String((l.customFields ?? {})[key] ?? '').toLowerCase();
+        return fieldVal === filterVal.toLowerCase() || fieldVal.includes(filterVal.toLowerCase());
+      });
+
+      return matchesSearch && matchesOwner && matchesDate && matchesStatus && matchesRecent && matchesTag && matchesChannel && matchesCustomFields;
     }).map(deal => {
       // Enrich owner info if it matches current user
       if (deal.ownerId === profile?.id || deal.ownerId === (profile as any)?.user_id) { // Fallback for some profile types
@@ -507,7 +524,7 @@ export const useBoardsController = () => {
       }
       return deal;
     });
-  }, [deals, searchTerm, ownerFilter, dateRange, statusFilter, tagFilter, channelFilter, profile]);
+  }, [deals, searchTerm, ownerFilter, dateRange, statusFilter, tagFilter, channelFilter, customFieldFilters, profile]);
 
   // Drag & Drop Handlers
   const handleDragStart = (e: React.DragEvent, id: string, title: string) => {
@@ -941,6 +958,9 @@ export const useBoardsController = () => {
     setTagFilter,
     channelFilter,
     setChannelFilter,
+    customFieldFilters,
+    setCustomFieldFilter,
+    clearCustomFieldFilters,
 
     draggingId,
     selectedDealId,

@@ -13,6 +13,7 @@ import React, {
 import { usePathname } from 'next/navigation';
 import { LifecycleStage, Product, CustomFieldDefinition, Lead } from '@/types';
 import { settingsService, lifecycleStagesService, productsService } from '@/lib/supabase';
+import { useDealCustomFields } from '@/lib/query/hooks';
 import { useAuth } from '../AuthContext';
 
 const DEFAULT_LIFECYCLE_STAGES: LifecycleStage[] = [
@@ -117,7 +118,13 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [error, setError] = useState<string | null>(null);
   const [lifecycleStages, setLifecycleStages] = useState<LifecycleStage[]>(DEFAULT_LIFECYCLE_STAGES);
   const [products, setProducts] = useState<Product[]>([]);
-  const [customFieldDefinitions, setCustomFieldDefinitions] = useState<CustomFieldDefinition[]>([]);
+  // Deal custom fields — persisted in DB via useDealCustomFields hook
+  const {
+    fields: customFieldDefinitions,
+    createField: _createDealField,
+    updateField: _updateDealField,
+    deleteField: _deleteDealField,
+  } = useDealCustomFields();
   const [availableTags, setAvailableTags] = useState<string[]>([]);
   const [leads, setLeads] = useState<Lead[]>([]);
 
@@ -497,19 +504,18 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
     [updateSettings]
   );
 
-  // Custom Fields (local state for now)
+  // Custom Fields — DB-backed via deal_custom_fields table
   const addCustomField = useCallback((field: Omit<CustomFieldDefinition, 'id'>) => {
-    const newField = { ...field, id: crypto.randomUUID() };
-    setCustomFieldDefinitions(prev => [...prev, newField]);
-  }, []);
+    _createDealField(field).catch(() => {/* toast handled in hook */});
+  }, [_createDealField]);
 
   const updateCustomField = useCallback((id: string, updates: Partial<CustomFieldDefinition>) => {
-    setCustomFieldDefinitions(prev => prev.map(f => (f.id === id ? { ...f, ...updates } : f)));
-  }, []);
+    _updateDealField({ id, updates }).catch(() => {/* toast handled in hook */});
+  }, [_updateDealField]);
 
   const removeCustomField = useCallback((id: string) => {
-    setCustomFieldDefinitions(prev => prev.filter(f => f.id !== id));
-  }, []);
+    _deleteDealField(id).catch(() => {/* toast handled in hook */});
+  }, [_deleteDealField]);
 
   // Tags (local state for now)
   const addTag = useCallback((tag: string) => {

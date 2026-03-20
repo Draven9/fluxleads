@@ -51,6 +51,9 @@ interface PipelineViewProps {
   setTagFilter: (tag: string) => void;
   channelFilter: string;
   setChannelFilter: (channel: string) => void;
+  customFieldFilters?: Record<string, string>;
+  setCustomFieldFilter?: (key: string, value: string) => void;
+  clearCustomFieldFilters?: () => void;
   draggingId: string | null;
   selectedDealId: string | null;
   setSelectedDealId: (id: string | null) => void;
@@ -230,6 +233,9 @@ export const PipelineView: React.FC<PipelineViewProps> = ({
   setTagFilter,
   channelFilter,
   setChannelFilter,
+  customFieldFilters,
+  setCustomFieldFilter,
+  clearCustomFieldFilters,
   draggingId,
   selectedDealId,
   setSelectedDealId,
@@ -353,6 +359,10 @@ export const PipelineView: React.FC<PipelineViewProps> = ({
             setTagFilter={setTagFilter}
             channelFilter={channelFilter}
             setChannelFilter={setChannelFilter}
+            customFieldDefinitions={customFieldDefinitions}
+            customFieldFilters={customFieldFilters}
+            setCustomFieldFilter={setCustomFieldFilter}
+            clearCustomFieldFilters={clearCustomFieldFilters}
             onNewDeal={() => setIsCreateModalOpen(true)}
             onExportDeals={handleExportDeals}
           />

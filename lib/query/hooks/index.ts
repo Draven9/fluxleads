@@ -87,3 +87,6 @@ export {
   useUpdateOrganizationTag,
   useDeleteOrganizationTag,
 } from './useOrganizationTagsQuery';
+
+// Deal Custom Fields
+export { useDealCustomFields } from './useDealCustomFieldsQuery';

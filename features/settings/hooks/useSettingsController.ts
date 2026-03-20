@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import { useToast } from '@/context/ToastContext';
 import { CustomFieldDefinition, CustomFieldType } from '@/types';
-import { usePersistedState } from '@/hooks/usePersistedState';
 import { useOrganizationTags, useCreateOrganizationTag, useDeleteOrganizationTag } from '@/lib/query/hooks';
+import { useDealCustomFields } from '@/lib/query/hooks';
 
 /**
  * Hook React `useSettingsController` que encapsula uma lógica reutilizável.
@@ -13,12 +13,16 @@ export const useSettingsController = () => {
   const { addToast } = useToast();
 
   // General Settings
-  const [defaultRoute, setDefaultRoute] = usePersistedState<string>('crm_default_route', '/boards');
+  const [defaultRoute, setDefaultRoute] = useState('/boards');
 
-  // Custom Fields State (local - TODO: migrate to Supabase)
-  const [customFieldDefinitions, setCustomFieldDefinitions] = usePersistedState<
-    CustomFieldDefinition[]
-  >('crm_custom_fields', []);
+  // Custom Fields — DB-backed
+  const {
+    fields: customFieldDefinitions,
+    createField,
+    updateField,
+    deleteField,
+    isMutating: fieldsMutating,
+  } = useDealCustomFields();
   const [newFieldLabel, setNewFieldLabel] = useState('');
   const [newFieldType, setNewFieldType] = useState<CustomFieldType>('text');
   const [newFieldOptions, setNewFieldOptions] = useState('');
@@ -47,55 +51,36 @@ export const useSettingsController = () => {
     setNewFieldOptions('');
   };
 
-  const handleSaveField = () => {
-    if (!newFieldLabel.trim()) return;
+  const parseOptions = () =>
+    newFieldType === 'select'
+      ? newFieldOptions.split(',').map(o => o.trim()).filter(Boolean)
+      : undefined;
 
-    const optionsArray =
-      newFieldType === 'select'
-        ? newFieldOptions
-          .split(',')
-          .map(opt => opt.trim())
-          .filter(opt => opt !== '')
-        : undefined;
+  const handleSaveField = async () => {
+    if (!newFieldLabel.trim()) return;
+    const options = parseOptions();
 
     if (editingId) {
-      // UPDATE EXISTING
-      setCustomFieldDefinitions(prev =>
-        prev.map(f =>
-          f.id === editingId
-            ? { ...f, label: newFieldLabel, type: newFieldType, options: optionsArray }
-            : f
-        )
-      );
-      addToast('Campo personalizado atualizado com sucesso!', 'success');
+      await updateField({ id: editingId, updates: { label: newFieldLabel, type: newFieldType, options } });
       cancelEditingField();
     } else {
-      // CREATE NEW
+      // Gera field_key camelCase a partir do label
       const key = newFieldLabel
         .toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // remove acentos
         .replace(/(?:^\w|[A-Z]|\b\w)/g, (word, index) =>
           index === 0 ? word.toLowerCase() : word.toUpperCase()
         )
-        .replace(/\s+/g, '');
+        .replace(/[^a-zA-Z0-9]/g, '');
 
-      const newField: CustomFieldDefinition = {
-        id: crypto.randomUUID(),
-        key,
-        label: newFieldLabel,
-        type: newFieldType,
-        options: optionsArray,
-      };
-
-      setCustomFieldDefinitions(prev => [...prev, newField]);
-      addToast('Campo personalizado criado com sucesso!', 'success');
+      await createField({ key, label: newFieldLabel, type: newFieldType, options });
       setNewFieldLabel('');
       setNewFieldOptions('');
     }
   };
 
-  const handleRemoveField = (id: string) => {
-    setCustomFieldDefinitions(prev => prev.filter(f => f.id !== id));
-    addToast('Campo personalizado removido.', 'info');
+  const handleRemoveField = async (id: string) => {
+    await deleteField(id);
   };
 
   // Tags Logic — Supabase-backed via organization_tags
@@ -142,6 +127,7 @@ export const useSettingsController = () => {
     cancelEditingField,
     handleSaveField,
     removeCustomField: handleRemoveField,
+    fieldsMutating,
 
     // Tags
     availableTags,

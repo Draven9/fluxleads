@@ -1,7 +1,7 @@
 import React from 'react';
 import { Plus, Search, LayoutGrid, Table as TableIcon, User, Settings, Lightbulb, Download } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Board } from '@/types';
+import { Board, CustomFieldDefinition } from '@/types';
 import { BoardSelector } from '../BoardSelector';
 import { FilterBar, FilterDefinition, ActiveFilter } from '@/components/ui/FilterBar';
 import { useOrganizationTags } from '@/lib/query/hooks';
@@ -27,6 +27,10 @@ interface KanbanHeaderProps {
     setTagFilter: (tag: string) => void;
     channelFilter: string;
     setChannelFilter: (channel: string) => void;
+    customFieldDefinitions?: CustomFieldDefinition[];
+    customFieldFilters?: Record<string, string>;
+    setCustomFieldFilter?: (key: string, value: string) => void;
+    clearCustomFieldFilters?: () => void;
     onNewDeal: () => void;
     onExportDeals?: () => void;
 }
@@ -77,10 +81,26 @@ export const KanbanHeader: React.FC<KanbanHeaderProps> = ({
     statusFilter, setStatusFilter,
     tagFilter, setTagFilter,
     channelFilter, setChannelFilter,
+    customFieldDefinitions = [],
+    customFieldFilters = {},
+    setCustomFieldFilter,
+    clearCustomFieldFilters,
     onNewDeal,
     onExportDeals
 }) => {
     const { data: orgTags = [] } = useOrganizationTags();
+
+    // Custom field filter definitions — only select and boolean types render as chips
+    const customFieldFilterDefs: FilterDefinition[] = customFieldDefinitions
+        .filter(f => f.type === 'select' || f.type === 'boolean')
+        .map(f => ({
+            id: `cf_${f.key}`,
+            label: f.label,
+            type: 'select' as const,
+            options: f.type === 'boolean'
+                ? [{ label: 'Sim', value: 'true' }, { label: 'Não', value: 'false' }]
+                : (f.options || []).map(o => ({ label: o, value: o })),
+        }));
 
     const filterDefinitions: FilterDefinition[] = [
         {
@@ -121,6 +141,7 @@ export const KanbanHeader: React.FC<KanbanHeaderProps> = ({
                 { label: 'Outro', value: 'outro' },
             ]
         },
+        ...customFieldFilterDefs,
     ];
 
     const activeFilters: ActiveFilter[] = [];
@@ -136,22 +157,37 @@ export const KanbanHeader: React.FC<KanbanHeaderProps> = ({
         activeFilters.push({ id: 'tag', value: tagFilter, labelDisplay: `Tag: ${tagFilter}` });
     }
     if (channelFilter) {
-        const label = filterDefinitions[3].options?.find(o => o.value === channelFilter)?.label;
+        const chanDef = filterDefinitions.find(d => d.id === 'channel');
+        const label = chanDef?.options?.find(o => o.value === channelFilter)?.label;
         activeFilters.push({ id: 'channel', value: channelFilter, labelDisplay: label ? `Canal: ${label}` : channelFilter });
     }
+    // Active custom field filters
+    Object.entries(customFieldFilters).forEach(([key, val]) => {
+        if (!val) return;
+        const def = customFieldFilterDefs.find(d => d.id === `cf_${key}`);
+        const fieldLabel = def?.label || key;
+        const optionLabel = def?.options?.find(o => o.value === val)?.label || val;
+        activeFilters.push({ id: `cf_${key}`, value: val, labelDisplay: `${fieldLabel}: ${optionLabel}` });
+    });
 
     const handleAddFilter = (f: ActiveFilter) => {
         if (f.id === 'status') setStatusFilter(f.value);
-        if (f.id === 'owner') setOwnerFilter(f.value);
-        if (f.id === 'tag') setTagFilter(f.value);
-        if (f.id === 'channel') setChannelFilter(f.value);
+        else if (f.id === 'owner') setOwnerFilter(f.value);
+        else if (f.id === 'tag') setTagFilter(f.value);
+        else if (f.id === 'channel') setChannelFilter(f.value);
+        else if (f.id.startsWith('cf_') && setCustomFieldFilter) {
+            setCustomFieldFilter(f.id.slice(3), f.value);
+        }
     };
 
     const handleRemoveFilter = (id: string) => {
         if (id === 'status') setStatusFilter('open');
-        if (id === 'owner') setOwnerFilter('all');
-        if (id === 'tag') setTagFilter('');
-        if (id === 'channel') setChannelFilter('');
+        else if (id === 'owner') setOwnerFilter('all');
+        else if (id === 'tag') setTagFilter('');
+        else if (id === 'channel') setChannelFilter('');
+        else if (id.startsWith('cf_') && setCustomFieldFilter) {
+            setCustomFieldFilter(id.slice(3), '');
+        }
     };
 
     const handleClearFilters = () => {
@@ -160,6 +196,7 @@ export const KanbanHeader: React.FC<KanbanHeaderProps> = ({
         setTagFilter('');
         setChannelFilter('');
         setSearchTerm('');
+        if (clearCustomFieldFilters) clearCustomFieldFilters();
     };
 
     return (
