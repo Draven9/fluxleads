@@ -18,6 +18,7 @@ interface ScheduledMessageRow {
 interface ContactRow {
     name: string;
     phone: string;
+    company_name?: string | null;
 }
 
 interface IntegrationRow {
@@ -35,6 +36,7 @@ function applyVariables(template: string, contact: ContactRow | null): string {
 
     return template
         .replace(/\{\{nome\}\}/g, contact?.name || '')
+        .replace(/\{\{empresa\}\}/g, contact?.company_name || '')
         .replace(/\{\{data\}\}/g, dateStr)
         .replace(/\{\{hora\}\}/g, timeStr);
 }
@@ -92,7 +94,7 @@ Deno.serve(async (_req: Request) => {
                 let contact: ContactRow | null = null;
                 if (msg.contact_id) {
                     const contactRes = await fetch(
-                        `${supabaseUrl}/rest/v1/contacts?id=eq.${msg.contact_id}&select=name,phone&limit=1`,
+                        `${supabaseUrl}/rest/v1/contacts?id=eq.${msg.contact_id}&select=name,phone,company_name&limit=1`,
                         { headers }
                     );
                     const contacts: ContactRow[] = await contactRes.json();

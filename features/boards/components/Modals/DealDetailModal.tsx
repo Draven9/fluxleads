@@ -39,7 +39,11 @@ import {
   Plus,
   MessageCircle,
   ArrowRight,
+  Clock,
 } from 'lucide-react';
+import { ScheduleMessageModal } from '@/features/chat/components/ScheduleMessageModal';
+import { useScheduledMessages } from '@/lib/query/hooks/useScheduledMessages';
+import { useContactChatSession } from '@/lib/query/hooks';
 import { StageProgressBar } from '../StageProgressBar';
 import { ActivityRow } from '@/features/activities/components/ActivityRow';
 import { formatPriorityPtBr } from '@/lib/utils/priority';
@@ -140,6 +144,18 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({ dealId, isOpen
   const { data: orgTags = [] } = useOrganizationTags();
   const createOrgTag = useCreateOrganizationTag();
   const [tagQuery, setTagQuery] = useState('');
+
+  // Scheduling
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const { data: contactSession } = useContactChatSession(deal?.contactId);
+  const {
+    scheduledMessages,
+    createScheduledMessage,
+    cancelScheduledMessage,
+    updateScheduledMessage,
+    isCreating: isScheduling,
+    isUpdating: isUpdatingSchedule,
+  } = useScheduledMessages(contactSession?.id ?? '');
 
   const normalizeTag = (value: string) => value.trim().replace(/\s+/g, ' ');
   const tagsLower = useMemo(() => new Set((deal?.tags || []).map(t => t.toLowerCase())), [deal?.tags]);
@@ -477,6 +493,33 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({ dealId, isOpen
               >
                 <MessageCircle size={16} />
                 <span>Conversar</span>
+              </button>
+
+              {/* Botão de Agendamento */}
+              <button
+                type="button"
+                onClick={() => {
+                  if (!deal.contactId) {
+                    addToast('Este negócio não possui um contato vinculado.', 'warning');
+                    return;
+                  }
+                  if (!contactSession?.id) {
+                    addToast('Contato sem conversa ativa no WhatsApp. Inicie uma conversa primeiro.', 'warning');
+                    return;
+                  }
+                  setShowScheduleModal(true);
+                }}
+                className="relative flex items-center gap-2 px-3 py-2 rounded-lg font-bold text-sm shadow-sm transition-all border bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-amber-400 dark:hover:border-amber-500 hover:text-amber-600 dark:hover:text-amber-400"
+                title="Agendar mensagem para o lead"
+                aria-label="Agendar mensagem"
+              >
+                <Clock size={16} />
+                <span>Agendar</span>
+                {scheduledMessages.filter(m => m.status === 'pending').length > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-amber-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                    {scheduledMessages.filter(m => m.status === 'pending').length}
+                  </span>
+                )}
               </button>
 
               {/* Se fechado: mostra badge + botão Reabrir */}
@@ -1251,6 +1294,30 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({ dealId, isOpen
         confirmText="Excluir"
         variant="danger"
       />
+
+      {showScheduleModal && contactSession?.id && (
+        <ScheduleMessageModal
+          isOpen={showScheduleModal}
+          onClose={() => setShowScheduleModal(false)}
+          sessionId={contactSession.id}
+          contactName={contact?.name}
+          scheduledMessages={scheduledMessages}
+          onSchedule={async (content, scheduledAt) => {
+            await createScheduledMessage({
+              sessionId: contactSession.id,
+              content,
+              scheduledAt,
+              contactId: deal.contactId,
+            });
+          }}
+          onCancel={cancelScheduledMessage}
+          onUpdate={async (id, content, scheduledAt) => {
+            await updateScheduledMessage(id, { content, scheduledAt });
+          }}
+          isCreating={isScheduling}
+          isUpdating={isUpdatingSchedule}
+        />
+      )}
 
       <LossReasonModal
         isOpen={showLossReasonModal}

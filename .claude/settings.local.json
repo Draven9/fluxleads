@@ -18,7 +18,8 @@
       "Bash(npx tsc:*)",
       "mcp__supabase-fluxleads__list_migrations",
       "Bash(find \"d:\\\\Sites e Clientes\\\\Eric Mídias\\\\Flux Comunicação-20240126T173950Z-001\\\\fluxleads\\\\supabase\\\\functions\" -name \"*.ts\" -exec basename {})",
-      "Bash(grep -l \"ScheduleMessageModal\\\\|Clock\\\\|schedule\" \"d:\\\\Sites e Clientes\\\\Eric Mídias\\\\Flux Comunicação-20240126T173950Z-001\\\\fluxleads\\\\features\\\\chat\\\\components\"*.tsx)"
+      "Bash(grep -l \"ScheduleMessageModal\\\\|Clock\\\\|schedule\" \"d:\\\\Sites e Clientes\\\\Eric Mídias\\\\Flux Comunicação-20240126T173950Z-001\\\\fluxleads\\\\features\\\\chat\\\\components\"*.tsx)",
+      "mcp__supabase-fluxleads__deploy_edge_function"
     ]
   }
 }

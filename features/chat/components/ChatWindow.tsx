@@ -34,7 +34,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ session, onBack }) => {
         scheduledMessages,
         createScheduledMessage,
         cancelScheduledMessage,
+        updateScheduledMessage,
         isCreating: isScheduling,
+        isUpdating: isUpdatingSchedule,
     } = useScheduledMessages(session.id);
 
     // Group Mentions State
@@ -246,7 +248,11 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ session, onBack }) => {
                             });
                         }}
                         onCancel={cancelScheduledMessage}
+                        onUpdate={async (id, content, scheduledAt) => {
+                            await updateScheduledMessage(id, { content, scheduledAt });
+                        }}
                         isCreating={isScheduling}
+                        isUpdating={isUpdatingSchedule}
                     />
                 </div>
 

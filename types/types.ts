@@ -603,3 +603,8 @@ export interface CreateScheduledMessagePayload {
   contactId?: string;
 }
 
+export interface UpdateScheduledMessagePayload {
+  content?: string;
+  scheduledAt?: string;
+}
+

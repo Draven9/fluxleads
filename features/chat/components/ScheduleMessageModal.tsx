@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, Clock, Calendar, Send, Trash2, AlertCircle } from 'lucide-react';
+import { X, Clock, Calendar, Send, Trash2, AlertCircle, Pencil } from 'lucide-react';
 import { ScheduledMessage } from '@/types';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -15,11 +15,14 @@ interface ScheduleMessageModalProps {
     scheduledMessages: ScheduledMessage[];
     onSchedule: (content: string, scheduledAt: string) => Promise<void>;
     onCancel: (id: string) => Promise<void>;
+    onUpdate: (id: string, content: string, scheduledAt: string) => Promise<void>;
     isCreating: boolean;
+    isUpdating: boolean;
 }
 
 const DYNAMIC_VARS = [
     { variable: '{{nome}}', description: 'Nome do contato' },
+    { variable: '{{empresa}}', description: 'Nome da empresa do contato' },
     { variable: '{{data}}', description: 'Data atual (dd/mm/aaaa)' },
     { variable: '{{hora}}', description: 'Hora atual (hh:mm)' },
 ];
@@ -33,11 +36,14 @@ export const ScheduleMessageModal: React.FC<ScheduleMessageModalProps> = ({
     scheduledMessages,
     onSchedule,
     onCancel,
+    onUpdate,
     isCreating,
+    isUpdating,
 }) => {
     const [message, setMessage] = useState(initialMessage);
     const [scheduledAt, setScheduledAt] = useState('');
     const [tab, setTab] = useState<'new' | 'list'>('new');
+    const [editingId, setEditingId] = useState<string | null>(null);
 
     if (!isOpen) return null;
 
@@ -45,10 +51,29 @@ export const ScheduleMessageModal: React.FC<ScheduleMessageModalProps> = ({
         setMessage(prev => prev + variable);
     };
 
+    const handleEdit = (m: ScheduledMessage) => {
+        setEditingId(m.id);
+        setMessage(m.content);
+        // Convert ISO to datetime-local format (YYYY-MM-DDTHH:mm)
+        setScheduledAt(m.scheduledAt.slice(0, 16));
+        setTab('new');
+    };
+
+    const handleCancelEdit = () => {
+        setEditingId(null);
+        setMessage('');
+        setScheduledAt('');
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!message.trim() || !scheduledAt) return;
-        await onSchedule(message, scheduledAt);
+        if (editingId) {
+            await onUpdate(editingId, message, scheduledAt);
+            setEditingId(null);
+        } else {
+            await onSchedule(message, scheduledAt);
+        }
         setMessage('');
         setScheduledAt('');
         setTab('list');
@@ -147,7 +172,7 @@ export const ScheduleMessageModal: React.FC<ScheduleMessageModalProps> = ({
                                         className="w-full bg-slate-50 dark:bg-black/30 border border-slate-200 dark:border-white/10 rounded-xl p-3 text-sm resize-none outline-none focus:ring-2 focus:ring-primary-500 dark:text-white placeholder-slate-400"
                                     />
                                     <p className="text-[10px] text-slate-400 mt-1">
-                                        As variáveis <code className="font-mono">{'{{nome}}'}</code>, <code className="font-mono">{'{{data}}'}</code> e <code className="font-mono">{'{{hora}}'}</code> serão substituídas automaticamente no envio.
+                                        As variáveis <code className="font-mono">{'{{nome}}'}</code>, <code className="font-mono">{'{{empresa}}'}</code>, <code className="font-mono">{'{{data}}'}</code> e <code className="font-mono">{'{{hora}}'}</code> serão substituídas automaticamente no envio.
                                     </p>
                                 </div>
 
@@ -164,14 +189,28 @@ export const ScheduleMessageModal: React.FC<ScheduleMessageModalProps> = ({
                                     />
                                 </div>
 
-                                <button
-                                    type="submit"
-                                    disabled={isCreating || !message.trim() || !scheduledAt}
-                                    className="mt-2 flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    <Clock size={16} />
-                                    {isCreating ? 'Agendando...' : 'Agendar Mensagem'}
-                                </button>
+                                <div className="mt-2 flex flex-col gap-2">
+                                    <button
+                                        type="submit"
+                                        disabled={isCreating || isUpdating || !message.trim() || !scheduledAt}
+                                        className="flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        <Clock size={16} />
+                                        {editingId
+                                            ? (isUpdating ? 'Salvando...' : 'Salvar Alterações')
+                                            : (isCreating ? 'Agendando...' : 'Agendar Mensagem')}
+                                    </button>
+                                    {editingId && (
+                                        <button
+                                            type="button"
+                                            onClick={handleCancelEdit}
+                                            className="flex items-center justify-center gap-2 border border-slate-200 dark:border-white/10 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 font-medium py-2.5 rounded-xl transition-colors text-sm"
+                                        >
+                                            <X size={14} />
+                                            Cancelar edição
+                                        </button>
+                                    )}
+                                </div>
                             </form>
                         )}
 
@@ -204,13 +243,22 @@ export const ScheduleMessageModal: React.FC<ScheduleMessageModalProps> = ({
                                                             {format(parseISO(m.scheduledAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                                                         </p>
                                                     </div>
-                                                    <button
-                                                        onClick={() => onCancel(m.id)}
-                                                        className="text-slate-400 hover:text-red-500 p-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors shrink-0"
-                                                        title="Cancelar agendamento"
-                                                    >
-                                                        <Trash2 size={15} />
-                                                    </button>
+                                                    <div className="flex items-center gap-1 shrink-0">
+                                                        <button
+                                                            onClick={() => handleEdit(m)}
+                                                            className="text-slate-400 hover:text-primary-600 p-1 rounded-lg hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors"
+                                                            title="Editar agendamento"
+                                                        >
+                                                            <Pencil size={14} />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => onCancel(m.id)}
+                                                            className="text-slate-400 hover:text-red-500 p-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                                                            title="Cancelar agendamento"
+                                                        >
+                                                            <Trash2 size={15} />
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             ))}
                                         </div>

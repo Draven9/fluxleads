@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { scheduledMessagesService } from '@/lib/supabase/scheduled_messages';
-import { CreateScheduledMessagePayload } from '@/types';
+import { CreateScheduledMessagePayload, UpdateScheduledMessagePayload } from '@/types';
 import { useToast } from '@/context/ToastContext';
 
 export const SCHEDULED_MESSAGES_QUERY_KEY = (sessionId: string) => ['scheduled_messages', sessionId];
@@ -48,12 +48,30 @@ export function useScheduledMessages(sessionId: string) {
         },
     });
 
+    const updateMutation = useMutation({
+        mutationFn: async ({ id, payload }: { id: string; payload: UpdateScheduledMessagePayload }) => {
+            const { data, error } = await scheduledMessagesService.update(id, payload);
+            if (error) throw error;
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: SCHEDULED_MESSAGES_QUERY_KEY(sessionId) });
+            addToast('Agendamento atualizado com sucesso!', 'success');
+        },
+        onError: (err) => {
+            addToast(`Erro ao atualizar agendamento: ${(err as Error).message}`, 'error');
+        },
+    });
+
     return {
         scheduledMessages: messagesQuery.data || [],
         isLoading: messagesQuery.isLoading,
         createScheduledMessage: createMutation.mutateAsync,
         cancelScheduledMessage: cancelMutation.mutateAsync,
+        updateScheduledMessage: (id: string, payload: UpdateScheduledMessagePayload) =>
+            updateMutation.mutateAsync({ id, payload }),
         isCreating: createMutation.isPending,
         isCancelling: cancelMutation.isPending,
+        isUpdating: updateMutation.isPending,
     };
 }

@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/client';
-import { DbScheduledMessage, ScheduledMessage, ScheduledMessageStatus, CreateScheduledMessagePayload } from '@/types';
+import { DbScheduledMessage, ScheduledMessage, ScheduledMessageStatus, CreateScheduledMessagePayload, UpdateScheduledMessagePayload } from '@/types';
 
 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 const supabase = createClient()!;
@@ -78,6 +78,25 @@ export const scheduledMessagesService = {
             .from('scheduled_messages')
             .update({ status: 'cancelled' as ScheduledMessageStatus })
             .eq('id', id)
+            .select()
+            .single();
+
+        return { data: data ? mapDb(data as DbScheduledMessage) : null, error };
+    },
+
+    /** Edita conteúdo e/ou horário de um agendamento pendente. */
+    async update(id: string, payload: UpdateScheduledMessagePayload) {
+        const { data, error } = await supabase
+            .from('scheduled_messages')
+            .update({
+                ...(payload.content !== undefined && {
+                    content: payload.content,
+                    has_variables: payload.content.includes('{{'),
+                }),
+                ...(payload.scheduledAt !== undefined && { scheduled_at: payload.scheduledAt }),
+            })
+            .eq('id', id)
+            .eq('status', 'pending')
             .select()
             .single();
 

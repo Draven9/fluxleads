@@ -90,3 +90,6 @@ export {
 
 // Deal Custom Fields
 export { useDealCustomFields } from './useDealCustomFieldsQuery';
+
+// Chat Sessions
+export { useContactChatSession } from './useChatSessionQuery';
