@@ -18,6 +18,7 @@ interface ChatInputProps {
     onScheduleMessage?: (content: string, scheduledAt: string) => Promise<void>;
     onCancelSchedule?: (id: string) => Promise<void>;
     isScheduling?: boolean;
+    onOpenScheduleModal?: () => void;
 }
 
 export const ChatInput: React.FC<ChatInputProps> = ({
@@ -31,6 +32,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     onScheduleMessage,
     onCancelSchedule,
     isScheduling = false,
+    onOpenScheduleModal,
 }) => {
     const [newMessage, setNewMessage] = useState('');
     const [isRecording, setIsRecording] = useState(false);
@@ -229,7 +231,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
                             {onScheduleMessage && (
                                 <button
-                                    onClick={() => setShowScheduleModal(true)}
+                                    onClick={() => onOpenScheduleModal ? onOpenScheduleModal() : setShowScheduleModal(true)}
                                     title="Agendar mensagem"
                                     className={`p-3 rounded-xl transition-colors h-[44px] w-[44px] flex items-center justify-center relative ${scheduledMessages.filter(m => m.status === 'pending').length > 0
                                             ? 'bg-amber-100 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400'

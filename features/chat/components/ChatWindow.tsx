@@ -225,6 +225,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ session, onBack }) => {
                         }}
                         onCancelSchedule={cancelScheduledMessage}
                         isScheduling={isScheduling}
+                        onOpenScheduleModal={() => setShowScheduleModal(true)}
                     />
 
                     <ForwardModal
