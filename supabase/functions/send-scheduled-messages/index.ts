@@ -21,11 +21,13 @@ interface ContactRow {
     company_name?: string | null;
 }
 
-interface IntegrationRow {
-    config: {
-        base_url?: string;
-        api_key?: string;
-        instance?: string;
+interface IntegrationSourceRow {
+    provider_type: string;
+    configuration: {
+        baseUrl?: string;
+        token?: string;       // uazapi
+        apiKey?: string;      // evolution
+        instanceName?: string; // evolution
     };
 }
 
@@ -66,16 +68,16 @@ Deno.serve(async (_req: Request) => {
     const results = await Promise.allSettled(
         pendingMessages.map(async (msg) => {
             try {
-                // 2. Buscar integração UazAPI da organização
+                // 2. Buscar integração WhatsApp da organização (uazapi ou evolution)
                 const integrationRes = await fetch(
-                    `${supabaseUrl}/rest/v1/integrations?organization_id=eq.${msg.organization_id}&type=eq.uazapi&select=config&limit=1`,
+                    `${supabaseUrl}/rest/v1/integration_inbound_sources?organization_id=eq.${msg.organization_id}&active=eq.true&select=provider_type,configuration&limit=1`,
                     { headers }
                 );
-                const integrations: IntegrationRow[] = await integrationRes.json();
+                const integrations: IntegrationSourceRow[] = await integrationRes.json();
                 const integration = integrations[0];
 
-                if (!integration?.config?.base_url || !integration?.config?.instance) {
-                    throw new Error('Configuração UazAPI não encontrada para a organização');
+                if (!integration?.configuration?.baseUrl) {
+                    throw new Error('Configuração WhatsApp não encontrada para a organização');
                 }
 
                 // 3. Obter o provider_id (phone do destinatário) — via sessão ou contato direto
@@ -123,26 +125,38 @@ Deno.serve(async (_req: Request) => {
                     ? applyVariables(msg.content, contact)
                     : msg.content;
 
-                // 6. Enviar via UazAPI
-                const apiKey = integration.config.api_key || '';
-                const sendRes = await fetch(
-                    `${integration.config.base_url}/message/send/text/${integration.config.instance}`,
-                    {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': apiKey,
-                        },
-                        body: JSON.stringify({
-                            to: recipientPhone,
-                            text: finalContent,
-                        }),
+                // 6. Enviar via WhatsApp (uazapi ou evolution)
+                const cfg = integration.configuration;
+                const baseUrl = cfg.baseUrl!.replace(/\/$/, '');
+                const providerType = integration.provider_type || 'uazapi';
+
+                let sendUrl: string;
+                let sendHeaders: Record<string, string>;
+                let sendBody: string;
+
+                if (providerType === 'evolution') {
+                    if (!cfg.instanceName || !cfg.apiKey) {
+                        throw new Error('Configuração Evolution incompleta (instanceName/apiKey ausente)');
                     }
-                );
+                    sendUrl = `${baseUrl}/message/sendText/${cfg.instanceName}`;
+                    sendHeaders = { 'Content-Type': 'application/json', 'apikey': cfg.apiKey };
+                    sendBody = JSON.stringify({ number: recipientPhone, text: finalContent });
+                } else {
+                    // uazapi
+                    sendUrl = `${baseUrl}/message/send/text`;
+                    sendHeaders = { 'Content-Type': 'application/json', 'Authorization': cfg.token || '' };
+                    sendBody = JSON.stringify({ to: recipientPhone, text: finalContent });
+                }
+
+                const sendRes = await fetch(sendUrl, {
+                    method: 'POST',
+                    headers: sendHeaders,
+                    body: sendBody,
+                });
 
                 if (!sendRes.ok) {
                     const errBody = await sendRes.text();
-                    throw new Error(`UazAPI error: ${sendRes.status} - ${errBody}`);
+                    throw new Error(`WhatsApp API error [${providerType}]: ${sendRes.status} - ${errBody}`);
                 }
 
                 // 7. Marcar como enviada
