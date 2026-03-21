@@ -70,12 +70,20 @@ export const scheduledMessagesService = {
     async create(payload: CreateScheduledMessagePayload) {
         const { data: { user } } = await supabase.auth.getUser();
 
+        // Busca organization_id do profile (necessário para RLS)
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('organization_id')
+            .eq('id', user?.id ?? '')
+            .single();
+
         const { data, error } = await supabase
             .from('scheduled_messages')
             .insert({
                 session_id: payload.sessionId ?? null,
                 deal_id: payload.dealId ?? null,
                 contact_id: payload.contactId ?? null,
+                organization_id: profile?.organization_id ?? null,
                 created_by: user?.id ?? null,
                 content: payload.content,
                 has_variables: payload.content.includes('{{'),

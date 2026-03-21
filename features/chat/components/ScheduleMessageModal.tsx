@@ -81,9 +81,6 @@ export const ScheduleMessageModal: React.FC<ScheduleMessageModalProps> = ({
         setTab('list');
     };
 
-    // Min datetime must be 5 minutes from now
-    const minDateTime = new Date(Date.now() + 5 * 60 * 1000).toISOString().slice(0, 16);
-
     const pendingMessages = scheduledMessages.filter(m => m.status === 'pending');
     const pastMessages = scheduledMessages.filter(m => m.status !== 'pending');
 
@@ -186,7 +183,6 @@ export const ScheduleMessageModal: React.FC<ScheduleMessageModalProps> = ({
                                         type="datetime-local"
                                         value={scheduledAt}
                                         onChange={e => setScheduledAt(e.target.value)}
-                                        min={minDateTime}
                                         required
                                         className="w-full bg-slate-50 dark:bg-black/30 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary-500 dark:text-white"
                                     />
