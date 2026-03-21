@@ -124,7 +124,7 @@ export const ContactSidePanel: React.FC<ContactSidePanelProps> = ({ session, isO
                                         onChange={(e) => handleStageChange(e.target.value)}
                                         className="w-full appearance-none bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-200 text-sm rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 transition-colors cursor-pointer"
                                     >
-                                        {activeBoard.stages.map((stage) => (
+                                        {(activeBoard.stages ?? []).map((stage) => (
                                             <option key={stage.id} value={stage.id}>
                                                 {stage.label}
                                             </option>
