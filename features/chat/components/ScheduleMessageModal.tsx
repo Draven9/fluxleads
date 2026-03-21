@@ -93,7 +93,8 @@ export const ScheduleMessageModal: React.FC<ScheduleMessageModalProps> = ({
             <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50" onClick={onClose} />
 
             {/* Modal */}
-            <div className="fixed inset-x-4 bottom-20 md:inset-auto md:bottom-24 md:right-6 md:w-[480px] z-50">
+            <div className="fixed inset-0 flex items-center justify-center z-50 px-4 pointer-events-none">
+            <div className="w-full max-w-[480px] pointer-events-auto">
                 <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-white/10 overflow-hidden flex flex-col max-h-[80vh]">
                     {/* Header */}
                     <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-white/10 bg-slate-50 dark:bg-black/20">
@@ -307,6 +308,7 @@ export const ScheduleMessageModal: React.FC<ScheduleMessageModalProps> = ({
                         )}
                     </div>
                 </div>
+            </div>
             </div>
         </>
     );
