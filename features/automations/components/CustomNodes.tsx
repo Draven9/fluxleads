@@ -4,6 +4,32 @@ import React, { memo } from 'react';
 import { Handle, Position, NodeProps } from '@xyflow/react';
 import { Play, Settings2, Trash2, Zap, MessageSquare, Clock, Shuffle, ArrowRightCircle } from 'lucide-react';
 
+function ConfigSummary({ data }: { data: Record<string, any> }) {
+    const config = data.config as Record<string, any> | undefined;
+    const condition = data.condition as Record<string, any> | undefined;
+    if (!config && !condition) return null;
+
+    let summary = '';
+    if (condition?.field) {
+        summary = `${condition.field} ${condition.operator || ''} ${condition.value || ''}`.trim();
+    } else if (config?.message) {
+        summary = config.message.slice(0, 30) + (config.message.length > 30 ? '…' : '');
+    } else if (config?.stage_id) {
+        summary = `→ ${config.stage_id.slice(0, 8)}…`;
+    } else if (config?.tag) {
+        summary = `#${config.tag}`;
+    } else if (config?.url) {
+        summary = config.url.replace(/^https?:\/\//, '').slice(0, 25) + '…';
+    } else if (config?.amount) {
+        summary = `${config.amount} ${config.unit || 'horas'}`;
+    } else if (config?.title) {
+        summary = config.title.slice(0, 30);
+    }
+
+    if (!summary) return null;
+    return <div className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 truncate max-w-[160px]">{summary}</div>;
+}
+
 const iconMap: Record<string, React.ReactNode> = {
     trigger: <Zap className="w-5 h-5 text-indigo-500" />,
     action: <Play className="w-5 h-5 text-primary-500" />,
@@ -39,9 +65,10 @@ export const ActionNode = memo(({ data, isConnectable }: NodeProps) => {
             <div className="flex-shrink-0 p-2 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
                 {icon}
             </div>
-            <div>
+            <div className="min-w-0">
                 <div className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-0.5">{typeLabel}</div>
                 <div className="text-sm font-semibold text-slate-900 dark:text-white leading-tight">{data.label as string}</div>
+                <ConfigSummary data={data as Record<string, any>} />
             </div>
             <Handle type="source" position={Position.Bottom} isConnectable={isConnectable} className="!w-3 !h-3 !bg-slate-400 dark:!bg-slate-500 !border-2 !border-white dark:!border-slate-800" />
         </div>

@@ -146,6 +146,18 @@ export function useAutomations() {
         return updateAutomation(id, { active: !currentStatus });
     };
 
+    const duplicateAutomation = async (id: string) => {
+        const source = automations.find(a => a.id === id);
+        if (!source) return null;
+        return createAutomation(
+            `${source.name} (cópia)`,
+            source.trigger_type,
+            source.nodes,
+            source.edges,
+            source.description ?? undefined
+        );
+    };
+
     return {
         automations,
         loading,
@@ -153,6 +165,7 @@ export function useAutomations() {
         createAutomation,
         updateAutomation,
         deleteAutomation,
-        toggleStatus
+        toggleStatus,
+        duplicateAutomation,
     };
 }

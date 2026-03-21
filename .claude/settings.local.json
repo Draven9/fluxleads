@@ -58,7 +58,14 @@
       "Bash(/tmp/search_queries.txt:*)",
       "Read(//tmp/**)",
       "Bash(grep -n \"interface DealView\\\\|type DealView\" types/*.ts)",
-      "mcp__supabase-fluxleads__list_edge_functions"
+      "mcp__supabase-fluxleads__list_edge_functions",
+      "Bash(find 'd:/Sites e Clientes/Eric Mídias/Flux Comunicação-20240126T173950Z-001/fluxleads/src' -type f -name *.ts -o -name *.tsx)",
+      "Bash(find 'd:/Sites e Clientes/Eric Mídias/Flux Comunicação-20240126T173950Z-001/fluxleads/supabase' -type f -name *.sql -o -name *.ts)",
+      "Bash(grep -l \"automation\" \"d:/Sites e Clientes/Eric Mídias/Flux Comunicação-20240126T173950Z-001/fluxleads/supabase/migrations\"/*.sql)",
+      "Bash(grep -n \"automations\\\\|automation_runs\\\\|automation_logs\\\\|automation_triggers\" \"/d/Sites e Clientes/Eric Mídias/Flux Comunicação-20240126T173950Z-001/fluxleads/supabase/migrations/\"*.sql)",
+      "Bash(grep -l \"CREATE TRIGGER\\\\|CREATE FUNCTION\" \"/d/Sites e Clientes/Eric Mídias/Flux Comunicação-20240126T173950Z-001/fluxleads/supabase/migrations/\"*.sql)",
+      "Bash(grep -l \"automations\" \"d:/Sites e Clientes/Eric Mídias/Flux Comunicação-20240126T173950Z-001/fluxleads/supabase/migrations\"/*.sql)",
+      "Bash(grep -l \"CREATE TRIGGER\\\\|CREATE FUNCTION\" *.sql)"
     ]
   }
 }

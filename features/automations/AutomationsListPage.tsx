@@ -2,11 +2,11 @@
 
 import React, { useState } from 'react';
 import { useAutomations } from '@/lib/query/hooks/useAutomations';
-import { Plus, Settings2, PlayCircle, Clock, Search, MoreVertical, SearchX, MousePointerClick, Zap, Loader2 } from 'lucide-react';
+import { Plus, Settings2, PlayCircle, Clock, Search, Copy, Trash2, SearchX, MousePointerClick, Zap, Loader2 } from 'lucide-react';
 // import { useNavigate } from 'react-router-dom'; se houver rotas. 
 
 export const AutomationsListPage: React.FC<{ onOpenBuilder: (id?: string) => void }> = ({ onOpenBuilder }) => {
-    const { automations, loading, toggleStatus, deleteAutomation } = useAutomations();
+    const { automations, loading, toggleStatus, deleteAutomation, duplicateAutomation } = useAutomations();
     const [searchTerm, setSearchTerm] = useState('');
 
     const filtered = automations.filter(a =>
@@ -112,15 +112,24 @@ export const AutomationsListPage: React.FC<{ onOpenBuilder: (id?: string) => voi
                                         <button
                                             onClick={() => toggleStatus(automation.id, automation.active)}
                                             className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:ring-offset-2 ${automation.active ? 'bg-primary-500' : 'bg-slate-300 dark:bg-slate-700'}`}
+                                            title={automation.active ? 'Desativar' : 'Ativar'}
                                         >
                                             <span className="sr-only">Toggle</span>
                                             <span aria-hidden="true" className={`pointer-events-none absolute left-0 inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${automation.active ? 'translate-x-4' : 'translate-x-0'}`} />
                                         </button>
                                         <button
+                                            onClick={(e) => { e.stopPropagation(); duplicateAutomation(automation.id); }}
+                                            className="p-1.5 text-slate-400 hover:text-primary-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                                            title="Duplicar automação"
+                                        >
+                                            <Copy className="w-4 h-4" />
+                                        </button>
+                                        <button
                                             onClick={(e) => { e.stopPropagation(); deleteAutomation(automation.id); }}
                                             className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                                            title="Excluir automação"
                                         >
-                                            <MoreVertical className="w-4 h-4" />
+                                            <Trash2 className="w-4 h-4" />
                                         </button>
                                     </div>
                                 </div>

@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/context/ToastContext';
 import { TriggerNode, ActionNode, ConditionNode } from './components/CustomNodes';
+import { NodeConfigPanel } from './components/NodeConfigPanel';
 
 // ─────────────────────────────────────────────
 // Trigger & Block definitions
@@ -26,8 +27,11 @@ const TRIGGER_OPTIONS = [
         group: '👤 Lead / Contato',
         items: [
             { value: 'lead_created', label: '🆕 Novo Lead Criado' },
+            { value: 'lead_created_in_stage', label: '🆕 Lead Criado em Etapa Específica' },
             { value: 'tag_added', label: '🏷️ Tag Adicionada ao Lead' },
             { value: 'tag_removed', label: '🏷️ Tag Removida do Lead' },
+            { value: 'owner_changed', label: '👤 Responsável Alterado' },
+            { value: 'custom_field_updated', label: '📋 Campo Personalizado Atualizado' },
         ],
     },
     {
@@ -36,19 +40,22 @@ const TRIGGER_OPTIONS = [
             { value: 'stage_changed', label: '🔄 Negócio Movido de Etapa' },
             { value: 'deal_won', label: '🏆 Negócio Ganho (Venda)' },
             { value: 'deal_lost', label: '❌ Negócio Perdido' },
-            { value: 'deal_stale', label: '⏳ Negócio Parado (Inativo)' },
         ],
     },
     {
         group: '💬 Comunicação',
         items: [
             { value: 'message_received', label: '💬 Mensagem Recebida' },
+            { value: 'message_sent', label: '📤 Mensagem Enviada' },
+            { value: 'chat_initiated', label: '🟢 Chat Iniciado' },
             { value: 'form_submitted', label: '📝 Formulário Preenchido' },
         ],
     },
     {
         group: '⏰ Tempo',
         items: [
+            { value: 'deal_stale', label: '⏳ Negócio Parado (Inativo)' },
+            { value: 'hours_since_last_message', label: '🕐 Horas Após Última Mensagem' },
             { value: 'scheduled', label: '📅 Agendado (Recorrente)' },
         ],
     },
@@ -61,6 +68,7 @@ interface BlockDef {
     icon: string;
     color: string;
     defaultText: string;
+    actionType?: string;
 }
 
 const BLOCKS: BlockDef[] = [
@@ -71,6 +79,7 @@ const BLOCKS: BlockDef[] = [
         icon: 'message',
         color: 'emerald',
         defaultText: 'Enviar Mensagem',
+        actionType: 'send_message',
     },
     {
         label: 'Mover Negócio de Etapa',
@@ -79,6 +88,7 @@ const BLOCKS: BlockDef[] = [
         icon: 'move',
         color: 'amber',
         defaultText: 'Mover Negócio',
+        actionType: 'move_stage',
     },
     {
         label: 'Atribuir a Vendedor',
@@ -87,6 +97,7 @@ const BLOCKS: BlockDef[] = [
         icon: 'action',
         color: 'blue',
         defaultText: 'Atribuir Vendedor',
+        actionType: 'assign_owner',
     },
     {
         label: 'Criar Atividade / Follow-up',
@@ -95,6 +106,7 @@ const BLOCKS: BlockDef[] = [
         icon: 'action',
         color: 'green',
         defaultText: 'Criar Follow-up',
+        actionType: 'create_task',
     },
     {
         label: 'Enviar Webhook',
@@ -103,6 +115,7 @@ const BLOCKS: BlockDef[] = [
         icon: 'action',
         color: 'slate',
         defaultText: 'Disparar Webhook',
+        actionType: 'send_webhook',
     },
     {
         label: 'Aguardar (Delay)',
@@ -111,6 +124,7 @@ const BLOCKS: BlockDef[] = [
         icon: 'delay',
         color: 'blue',
         defaultText: 'Aguardar 1 Dia',
+        actionType: 'delay',
     },
     {
         label: 'Condição SE',
@@ -121,12 +135,40 @@ const BLOCKS: BlockDef[] = [
         defaultText: 'Se Condição…',
     },
     {
+        label: 'Adicionar Tag',
+        typeLabel: 'Ação',
+        nodeType: 'action',
+        icon: 'tag',
+        color: 'violet',
+        defaultText: 'Adicionar Tag',
+        actionType: 'add_tag',
+    },
+    {
+        label: 'Remover Tag',
+        typeLabel: 'Ação',
+        nodeType: 'action',
+        icon: 'tag',
+        color: 'rose',
+        defaultText: 'Remover Tag',
+        actionType: 'remove_tag',
+    },
+    {
+        label: 'Notificar Responsável',
+        typeLabel: 'Ação',
+        nodeType: 'action',
+        icon: 'action',
+        color: 'orange',
+        defaultText: 'Notificar Responsável',
+        actionType: 'notify_owner',
+    },
+    {
         label: 'Encerrar Fluxo',
         typeLabel: 'Fim',
         nodeType: 'action',
         icon: 'stop',
         color: 'slate',
         defaultText: 'Fim do Fluxo',
+        actionType: 'end',
     },
 ];
 
@@ -176,6 +218,7 @@ export const FlowBuilderPage: React.FC<FlowBuilderPageProps> = ({ automationId, 
     const [name, setName] = useState('Nova Automação');
     const [triggerType, setTriggerType] = useState('lead_created');
     const [loading, setLoading] = useState(false);
+    const [selectedNode, setSelectedNode] = useState<Node | null>(null);
 
     const automation = useMemo(
         () => automationId ? automations.find(a => a.id === automationId) : null,
@@ -265,10 +308,21 @@ export const FlowBuilderPage: React.FC<FlowBuilderPageProps> = ({ automationId, 
                 label: block.defaultText,
                 typeLabel: block.typeLabel,
                 icon: block.icon,
+                actionType: block.actionType,
+                config: {},
             },
         };
         setNodes(nds => [...nds, newNode]);
     };
+
+    const onNodeClick = useCallback((_evt: React.MouseEvent, node: Node) => {
+        setSelectedNode(node);
+    }, []);
+
+    const onNodeConfigChange = useCallback((nodeId: string, newData: Record<string, any>) => {
+        setNodes(nds => nds.map(n => n.id === nodeId ? { ...n, data: { ...n.data, ...newData } } : n));
+        setSelectedNode(prev => prev?.id === nodeId ? { ...prev, data: { ...prev.data, ...newData } } : prev);
+    }, []);
 
     return (
         <div className="flex flex-col h-[820px] border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden bg-slate-50/80 dark:bg-slate-950">
@@ -375,6 +429,8 @@ export const FlowBuilderPage: React.FC<FlowBuilderPageProps> = ({ automationId, 
                         maxZoom={2}
                         deleteKeyCode="Delete"
                         className="!bg-slate-50 dark:!bg-slate-950"
+                        onNodeClick={onNodeClick}
+                        onPaneClick={() => setSelectedNode(null)}
                     >
                         <Background
                             color="#94a3b8"
@@ -391,6 +447,15 @@ export const FlowBuilderPage: React.FC<FlowBuilderPageProps> = ({ automationId, 
                         />
                     </ReactFlow>
                 </div>
+
+                {/* ── Node Config Panel ── */}
+                {selectedNode && (
+                    <NodeConfigPanel
+                        node={selectedNode}
+                        onChange={onNodeConfigChange}
+                        onClose={() => setSelectedNode(null)}
+                    />
+                )}
             </div>
         </div>
     );
