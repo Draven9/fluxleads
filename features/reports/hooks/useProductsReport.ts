@@ -33,6 +33,7 @@ export function useProductsReport(deals: Deal[]) {
     queryFn: async () => {
       if (!dealIds.length) return [];
       const supabase = createClient();
+      if (!supabase) return [];
       const { data, error } = await supabase
         .from('deal_items')
         .select('name, quantity, price')
