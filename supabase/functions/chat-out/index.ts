@@ -269,11 +269,13 @@ Deno.serve(async (req: Request) => {
             });
 
             if (proxyError || proxyData?.error) {
-                console.error("Native WhatsApp delivery failed:", proxyError || proxyData?.error);
+                const errDetail = proxyError?.message ?? (typeof proxyData?.error === 'string' ? proxyData.error : JSON.stringify(proxyData?.error));
+                console.error("[chat-out] Native WhatsApp delivery failed:", errDetail);
                 await supabase.from('messages').update({ status: 'failed' }).eq('id', message.id);
-                
-                // If it fails, we will NOT fallback to n8n webhook (we assume native routing is intentional)
-                return json(500, { error: 'Failed to send via Native WhatsApp integration', details: proxyError || proxyData?.error });
+                // Return 200 so the frontend does not remove the message from the UI.
+                // The message is already persisted in the DB with status "failed"; the
+                // Realtime subscription will update the UI accordingly.
+                return json(200, { ok: false, warning: 'WhatsApp delivery failed', details: errDetail });
             }
 
             await supabase.from('messages').update({ status: 'delivered' }).eq('id', message.id);

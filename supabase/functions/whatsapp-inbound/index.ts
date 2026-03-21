@@ -153,6 +153,28 @@ function normalizeEvolution(body: any, source: any): NormalizedMessage | null {
     };
 }
 
+// ─── Fetch Group Name from Evolution API ─────────────────────────────────────
+
+async function fetchGroupNameFromEvolution(groupJid: string, source: any): Promise<string | null> {
+    try {
+        const config = source?.configuration || {};
+        const baseUrl = (config.baseUrl || config.apiUrl || '').replace(/\/$/, '');
+        const apiKey = config.apiKey;
+        const instanceName = config.instanceName;
+        if (!baseUrl || !apiKey || !instanceName) return null;
+
+        const headers: Record<string, string> = { 'apikey': apiKey, 'Content-Type': 'application/json' };
+        const res = await fetch(`${baseUrl}/group/findGroupInfos/${instanceName}?groupJid=${groupJid}`, { headers });
+        if (!res.ok) return null;
+
+        const info = await res.json();
+        const g = Array.isArray(info) ? info[0] : info;
+        return g?.subject || null;
+    } catch {
+        return null;
+    }
+}
+
 // ─── Media Download & Upload ──────────────────────────────────────────────────
 
 async function downloadAndUploadMedia(normalized: NormalizedMessage): Promise<string | null> {

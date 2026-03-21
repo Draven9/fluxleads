@@ -65,7 +65,10 @@
       "Bash(grep -n \"automations\\\\|automation_runs\\\\|automation_logs\\\\|automation_triggers\" \"/d/Sites e Clientes/Eric Mídias/Flux Comunicação-20240126T173950Z-001/fluxleads/supabase/migrations/\"*.sql)",
       "Bash(grep -l \"CREATE TRIGGER\\\\|CREATE FUNCTION\" \"/d/Sites e Clientes/Eric Mídias/Flux Comunicação-20240126T173950Z-001/fluxleads/supabase/migrations/\"*.sql)",
       "Bash(grep -l \"automations\" \"d:/Sites e Clientes/Eric Mídias/Flux Comunicação-20240126T173950Z-001/fluxleads/supabase/migrations\"/*.sql)",
-      "Bash(grep -l \"CREATE TRIGGER\\\\|CREATE FUNCTION\" *.sql)"
+      "Bash(grep -l \"CREATE TRIGGER\\\\|CREATE FUNCTION\" *.sql)",
+      "Bash(find 'd:/Sites e Clientes/Eric Mídias/Flux Comunicação-20240126T173950Z-001/fluxleads/app' -name page.tsx -path */inbox*)",
+      "Bash(ls \"d:/Sites e Clientes/Eric Mídias/Flux Comunicação-20240126T173950Z-001/fluxleads/app/\\(protected\\)/\")",
+      "mcp__supabase-fluxleads__get_logs"
     ]
   }
 }
