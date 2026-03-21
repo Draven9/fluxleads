@@ -49,15 +49,23 @@ function normalizeUazapi(body: any): NormalizedMessage | null {
 
     const groupName = isGroup ? (body.chat?.name || body.groupName || null) : null;
 
+    // Para fromMe=true (eco de mensagem enviada), o interlocutor está em chatid, não em sender.
+    // sender é o JID do próprio usuário quando fromMe=true.
     const phone = isGroup
         ? (msg.chatid || '').replace('@g.us', '')
-        : (msg.sender || msg.chatid || '').replace('@s.whatsapp.net', '').split(':')[0];
+        : fromMe
+            ? (msg.chatid || '').replace('@s.whatsapp.net', '').split(':')[0]
+            : (msg.sender || msg.chatid || '').replace('@s.whatsapp.net', '').split(':')[0];
 
     const messageType = msg.type || msg.messageType || 'text';
 
     return {
         phone,
-        name: isGroup ? (groupName || phone) : (msg.senderName || msg.pushName || body.chat?.name || phone),
+        name: isGroup
+            ? (groupName || phone)
+            : fromMe
+                ? (body.chat?.name || phone)
+                : (msg.senderName || msg.pushName || body.chat?.name || phone),
         text: msg.content || msg.text || msg.caption || '',
         direction: fromMe ? 'outbound' : 'inbound',
         message_type: messageType,
@@ -372,7 +380,7 @@ Deno.serve(async (req: Request) => {
 
             const { data: existingSession } = await supabase
                 .from('chat_sessions')
-                .select('id, name')
+                .select('id, name, contact_id')
                 .eq('organization_id', orgId)
                 .eq('provider_id', sessionProviderId)
                 .maybeSingle();
@@ -397,6 +405,8 @@ Deno.serve(async (req: Request) => {
                     .update({
                         updated_at: new Date().toISOString(),
                         whatsapp_source_id: sourceId,
+                        // Corrige contact_id se a sessão foi criada sem contato
+                        ...(contactId && !existingSession.contact_id ? { contact_id: contactId } : {}),
                         ...(nameToSave ? { name: nameToSave } : {}),
                     })
                     .eq('id', sessionId);

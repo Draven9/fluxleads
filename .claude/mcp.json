@@ -8,6 +8,12 @@
         "--access-token",
         "sbp_45921d026915247f2904eb7a5a099f04d7d8f928"
       ]
+    },
+    "plugin_context-mode": {
+      "command": "node",
+      "args": [
+        "C:/Users/erica/AppData/Roaming/npm/node_modules/context-mode/cli.bundle.mjs"
+      ]
     }
   }
 }
