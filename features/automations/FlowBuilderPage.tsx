@@ -57,6 +57,10 @@ const TRIGGER_OPTIONS = [
             { value: 'deal_stale', label: '⏳ Negócio Parado (Inativo)' },
             { value: 'hours_since_last_message', label: '🕐 Horas Após Última Mensagem' },
             { value: 'scheduled', label: '📅 Agendado (Recorrente)' },
+            { value: 'before_date_field', label: '📅 Antes de Campo de Data' },
+            { value: 'after_date_field', label: '📅 Depois de Campo de Data' },
+            { value: 'daily_at_time', label: '🕐 Horário Específico (Diário)' },
+            { value: 'daily_execution', label: '🔄 Execução Diária' },
         ],
     },
 ];
@@ -217,6 +221,7 @@ export const FlowBuilderPage: React.FC<FlowBuilderPageProps> = ({ automationId, 
     const [edges, setEdges] = useState<Edge[]>([]);
     const [name, setName] = useState('Nova Automação');
     const [triggerType, setTriggerType] = useState('lead_created');
+    const [triggerConfig, setTriggerConfig] = useState<Record<string, any>>({});
     const [loading, setLoading] = useState(false);
     const [selectedNode, setSelectedNode] = useState<Node | null>(null);
 
@@ -232,9 +237,11 @@ export const FlowBuilderPage: React.FC<FlowBuilderPageProps> = ({ automationId, 
         if (automation) {
             setName(automation.name);
             setTriggerType(automation.trigger_type);
+            setTriggerConfig(automation.trigger_config || {});
             setNodes((automation.nodes as Node[]) || buildInitialNodes(automation.trigger_type));
             setEdges((automation.edges as Edge[]) || []);
         } else {
+            setTriggerConfig({});
             setNodes(buildInitialNodes('lead_created'));
             setEdges([]);
         }
@@ -282,6 +289,7 @@ export const FlowBuilderPage: React.FC<FlowBuilderPageProps> = ({ automationId, 
                 await updateAutomation(automationId, {
                     name,
                     trigger_type: triggerType,
+                    trigger_config: triggerConfig,
                     nodes: nodes as any,
                     edges: edges as any,
                 });
@@ -289,6 +297,9 @@ export const FlowBuilderPage: React.FC<FlowBuilderPageProps> = ({ automationId, 
             } else {
                 const result = await createAutomation(name, triggerType, nodes as any, edges as any);
                 if (result) {
+                    if (Object.keys(triggerConfig).length > 0) {
+                        await updateAutomation(result.id, { trigger_config: triggerConfig });
+                    }
                     addToast('Automação criada com sucesso!', 'success');
                     onClose();
                 }
@@ -381,6 +392,55 @@ export const FlowBuilderPage: React.FC<FlowBuilderPageProps> = ({ automationId, 
                                     </optgroup>
                                 ))}
                             </select>
+
+                            {/* trigger_config inline forms */}
+                            {(triggerType === 'before_date_field' || triggerType === 'after_date_field') && (
+                                <div className="mt-2 space-y-2">
+                                    <input
+                                        type="text"
+                                        placeholder="Nome do campo (ex: follow_up)"
+                                        value={triggerConfig.field_key || ''}
+                                        onChange={e => setTriggerConfig(c => ({ ...c, field_key: e.target.value }))}
+                                        className="w-full px-2 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary-500"
+                                    />
+                                    <input
+                                        type="number"
+                                        min={1}
+                                        placeholder={triggerType === 'before_date_field' ? 'Dias antes' : 'Dias depois'}
+                                        value={triggerType === 'before_date_field' ? (triggerConfig.days_before || '') : (triggerConfig.days_after || '')}
+                                        onChange={e => setTriggerConfig(c => ({
+                                            ...c,
+                                            ...(triggerType === 'before_date_field'
+                                                ? { days_before: Number(e.target.value) }
+                                                : { days_after: Number(e.target.value) })
+                                        }))}
+                                        className="w-full px-2 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary-500"
+                                    />
+                                </div>
+                            )}
+                            {triggerType === 'daily_at_time' && (
+                                <div className="mt-2">
+                                    <input
+                                        type="time"
+                                        value={triggerConfig.time || '09:00'}
+                                        onChange={e => setTriggerConfig(c => ({ ...c, time: e.target.value }))}
+                                        className="w-full px-2 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary-500"
+                                    />
+                                    <p className="text-[10px] text-slate-400 mt-1">Horário em UTC</p>
+                                </div>
+                            )}
+                            {triggerType === 'hours_since_last_message' && (
+                                <div className="mt-2">
+                                    <input
+                                        type="number"
+                                        min={1}
+                                        placeholder="Horas (padrão: 24)"
+                                        value={triggerConfig.hours || ''}
+                                        onChange={e => setTriggerConfig(c => ({ ...c, hours: Number(e.target.value) }))}
+                                        className="w-full px-2 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary-500"
+                                    />
+                                </div>
+                            )}
                         </section>
 
                         {/* Block palette */}

@@ -17,6 +17,8 @@ const CONDITION_FIELDS = [
     { value: 'owner_id', label: 'Responsável' },
     { value: 'is_won', label: 'Ganho?' },
     { value: 'is_lost', label: 'Perdido?' },
+    { value: 'message_content', label: 'Conteúdo da Mensagem' },
+    { value: 'message_direction', label: 'Direção da Mensagem' },
 ];
 
 const CONDITION_OPERATORS = [
@@ -24,6 +26,8 @@ const CONDITION_OPERATORS = [
     { value: 'neq', label: 'é diferente de' },
     { value: 'contains', label: 'contém' },
     { value: 'not_contains', label: 'não contém' },
+    { value: 'starts_with', label: 'começa com' },
+    { value: 'ends_with', label: 'termina com' },
     { value: 'is_set', label: 'está preenchido' },
     { value: 'is_empty', label: 'está vazio' },
 ];
@@ -64,7 +68,15 @@ export const NodeConfigPanel: React.FC<NodeConfigPanelProps> = ({ node, onChange
                     {condition.operator && !['is_set', 'is_empty'].includes(condition.operator) && (
                         <div>
                             <label className={labelCls}>Valor</label>
-                            <input className={inputCls} value={condition.value || ''} onChange={e => setCondition({ value: e.target.value })} placeholder="Ex: Qualificado" />
+                            {condition.field === 'message_direction' ? (
+                                <select className={inputCls} value={condition.value || ''} onChange={e => setCondition({ value: e.target.value })}>
+                                    <option value="">Selecione…</option>
+                                    <option value="received">Mensagem recebida (cliente)</option>
+                                    <option value="sent">Mensagem enviada (atendente)</option>
+                                </select>
+                            ) : (
+                                <input className={inputCls} value={condition.value || ''} onChange={e => setCondition({ value: e.target.value })} placeholder="Ex: Qualificado" />
+                            )}
                         </div>
                     )}
                     <p className="text-[11px] text-slate-400 dark:text-slate-500">

@@ -107,16 +107,19 @@ function applyVariables(template: string, contact: ContactRow | null): string {
 function evaluateCondition(
   condition: { field: string; operator: string; value: string; field_key?: string },
   deal: DealRow,
-  messageContent?: string
+  messageContent?: string,
+  messageDirection?: string
 ): boolean {
   let actual: string | null = null;
 
   switch (condition.field) {
+    case 'stage_id':
     case 'stage':
       actual = deal.status;
       break;
+    case 'tags':
     case 'tag':
-      if (condition.operator === 'exists') return (deal.tags || []).includes(condition.value);
+      if (condition.operator === 'contains' || condition.operator === 'exists') return (deal.tags || []).includes(condition.value);
       actual = (deal.tags || []).join(',');
       break;
     case 'channel':
@@ -128,6 +131,9 @@ function evaluateCondition(
     case 'message_content':
       actual = messageContent || null;
       break;
+    case 'message_direction':
+      actual = messageDirection || null;
+      break;
     default:
       return false;
   }
@@ -135,14 +141,25 @@ function evaluateCondition(
   if (actual === null) return false;
 
   switch (condition.operator) {
+    case 'eq':
     case 'equals':
       return actual === condition.value;
+    case 'neq':
     case 'not_equals':
       return actual !== condition.value;
     case 'contains':
       return actual.toLowerCase().includes(condition.value.toLowerCase());
+    case 'not_contains':
+      return !actual.toLowerCase().includes(condition.value.toLowerCase());
+    case 'starts_with':
+      return actual.toLowerCase().startsWith(condition.value.toLowerCase());
+    case 'ends_with':
+      return actual.toLowerCase().endsWith(condition.value.toLowerCase());
+    case 'is_set':
     case 'exists':
       return actual.length > 0;
+    case 'is_empty':
+      return actual.length === 0;
     default:
       return false;
   }
@@ -302,7 +319,7 @@ Deno.serve(async (_req: Request) => {
           const condition = currentNode.data?.condition;
           let result = false;
           if (condition && deal) {
-            result = evaluateCondition(condition, deal, run.context.content);
+            result = evaluateCondition(condition, deal, run.context.content, run.context.message_direction);
           }
           currentNode = nextNode(nodes, edges, currentNode.id, result ? 'true' : 'false');
           continue;
@@ -599,5 +616,120 @@ async function handleTimeTriggers(supabaseUrl: string, headers: Record<string, s
         }),
       });
     }
+  }
+
+  // ── before_date_field / after_date_field ──────────────────────────────
+  for (const triggerType of ['before_date_field', 'after_date_field'] as const) {
+    const dateAutosRes = await fetch(
+      `${supabaseUrl}/rest/v1/automations?trigger_type=eq.${triggerType}&active=eq.true&select=id,organization_id,trigger_config`,
+      { headers }
+    );
+    const dateAutos: { id: string; organization_id: string; trigger_config: { field_key?: string; days_before?: number; days_after?: number } }[] = await dateAutosRes.json();
+
+    for (const auto of dateAutos) {
+      const fieldKey = auto.trigger_config?.field_key;
+      if (!fieldKey) continue;
+
+      const dayOffset = triggerType === 'before_date_field'
+        ? Number(auto.trigger_config.days_before) || 1
+        : -(Number(auto.trigger_config.days_after) || 1);
+
+      const targetDate = new Date();
+      targetDate.setDate(targetDate.getDate() + dayOffset);
+      const targetDateStr = targetDate.toISOString().slice(0, 10); // YYYY-MM-DD
+      const todayStr = new Date().toISOString().slice(0, 10);
+
+      // Fetch deals of this org
+      const dealsRes = await fetch(
+        `${supabaseUrl}/rest/v1/deals?organization_id=eq.${auto.organization_id}&is_won=eq.false&is_lost=eq.false&select=id,contact_id,custom_fields&limit=100`,
+        { headers }
+      );
+      const deals: { id: string; contact_id: string; custom_fields: Record<string, any> | null }[] = await dealsRes.json();
+
+      for (const deal of deals) {
+        const fieldValue = deal.custom_fields?.[fieldKey];
+        if (!fieldValue || !String(fieldValue).startsWith(targetDateStr)) continue;
+
+        // Dedup: not already queued today for this deal + automation
+        const existsRes = await fetch(
+          `${supabaseUrl}/rest/v1/automation_runs?automation_id=eq.${auto.id}&context->>deal_id=eq.${deal.id}&created_at=gte.${todayStr}T00:00:00Z&select=id&limit=1`,
+          { headers }
+        );
+        const exists: { id: string }[] = await existsRes.json();
+        if (exists.length > 0) continue;
+
+        await fetch(`${supabaseUrl}/rest/v1/automation_runs`, {
+          method: 'POST',
+          headers: { ...headers, Prefer: 'return=minimal' },
+          body: JSON.stringify({
+            automation_id: auto.id,
+            organization_id: auto.organization_id,
+            trigger_type: triggerType,
+            context: { deal_id: deal.id, contact_id: deal.contact_id, field_key: fieldKey },
+          }),
+        });
+      }
+    }
+  }
+
+  // ── daily_at_time ─────────────────────────────────────────────────────
+  const now = new Date();
+  const dailyAtAutosRes = await fetch(
+    `${supabaseUrl}/rest/v1/automations?trigger_type=eq.daily_at_time&active=eq.true&select=id,organization_id,trigger_config`,
+    { headers }
+  );
+  const dailyAtAutos: { id: string; organization_id: string; trigger_config: { time?: string } }[] = await dailyAtAutosRes.json();
+
+  for (const auto of dailyAtAutos) {
+    const [configHour, configMin] = (auto.trigger_config?.time || '09:00').split(':').map(Number);
+    if (now.getUTCHours() !== configHour || now.getUTCMinutes() !== configMin) continue;
+
+    const todayStr = now.toISOString().slice(0, 10);
+    const existsRes = await fetch(
+      `${supabaseUrl}/rest/v1/automation_runs?automation_id=eq.${auto.id}&created_at=gte.${todayStr}T00:00:00Z&select=id&limit=1`,
+      { headers }
+    );
+    const exists: { id: string }[] = await existsRes.json();
+    if (exists.length > 0) continue;
+
+    await fetch(`${supabaseUrl}/rest/v1/automation_runs`, {
+      method: 'POST',
+      headers: { ...headers, Prefer: 'return=minimal' },
+      body: JSON.stringify({
+        automation_id: auto.id,
+        organization_id: auto.organization_id,
+        trigger_type: 'daily_at_time',
+        context: { scheduled_time: auto.trigger_config?.time || '09:00' },
+      }),
+    });
+  }
+
+  // ── daily_execution ───────────────────────────────────────────────────
+  const dailyExecAutosRes = await fetch(
+    `${supabaseUrl}/rest/v1/automations?trigger_type=eq.daily_execution&active=eq.true&select=id,organization_id`,
+    { headers }
+  );
+  const dailyExecAutos: { id: string; organization_id: string }[] = await dailyExecAutosRes.json();
+
+  for (const auto of dailyExecAutos) {
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const existsRes = await fetch(
+      `${supabaseUrl}/rest/v1/automation_runs?automation_id=eq.${auto.id}&created_at=gte.${todayStr}T00:00:00Z&select=id&limit=1`,
+      { headers }
+    );
+    const exists: { id: string }[] = await existsRes.json();
+    if (exists.length > 0) continue;
+
+    // Queue one run per org (not per deal — the automation itself decides what to do)
+    await fetch(`${supabaseUrl}/rest/v1/automation_runs`, {
+      method: 'POST',
+      headers: { ...headers, Prefer: 'return=minimal' },
+      body: JSON.stringify({
+        automation_id: auto.id,
+        organization_id: auto.organization_id,
+        trigger_type: 'daily_execution',
+        context: {},
+      }),
+    });
   }
 }
