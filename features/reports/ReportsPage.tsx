@@ -1,11 +1,14 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { TrendingUp, Clock, Target, DollarSign, Trophy, Users, Download, Settings, UserPlus, Filter, AlertTriangle } from 'lucide-react';
+import { TrendingUp, Clock, Target, DollarSign, Trophy, Users, Download, Settings, UserPlus, Filter, AlertTriangle, Package, ChevronDown } from 'lucide-react';
 import { useDashboardMetrics, PeriodFilter, COMPARISON_LABELS } from '../dashboard/hooks/useDashboardMetrics';
 import { PeriodFilterSelect } from '@/components/filters/PeriodFilterSelect';
 import { LazyRevenueTrendChart, ChartWrapper } from '@/components/charts';
 import { generateReportPDF } from './utils/generateReportPDF';
+import { exportLeadsCSV, exportPipelineCSV, exportReportCSV } from './utils/generateCSV';
+import { exportLeadsXLSX, exportPipelineXLSX, exportReportXLSX } from './utils/generateXLSX';
+import { useProductsReport } from './hooks/useProductsReport';
 import { useCRM } from '@/context/CRMContext';
 import { useAuth } from '@/context/AuthContext';
 
@@ -19,6 +22,8 @@ const ReportsPage: React.FC = () => {
   const { profile } = useAuth();
   const [period, setPeriod] = useState<PeriodFilter>('this_month');
   const [selectedBoardId, setSelectedBoardId] = useState<string>('');
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const exportMenuRef = useRef<HTMLDivElement>(null);
 
   // Performance: avoid recomputing the "default board id" logic inside the effect.
   const defaultBoardId = useMemo(() => {
@@ -56,7 +61,21 @@ const ReportsPage: React.FC = () => {
     changes,
     funnelData,
     contactsCount,
+    activeSnapshotDeals,
+    activeContacts,
   } = useDashboardMetrics(period, selectedBoardId);
+
+  const { data: topProducts = [] } = useProductsReport(deals);
+
+  // Close export menu when clicking outside
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(e.target as Node))
+        setShowExportMenu(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
   // Extrair meta do board selecionado
   const boardGoal = selectedBoard?.goal;
@@ -172,6 +191,20 @@ const ReportsPage: React.FC = () => {
     wonRevenue,
   ]);
 
+  const stages = selectedBoard?.stages || [];
+
+  const reportMetrics = useMemo(() => ({
+    pipelineValue,
+    wonRevenue,
+    actualWinRate,
+    avgSalesCycle,
+    wonDeals,
+    lostDeals,
+    contactsCount,
+    funnelData,
+    trendData,
+  }), [pipelineValue, wonRevenue, actualWinRate, avgSalesCycle, wonDeals, lostDeals, contactsCount, funnelData, trendData]);
+
   return (
     <div className="flex flex-col h-[calc(100vh-7rem)] space-y-4">
       {/* Header com Filtros */}
@@ -198,15 +231,45 @@ const ReportsPage: React.FC = () => {
 
           <PeriodFilterSelect value={period} onChange={setPeriod} />
 
-          <button
-            type="button"
-            onClick={handleExportPDF}
-            className="group flex items-center gap-2 px-3 py-2 rounded-lg glass border border-slate-200/50 dark:border-white/10 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:border-slate-300 dark:hover:border-white/20 transition-all duration-200"
-            title="Exportar PDF"
-          >
-            <Download size={16} className="group-hover:scale-110 transition-transform" />
-            <span className="text-sm font-medium opacity-80 group-hover:opacity-100">PDF</span>
-          </button>
+          <div className="relative" ref={exportMenuRef}>
+            <button
+              type="button"
+              onClick={() => setShowExportMenu(v => !v)}
+              className="group flex items-center gap-2 px-3 py-2 rounded-lg glass border border-slate-200/50 dark:border-white/10 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:border-slate-300 dark:hover:border-white/20 transition-all duration-200"
+            >
+              <Download size={16} className="group-hover:scale-110 transition-transform" />
+              <span className="text-sm font-medium opacity-80 group-hover:opacity-100">Exportar</span>
+              <ChevronDown size={14} className={`transition-transform ${showExportMenu ? 'rotate-180' : ''}`} />
+            </button>
+            {showExportMenu && (
+              <div className="absolute right-0 mt-1 w-52 z-50 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg overflow-hidden">
+                <button onClick={() => { handleExportPDF(); setShowExportMenu(false); }} className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2">
+                  <Download size={14} className="text-red-500" /> PDF (relatório completo)
+                </button>
+                <div className="border-t border-slate-100 dark:border-slate-800 my-0.5" />
+                <button onClick={() => { exportLeadsCSV(activeContacts, period); setShowExportMenu(false); }} className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2">
+                  <UserPlus size={14} className="text-indigo-500" /> Leads CSV
+                </button>
+                <button onClick={() => { exportLeadsXLSX(activeContacts, period); setShowExportMenu(false); }} className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2">
+                  <UserPlus size={14} className="text-indigo-400" /> Leads XLSX
+                </button>
+                <div className="border-t border-slate-100 dark:border-slate-800 my-0.5" />
+                <button onClick={() => { exportPipelineCSV(activeSnapshotDeals, stages); setShowExportMenu(false); }} className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2">
+                  <TrendingUp size={14} className="text-blue-500" /> Pipeline CSV
+                </button>
+                <button onClick={() => { exportPipelineXLSX(activeSnapshotDeals, stages); setShowExportMenu(false); }} className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2">
+                  <TrendingUp size={14} className="text-blue-400" /> Pipeline XLSX
+                </button>
+                <div className="border-t border-slate-100 dark:border-slate-800 my-0.5" />
+                <button onClick={() => { exportReportCSV(reportMetrics, period, topProducts); setShowExportMenu(false); }} className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2">
+                  <Download size={14} className="text-emerald-500" /> Relatório CSV
+                </button>
+                <button onClick={() => { exportReportXLSX(reportMetrics, period, topProducts); setShowExportMenu(false); }} className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2">
+                  <Download size={14} className="text-emerald-400" /> Relatório XLSX
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -426,7 +489,7 @@ const ReportsPage: React.FC = () => {
       </div>
 
       {/* Terceira Linha: Funil e Motivos de Perda */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 min-h-[250px] pb-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 min-h-[250px]">
         {/* Funil de Conversão */}
         <div className="glass p-5 rounded-xl border border-slate-200 dark:border-white/5 shadow-sm flex flex-col h-full overflow-hidden">
           <div className="flex justify-between items-center mb-3 shrink-0">
@@ -526,6 +589,47 @@ const ReportsPage: React.FC = () => {
             )}
           </div>
         </div>
+      </div>
+      {/* Quarta Linha: Produtos Mais Vendidos */}
+      <div className="glass p-5 rounded-xl border border-slate-200 dark:border-white/5 shadow-sm flex flex-col pb-4">
+        <div className="flex justify-between items-center mb-3">
+          <h2 className="text-lg font-bold text-slate-900 dark:text-white font-display flex items-center gap-2">
+            <Package className="text-violet-500" size={20} />
+            Produtos Mais Vendidos
+          </h2>
+          <span className="text-xs text-slate-500 bg-slate-100 dark:bg-white/5 px-2 py-1 rounded">
+            {topProducts.length} produtos
+          </span>
+        </div>
+        {topProducts.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-xs font-semibold text-slate-500 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800">
+                  <th className="pb-2 pr-4">#</th>
+                  <th className="pb-2 pr-4">Produto</th>
+                  <th className="pb-2 pr-4 text-right">Qtd. Vendida</th>
+                  <th className="pb-2 text-right">Receita Total</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                {topProducts.map((product, index) => (
+                  <tr key={product.name} className="hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors">
+                    <td className="py-2 pr-4 text-slate-400 font-medium">{index + 1}</td>
+                    <td className="py-2 pr-4 font-medium text-slate-900 dark:text-white">{product.name}</td>
+                    <td className="py-2 pr-4 text-right text-slate-700 dark:text-slate-300">{product.quantity}</td>
+                    <td className="py-2 text-right font-bold text-emerald-500">{formatCurrency(product.revenue)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-8 text-slate-500">
+            <Package size={32} className="mb-2 opacity-50" />
+            <p className="text-sm">Nenhum produto vendido no período.</p>
+          </div>
+        )}
       </div>
     </div>
   );
