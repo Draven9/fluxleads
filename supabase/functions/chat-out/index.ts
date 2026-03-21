@@ -82,64 +82,13 @@ Deno.serve(async (req: Request) => {
         return json(200, { ok: true, message: "Message saved but session not found for delivery" });
     }
 
-    // 3. Find Outbound Configuration (Webhook)
-    const { data: endpoints } = await supabase
-        .from("integration_outbound_endpoints")
-        .select("*")
-        .eq("organization_id", organization_id)
-        .eq("active", true)
-        .limit(1);
-
-    const endpoint = endpoints?.[0];
-
-    if (!endpoint) {
-        return json(200, { ok: true, warning: "No active outbound webhook configured. Message saved locally." });
-    }
-
-    // 4. Prepare Payload
+    // 3. Prepare contact info
     let contactPhone = session.contact?.phone || "";
     const isGroup = session.contact?.source === 'whatsapp_group';
 
     if (isGroup && contactPhone && !contactPhone.includes('@')) {
         contactPhone = `${contactPhone}@g.us`;
     }
-
-    // Fetch quoted message details if replying
-    let replyToExternalId = null;
-    let replyToContent = null;
-    let replyToParticipant = null;
-
-    if (reply_to_message_id) {
-        const { data: quotedMsg } = await supabase
-            .from('messages')
-            .select('external_id, content, direction')
-            .eq('id', reply_to_message_id)
-            .single();
-
-        if (quotedMsg) {
-            replyToExternalId = quotedMsg.external_id;
-            replyToContent = quotedMsg.content;
-            // If outbound, participant is ME (null/undefined in Evolution usually triggers standard behavior)
-            // If inbound, we might need the participant header but usually ID is enough.
-        }
-    }
-
-    // Fetch forwarded message details if forwarding
-    let forwardExternalId = null;
-    if (is_forwarded && forward_original_message_id) {
-        const { data: fwdMsg } = await supabase
-            .from('messages')
-            .select('external_id')
-            .eq('id', forward_original_message_id)
-            .single();
-
-        forwardExternalId = fwdMsg?.external_id;
-    }
-
-    const contactPayload = {
-        ...session.contact,
-        phone: contactPhone
-    };
 
     // --- META DIRECT INTEGRATION ---
     if (session.provider === 'instagram' || session.provider === 'facebook') {
@@ -244,7 +193,7 @@ Deno.serve(async (req: Request) => {
 
         if (sources && sources.length > 0) {
             const source = sources[0]; // use the primary active source (usually only one per org right now)
-            
+
             // Determine action (sendText, sendMedia, sendAudio)
             let proxyAction = 'sendText';
             if (media_url) {
@@ -284,9 +233,53 @@ Deno.serve(async (req: Request) => {
     }
     // --- END NATIVE WHATSAPP INTEGRATION ---
 
-    // 5. Fallback for External Webhook (n8n)
+    // 4. Fallback: External Webhook (n8n)
+    const { data: endpoints } = await supabase
+        .from("integration_outbound_endpoints")
+        .select("*")
+        .eq("organization_id", organization_id)
+        .eq("active", true)
+        .limit(1);
+
+    const endpoint = endpoints?.[0];
+
     if (!endpoint) {
         return json(200, { ok: true, warning: "No active native integration or outbound webhook configured. Message saved locally." });
+    }
+
+    // Prepare payload for n8n webhook
+    const contactPayload = {
+        ...session.contact,
+        phone: contactPhone
+    };
+
+    // Fetch quoted message details if replying
+    let replyToExternalId = null;
+    let replyToContent = null;
+
+    if (reply_to_message_id) {
+        const { data: quotedMsg } = await supabase
+            .from('messages')
+            .select('external_id, content, direction')
+            .eq('id', reply_to_message_id)
+            .single();
+
+        if (quotedMsg) {
+            replyToExternalId = quotedMsg.external_id;
+            replyToContent = quotedMsg.content;
+        }
+    }
+
+    // Fetch forwarded message details if forwarding
+    let forwardExternalId = null;
+    if (is_forwarded && forward_original_message_id) {
+        const { data: fwdMsg } = await supabase
+            .from('messages')
+            .select('external_id')
+            .eq('id', forward_original_message_id)
+            .single();
+
+        forwardExternalId = fwdMsg?.external_id;
     }
 
     const payload = {
@@ -301,13 +294,13 @@ Deno.serve(async (req: Request) => {
             provider_id: session.provider_id,
             created_at: message.created_at,
             reply_to_message_id: reply_to_message_id,
-            reply_to_message_external_id: replyToExternalId, // Send external ID for WhatsApp quoting
-            reply_to_message_content: replyToContent, // Context for N8n if needed
-            mentions: mentions || [], // Pass mentions array to webhook
-            is_forwarded: is_forwarded || false, // Pass forwarded flag
-            forward_message_external_id: forwardExternalId, // Pass external ID for forwarding
-            fileName: media_name, // Pass original filename for documents
-            mimetype: media_mimetype // Pass explicit mimetype
+            reply_to_message_external_id: replyToExternalId,
+            reply_to_message_content: replyToContent,
+            mentions: mentions || [],
+            is_forwarded: is_forwarded || false,
+            forward_message_external_id: forwardExternalId,
+            fileName: media_name,
+            mimetype: media_mimetype
         }
     };
 

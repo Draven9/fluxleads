@@ -1,5 +1,12 @@
 {
   "mcpServers": {
+    "vercel": {
+      "url": "https://mcp.vercel.com/",
+      "headers": {
+        "Authorization": "Bearer vcp_4alYhH058zyFKokNCQ1oQHNeDfIkkdfWo0zvKhOGViYJGxq7Cj1dI15D"
+      },
+      "type": "http"
+    },
     "supabase-fluxleads": {
       "command": "npx",
       "args": [
