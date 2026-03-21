@@ -8,7 +8,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 interface ScheduledMessageRow {
     id: string;
     organization_id: string;
-    session_id: string;
+    session_id: string | null;
     contact_id: string | null;
     content: string;
     has_variables: boolean;
@@ -78,16 +78,33 @@ Deno.serve(async (_req: Request) => {
                     throw new Error('Configuração UazAPI não encontrada para a organização');
                 }
 
-                // 3. Buscar sessão de chat para obter o provider_id (phone do destinatário)
-                const sessionRes = await fetch(
-                    `${supabaseUrl}/rest/v1/chat_sessions?id=eq.${msg.session_id}&select=provider_id&limit=1`,
-                    { headers }
-                );
-                const sessions: { provider_id: string }[] = await sessionRes.json();
-                const session = sessions[0];
+                // 3. Obter o provider_id (phone do destinatário) — via sessão ou contato direto
+                let recipientPhone: string;
 
-                if (!session?.provider_id) {
-                    throw new Error('Sessão de chat não encontrada');
+                if (msg.session_id) {
+                    const sessionRes = await fetch(
+                        `${supabaseUrl}/rest/v1/chat_sessions?id=eq.${msg.session_id}&select=provider_id&limit=1`,
+                        { headers }
+                    );
+                    const sessions: { provider_id: string }[] = await sessionRes.json();
+                    const session = sessions[0];
+                    if (!session?.provider_id) {
+                        throw new Error('Sessão de chat não encontrada');
+                    }
+                    recipientPhone = session.provider_id;
+                } else if (msg.contact_id) {
+                    // Sem sessão: usar phone do contato diretamente
+                    const contactPhoneRes = await fetch(
+                        `${supabaseUrl}/rest/v1/contacts?id=eq.${msg.contact_id}&select=phone&limit=1`,
+                        { headers }
+                    );
+                    const phoneRows: { phone: string }[] = await contactPhoneRes.json();
+                    if (!phoneRows[0]?.phone) {
+                        throw new Error('Contato sem número de telefone cadastrado');
+                    }
+                    recipientPhone = phoneRows[0].phone;
+                } else {
+                    throw new Error('Agendamento sem sessão nem contato associado');
                 }
 
                 // 4. Buscar contato para variáveis dinâmicas
@@ -117,7 +134,7 @@ Deno.serve(async (_req: Request) => {
                             'Authorization': apiKey,
                         },
                         body: JSON.stringify({
-                            to: session.provider_id,
+                            to: recipientPhone,
                             text: finalContent,
                         }),
                     }

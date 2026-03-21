@@ -37,7 +37,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ session, onBack }) => {
         updateScheduledMessage,
         isCreating: isScheduling,
         isUpdating: isUpdatingSchedule,
-    } = useScheduledMessages(session.id);
+    } = useScheduledMessages({ sessionId: session.id });
 
     // Group Mentions State
     const isGroup = session.contact?.source === 'whatsapp_group';

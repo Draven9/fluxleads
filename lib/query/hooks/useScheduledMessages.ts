@@ -3,20 +3,36 @@ import { scheduledMessagesService } from '@/lib/supabase/scheduled_messages';
 import { CreateScheduledMessagePayload, UpdateScheduledMessagePayload } from '@/types';
 import { useToast } from '@/context/ToastContext';
 
-export const SCHEDULED_MESSAGES_QUERY_KEY = (sessionId: string) => ['scheduled_messages', sessionId];
+export const SCHEDULED_MESSAGES_QUERY_KEY = (id: string) => ['scheduled_messages', id];
 
-export function useScheduledMessages(sessionId: string) {
+interface UseScheduledMessagesParams {
+    sessionId?: string;
+    contactId?: string;
+}
+
+export function useScheduledMessages({ sessionId, contactId }: UseScheduledMessagesParams) {
     const queryClient = useQueryClient();
     const { addToast } = useToast();
 
+    // Prefer sessionId for the query key; fall back to contactId
+    const queryId = sessionId || contactId || '';
+
     const messagesQuery = useQuery({
-        queryKey: SCHEDULED_MESSAGES_QUERY_KEY(sessionId),
+        queryKey: SCHEDULED_MESSAGES_QUERY_KEY(queryId),
         queryFn: async () => {
-            const { data, error } = await scheduledMessagesService.listForSession(sessionId);
-            if (error) throw error;
-            return data;
+            if (sessionId) {
+                const { data, error } = await scheduledMessagesService.listForSession(sessionId);
+                if (error) throw error;
+                return data;
+            }
+            if (contactId) {
+                const { data, error } = await scheduledMessagesService.listForContact(contactId);
+                if (error) throw error;
+                return data;
+            }
+            return [];
         },
-        enabled: !!sessionId,
+        enabled: !!(sessionId || contactId),
     });
 
     const createMutation = useMutation({
@@ -26,7 +42,7 @@ export function useScheduledMessages(sessionId: string) {
             return data;
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: SCHEDULED_MESSAGES_QUERY_KEY(sessionId) });
+            queryClient.invalidateQueries({ queryKey: SCHEDULED_MESSAGES_QUERY_KEY(queryId) });
             addToast('Mensagem agendada com sucesso! ⏱️', 'success');
         },
         onError: (err) => {
@@ -40,7 +56,7 @@ export function useScheduledMessages(sessionId: string) {
             if (error) throw error;
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: SCHEDULED_MESSAGES_QUERY_KEY(sessionId) });
+            queryClient.invalidateQueries({ queryKey: SCHEDULED_MESSAGES_QUERY_KEY(queryId) });
             addToast('Agendamento cancelado.', 'info');
         },
         onError: (err) => {
@@ -55,7 +71,7 @@ export function useScheduledMessages(sessionId: string) {
             return data;
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: SCHEDULED_MESSAGES_QUERY_KEY(sessionId) });
+            queryClient.invalidateQueries({ queryKey: SCHEDULED_MESSAGES_QUERY_KEY(queryId) });
             addToast('Agendamento atualizado com sucesso!', 'success');
         },
         onError: (err) => {

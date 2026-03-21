@@ -10,6 +10,7 @@ function mapDb(row: DbScheduledMessage): ScheduledMessage {
         id: row.id,
         organizationId: row.organization_id,
         sessionId: row.session_id,
+        dealId: row.deal_id,
         contactId: row.contact_id,
         createdBy: row.created_by,
         content: row.content,
@@ -51,6 +52,20 @@ export const scheduledMessagesService = {
         };
     },
 
+    /** Lista mensagens agendadas de um contato (inclui agendamentos sem sessão). */
+    async listForContact(contactId: string) {
+        const { data, error } = await supabase
+            .from('scheduled_messages')
+            .select('*')
+            .eq('contact_id', contactId)
+            .order('scheduled_at', { ascending: true });
+
+        return {
+            data: (data as DbScheduledMessage[] | null)?.map(mapDb) ?? [],
+            error,
+        };
+    },
+
     /** Cria um novo agendamento. */
     async create(payload: CreateScheduledMessagePayload) {
         const { data: { user } } = await supabase.auth.getUser();
@@ -58,7 +73,8 @@ export const scheduledMessagesService = {
         const { data, error } = await supabase
             .from('scheduled_messages')
             .insert({
-                session_id: payload.sessionId,
+                session_id: payload.sessionId ?? null,
+                deal_id: payload.dealId ?? null,
                 contact_id: payload.contactId ?? null,
                 created_by: user?.id ?? null,
                 content: payload.content,

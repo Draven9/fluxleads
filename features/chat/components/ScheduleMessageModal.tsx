@@ -9,7 +9,8 @@ import { ptBR } from 'date-fns/locale';
 interface ScheduleMessageModalProps {
     isOpen: boolean;
     onClose: () => void;
-    sessionId: string;
+    sessionId?: string;
+    contactId?: string;
     contactName?: string;
     initialMessage?: string;
     scheduledMessages: ScheduledMessage[];
@@ -30,7 +31,8 @@ const DYNAMIC_VARS = [
 export const ScheduleMessageModal: React.FC<ScheduleMessageModalProps> = ({
     isOpen,
     onClose,
-    sessionId,
+    sessionId: _sessionId,
+    contactId: _contactId,
     contactName,
     initialMessage = '',
     scheduledMessages,

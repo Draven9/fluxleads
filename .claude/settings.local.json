@@ -39,7 +39,26 @@
       "mcp__plugin_context-mode_context-mode__ctx_doctor",
       "mcp__plugin_context-mode_context-mode__ctx_upgrade",
       "Bash(node \"C:\\\\Users\\\\erica\\\\.claude\\\\plugins\\\\cache\\\\context-mode\\\\context-mode\\\\1.0.42\\\\cli.bundle.mjs\" upgrade)",
-      "Bash(powershell -Command \"irm bun.sh/install.ps1 | iex\")"
+      "Bash(powershell -Command \"irm bun.sh/install.ps1 | iex\")",
+      "Bash(find '/d/Sites e Clientes/Eric Mídias/Flux Comunicação-20240126T173950Z-001/fluxleads/supabase/migrations' -name *.sql)",
+      "Bash(grep -E \"\\\\.\\(ts|tsx|js|jsx\\)$\")",
+      "Bash(find . -name *schedul* -o -name *agendament*)",
+      "Bash(ls -1 supabase/migrations/*.sql)",
+      "Bash(find src:*)",
+      "Bash(grep -r scheduled src --include=*.tsx --include=*.ts -l)",
+      "Bash(xargs ls:*)",
+      "Bash(grep -r \"scheduled_messages\\\\|agendament\" components --include=*.tsx --include=*.ts)",
+      "Bash(grep -r \"Clock\\\\|calendar\\\\|schedule\" components --include=*.tsx -l)",
+      "Bash(find app:*)",
+      "Bash(find components:*)",
+      "Bash(grep -r \"send.*message\\\\|sendMessage\\\\|Message.*Form\" components hooks --include=*.tsx --include=*.ts -l)",
+      "Bash(ls -la app/\\\\\\(protected\\\\\\)/chat/)",
+      "Bash(find features/chat -type f -name *.tsx)",
+      "Bash(grep -r \"sendMessage\\\\|send.*message\\\\|scheduled\" features/chat --include=*.tsx -l)",
+      "Bash(/tmp/search_queries.txt:*)",
+      "Read(//tmp/**)",
+      "Bash(grep -n \"interface DealView\\\\|type DealView\" types/*.ts)",
+      "mcp__supabase-fluxleads__list_edge_functions"
     ]
   }
 }

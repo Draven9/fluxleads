@@ -567,7 +567,8 @@ export type ScheduledMessageStatus = 'pending' | 'sent' | 'failed' | 'cancelled'
 export interface ScheduledMessage {
   id: string;
   organizationId: string;
-  sessionId: string;
+  sessionId?: string | null;
+  dealId?: string | null;
   contactId?: string | null;
   createdBy?: string | null;
   content: string;
@@ -583,7 +584,8 @@ export interface ScheduledMessage {
 export interface DbScheduledMessage {
   id: string;
   organization_id: string;
-  session_id: string;
+  session_id: string | null;
+  deal_id: string | null;
   contact_id: string | null;
   created_by: string | null;
   content: string;
@@ -597,7 +599,8 @@ export interface DbScheduledMessage {
 }
 
 export interface CreateScheduledMessagePayload {
-  sessionId: string;
+  sessionId?: string;
+  dealId?: string;
   content: string;
   scheduledAt: string;
   contactId?: string;

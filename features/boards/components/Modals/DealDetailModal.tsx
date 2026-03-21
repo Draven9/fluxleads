@@ -155,7 +155,7 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({ dealId, isOpen
     updateScheduledMessage,
     isCreating: isScheduling,
     isUpdating: isUpdatingSchedule,
-  } = useScheduledMessages(contactSession?.id ?? '');
+  } = useScheduledMessages({ sessionId: contactSession?.id, contactId: deal?.contactId });
 
   const normalizeTag = (value: string) => value.trim().replace(/\s+/g, ' ');
   const tagsLower = useMemo(() => new Set((deal?.tags || []).map(t => t.toLowerCase())), [deal?.tags]);
@@ -501,10 +501,6 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({ dealId, isOpen
                 onClick={() => {
                   if (!deal.contactId) {
                     addToast('Este negócio não possui um contato vinculado.', 'warning');
-                    return;
-                  }
-                  if (!contactSession?.id) {
-                    addToast('Contato sem conversa ativa no WhatsApp. Inicie uma conversa primeiro.', 'warning');
                     return;
                   }
                   setShowScheduleModal(true);
@@ -1295,16 +1291,18 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({ dealId, isOpen
         variant="danger"
       />
 
-      {showScheduleModal && contactSession?.id && (
+      {showScheduleModal && deal.contactId && (
         <ScheduleMessageModal
           isOpen={showScheduleModal}
           onClose={() => setShowScheduleModal(false)}
-          sessionId={contactSession.id}
+          sessionId={contactSession?.id}
+          contactId={deal.contactId}
           contactName={contact?.name}
           scheduledMessages={scheduledMessages}
           onSchedule={async (content, scheduledAt) => {
             await createScheduledMessage({
-              sessionId: contactSession.id,
+              sessionId: contactSession?.id,
+              dealId: deal.id,
               content,
               scheduledAt,
               contactId: deal.contactId,
