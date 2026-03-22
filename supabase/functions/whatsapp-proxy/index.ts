@@ -129,18 +129,16 @@ Deno.serve(async (req: Request) => {
         const authHeader = req.headers.get('Authorization');
         if (!authHeader) throw new Error('Missing Authorization header');
 
-        const { data: { user }, error: authError } = await supabase.auth.getUser(
-            authHeader.replace('Bearer ', '')
-        );
-        if (authError || !user) throw new Error('Unauthorized');
-
-        const { data: profile } = await supabase
-            .from('profiles')
-            .select('organization_id')
-            .eq('id', user.id)
-            .single();
-
-        if (!profile?.organization_id) throw new Error('Organization not found for user');
+        // Detect service-role calls (server-to-server from chat-out).
+        // Service role JWTs have role='service_role' in the payload.
+        let isServiceRole = false;
+        try {
+            // JWTs use base64url (- and _); atob requires standard base64 (+ and /)
+            const b64 = authHeader.replace('Bearer ', '').split('.')[1]
+                .replace(/-/g, '+').replace(/_/g, '/');
+            const payload = JSON.parse(atob(b64));
+            isServiceRole = payload?.role === 'service_role';
+        } catch (_) { /* invalid JWT — will fail below */ }
 
         // ── Parse body ────────────────────────────────────────────────────
         const body = await req.json();
@@ -150,17 +148,37 @@ Deno.serve(async (req: Request) => {
         let sourceQuery = supabase
             .from('integration_inbound_sources')
             .select('*')
-            .eq('organization_id', profile.organization_id)
             .eq('active', true);
 
-        if (sourceId) {
+        if (isServiceRole) {
+            // Trusted server call — sourceId is required; org scoping is done by ID
+            if (!sourceId) throw new Error('sourceId is required for server calls');
             sourceQuery = sourceQuery.eq('id', sourceId);
         } else {
-            sourceQuery = sourceQuery.limit(1);
+            // User call — validate JWT and scope by organization
+            const { data: { user }, error: authError } = await supabase.auth.getUser(
+                authHeader.replace('Bearer ', '')
+            );
+            if (authError || !user) throw new Error('Unauthorized');
+
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('organization_id')
+                .eq('id', user.id)
+                .single();
+
+            if (!profile?.organization_id) throw new Error('Organization not found for user');
+
+            sourceQuery = sourceQuery.eq('organization_id', profile.organization_id);
+            if (sourceId) {
+                sourceQuery = sourceQuery.eq('id', sourceId);
+            } else {
+                sourceQuery = sourceQuery.limit(1);
+            }
         }
 
         const { data: source } = await sourceQuery.single();
-        if (!source) throw new Error(`WhatsApp integration not configured (Org: ${profile.organization_id})`);
+        if (!source) throw new Error(`WhatsApp integration not configured (sourceId: ${sourceId})`);
 
         const config = source.configuration as any;
         const providerType: string = source.provider_type || config?.providerType || 'evolution';
