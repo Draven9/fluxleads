@@ -1,0 +1,20 @@
+deec809 Ajuste final whatsapp, falta o audio.
+fa3625c Ajuste final whatsapp, falta o audio
+376dc84 Correção final whatsapp
+f23eb49 nova tentativa de correção do whatsapp
+9b01c53 Nova tentativa de correção do whatsapp
+ceabd61 Nova correção do whatsapp
+2e8b42a Correção do whatsapp
+994f40f Correção do sistema de agendamento de mensagens.
+eb16299 Correção do deploy anterior.
+936d8d9 feat(reports): adiciona exportação CSV/XLSX e relatório de produtos
+821496a feat(automations): implementa Fase 2 do motor de automações
+686e907 Correção do sistema de agendamento de mensagens.
+fd677d6 Centralização do modal de agendamento
+18fb5aa Correção do botão de agendamento de mensagem.
+f45eed0 feat(automations): implementa motor de automações nativo completo
+cf53462 feat(scheduling): completa agendamento de mensagens
+9ae139e Inalação do repositório: https://github.com/mksglu/context-mode
+e4e2c0e feat(scheduling): implementa agendamento completo de mensagens
+8453fd3 Conconclusão da Fase 3 de melhorias solicitadas pela Kayla.
+f939554 - DealDetailModal: adiciona seletor de responsável inline, histórico de   etapas (STATUS_CHANGE activities) e label da etapa atual - Tags: migra de localStorage para tabela organization_tags no banco;   cria useOrganizationTags/useCreateOrganizationTag hooks - KanbanHeader: adiciona filtros de Tag e Canal com chips colapsáveis;   opções de tag carregadas dinamicamente do banco - useBoardsController: adiciona tagFilter e channelFilter no estado,   filteredDeals e retorno do hook - ActivityFormModalV2: substitui <select> de negócio por DealSearchCombobox   com busca client-side - ContactSidePanel: adiciona badge de status e botões explícitos   "Desativar cliente" / "Reativar cliente" - useSettingsController: refatora gestão de tags para usar organization_tags
