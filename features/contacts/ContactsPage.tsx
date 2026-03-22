@@ -103,7 +103,7 @@ export const ContactsPage: React.FC = () => {
     };
 
     return (
-        <div className="space-y-6 p-8 max-w-[1600px] mx-auto">
+        <div className="space-y-4 sm:space-y-6 p-4 sm:p-8 max-w-[1600px] mx-auto">
             <ContactsHeader
                 viewMode={controller.viewMode}
                 openCreateModal={controller.openCreateModal}

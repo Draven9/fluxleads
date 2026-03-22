@@ -441,8 +441,20 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           </div>
 
           {/* Header */}
-          <header className="h-16 glass border-b border-[var(--color-border-subtle)] flex items-center justify-between px-6 z-40 shrink-0" role="banner">
-            <div className="flex-1 max-w-xl mr-6">
+          <header className="h-16 glass border-b border-[var(--color-border-subtle)] flex items-center justify-between px-4 sm:px-6 z-40 shrink-0 gap-3 sm:gap-6" role="banner">
+            {!isDesktop && (
+              <Link href="/" className="flex items-center shrink-0 focus-visible-ring rounded-lg transition-transform active:scale-95">
+                <Image
+                  src="/icons/logo-icon.png"
+                  alt="Flux Leads"
+                  width={32}
+                  height={32}
+                  className="w-8 h-8 object-contain"
+                  unoptimized
+                />
+              </Link>
+            )}
+            <div className="flex-1 max-w-xl">
               <GlobalSearch />
             </div>
 
