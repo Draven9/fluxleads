@@ -56,8 +56,11 @@ export const ScheduleMessageModal: React.FC<ScheduleMessageModalProps> = ({
     const handleEdit = (m: ScheduledMessage) => {
         setEditingId(m.id);
         setMessage(m.content);
-        // Convert ISO to datetime-local format (YYYY-MM-DDTHH:mm)
-        setScheduledAt(m.scheduledAt.slice(0, 16));
+        // Convert UTC ISO to BRT (UTC-3) for datetime-local input
+        const d = new Date(m.scheduledAt);
+        const brt = new Date(d.getTime() - 3 * 60 * 60 * 1000);
+        const pad = (n: number) => String(n).padStart(2, '0');
+        setScheduledAt(`${brt.getUTCFullYear()}-${pad(brt.getUTCMonth() + 1)}-${pad(brt.getUTCDate())}T${pad(brt.getUTCHours())}:${pad(brt.getUTCMinutes())}`);
         setTab('new');
     };
 
