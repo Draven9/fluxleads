@@ -33,8 +33,9 @@ interface IntegrationSourceRow {
 
 function applyVariables(template: string, contact: ContactRow | null): string {
     const now = new Date();
-    const dateStr = now.toLocaleDateString('pt-BR');
-    const timeStr = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    const tz = 'America/Sao_Paulo';
+    const dateStr = now.toLocaleDateString('pt-BR', { timeZone: tz });
+    const timeStr = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: tz });
 
     return template
         .replace(/\{\{nome\}\}/g, contact?.name || '')
@@ -85,15 +86,19 @@ Deno.serve(async (_req: Request) => {
 
                 if (msg.session_id) {
                     const sessionRes = await fetch(
-                        `${supabaseUrl}/rest/v1/chat_sessions?id=eq.${msg.session_id}&select=provider_id&limit=1`,
+                        `${supabaseUrl}/rest/v1/chat_sessions?id=eq.${msg.session_id}&select=provider_id,contact_id&limit=1`,
                         { headers }
                     );
-                    const sessions: { provider_id: string }[] = await sessionRes.json();
+                    const sessions: { provider_id: string; contact_id: string | null }[] = await sessionRes.json();
                     const session = sessions[0];
                     if (!session?.provider_id) {
                         throw new Error('Sessão de chat não encontrada');
                     }
                     recipientPhone = session.provider_id;
+                    // Usar contact_id da sessão se não veio no agendamento
+                    if (!msg.contact_id && session.contact_id) {
+                        msg.contact_id = session.contact_id;
+                    }
                 } else if (msg.contact_id) {
                     // Sem sessão: usar phone do contato diretamente
                     const contactPhoneRes = await fetch(
