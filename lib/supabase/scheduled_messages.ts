@@ -87,7 +87,7 @@ export const scheduledMessagesService = {
                 created_by: user?.id ?? null,
                 content: payload.content,
                 has_variables: payload.content.includes('{{'),
-                scheduled_at: payload.scheduledAt,
+                scheduled_at: new Date(payload.scheduledAt).toISOString(),
                 status: 'pending',
             })
             .select()
@@ -117,7 +117,7 @@ export const scheduledMessagesService = {
                     content: payload.content,
                     has_variables: payload.content.includes('{{'),
                 }),
-                ...(payload.scheduledAt !== undefined && { scheduled_at: payload.scheduledAt }),
+                ...(payload.scheduledAt !== undefined && { scheduled_at: new Date(payload.scheduledAt).toISOString() }),
             })
             .eq('id', id)
             .eq('status', 'pending')

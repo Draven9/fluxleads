@@ -49,3 +49,7 @@ supabase/.branches
 .env.production.check
 .temp_evolution_labs/
 .tempuazapi/
+
+# Secrets and Local configs
+.claude/
+.mcp.json
