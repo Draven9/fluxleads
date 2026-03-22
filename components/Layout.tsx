@@ -61,6 +61,7 @@ import { isDebugMode, enableDebugMode, disableDebugMode } from '@/lib/debug';
 import { SkipLink } from '@/lib/a11y';
 import { useResponsiveMode } from '@/hooks/useResponsiveMode';
 import { BottomNav, MoreMenuSheet, NavigationRail } from '@/components/navigation';
+import { DESKTOP_NAV } from '@/components/navigation/navConfig';
 import { GlobalSearch } from '@/components/navigation/GlobalSearch';
 
 // Lazy load AI Assistant (deprecated - using UIChat now)
@@ -278,32 +279,20 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           </div>
 
           <nav className={`flex-1 p-4 space-y-2 flex flex-col overflow-y-auto min-h-0 ${sidebarCollapsed ? 'items-center px-2' : ''}`} aria-label="Navegação do sistema">
-            {[
-              { to: '/inbox', icon: Inbox, label: 'Inbox', prefetch: 'inbox' as const },
-              { to: '/chat', icon: MessageSquare, label: 'Mensagens', prefetch: 'chat' as const },
-              { to: '/comments', icon: MessageCircle, label: 'Engajamento', prefetch: 'comments' as const },
-              { to: '/dashboard', icon: LayoutDashboard, label: 'Visão Geral', prefetch: 'dashboard' as const },
-              { to: '/boards', icon: KanbanSquare, label: 'Boards', prefetch: 'boards' as const },
-              { to: '/companies', icon: Briefcase, label: 'Carteira', prefetch: 'companies' as const },
-              { to: '/contacts', icon: Users, label: 'Contatos', prefetch: 'contacts' as const },
-              { to: '/automations', icon: Zap, label: 'Automações', prefetch: 'automations' as const },
-              { to: '/activities', icon: CheckSquare, label: 'Atividades', prefetch: 'activities' as const },
-              { to: '/reports', icon: BarChart3, label: 'Relatórios', prefetch: 'reports' as const },
-              { to: '/manual', icon: Book, label: 'Manual', prefetch: 'manual' as const },
-              { to: '/settings', icon: Settings, label: 'Configurações', prefetch: 'settings' as const },
-            ].map((item) => {
+            {DESKTOP_NAV.map((item) => {
+              const to = item.href || '/';
               if (sidebarCollapsed) {
                 return (
                   <Link
-                    key={item.to}
-                    href={item.to}
-                    onMouseEnter={() => prefetchRoute(item.prefetch)}
-                    onClick={() => setClickedPath(item.to)}
+                    key={to}
+                    href={to}
+                    onMouseEnter={() => item.prefetch && prefetchRoute(item.prefetch)}
+                    onClick={() => setClickedPath(to)}
                     className={(() => {
-                      const isActive = pathname === item.to || (item.to === '/boards' && pathname === '/pipeline');
-                      const wasJustClicked = clickedPath === item.to;
+                      const isActive = pathname === to || (to === '/boards' && pathname === '/pipeline');
+                      const wasJustClicked = clickedPath === to;
                       // If user clicked on a DIFFERENT item, immediately deactivate this one
-                      const anotherItemWasClicked = clickedPath && clickedPath !== item.to;
+                      const anotherItemWasClicked = clickedPath && clickedPath !== to;
                       const isActuallyActive = anotherItemWasClicked ? false : (isActive || wasJustClicked);
                       return `w-10 h-10 rounded-lg flex items-center justify-center ${isActuallyActive
                         ? 'bg-primary-500/10 text-primary-600 dark:text-primary-400 border border-primary-200 dark:border-primary-900/50'
@@ -319,8 +308,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
               return (
                 <NavItem
-                  key={item.to}
-                  to={item.to}
+                  key={to}
+                  to={to}
                   icon={item.icon}
                   label={item.label}
                   prefetch={item.prefetch}

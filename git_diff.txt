@@ -1,0 +1,49 @@
+commit 376dc84eddb1a83bdc76c97aeb3fea6ba5957508
+Author: Draven9 <eric.azevedo9@gmail.com>
+Date:   Sat Mar 21 22:17:18 2026 -0300
+
+    Correção final whatsapp
+
+diff --git a/supabase/functions/chat-out/index.ts b/supabase/functions/chat-out/index.ts
+index 6f10081..08f96fa 100644
+--- a/supabase/functions/chat-out/index.ts
++++ b/supabase/functions/chat-out/index.ts
+@@ -185,14 +185,21 @@ Deno.serve(async (req: Request) => {
+ 
+     // --- NATIVE WHATSAPP INTEGRATION (EVOLUTION / UAZAPI) ---
+     if (session.provider === 'whatsapp') {
+-        const { data: sources } = await supabase
++        // Prefer the source linked to this specific session; fallback to first active
++        let sourceQuery = supabase
+             .from('integration_inbound_sources')
+             .select('*')
+             .eq('organization_id', organization_id)
+             .eq('active', true);
+ 
++        if (session.whatsapp_source_id) {
++            sourceQuery = sourceQuery.eq('id', session.whatsapp_source_id);
++        }
++
++        const { data: sources } = await sourceQuery.limit(1);
++
+         if (sources && sources.length > 0) {
+-            const source = sources[0]; // use the primary active source (usually only one per org right now)
++            const source = sources[0];
+ 
+             // Determine action (sendText, sendMedia, sendAudio)
+             let proxyAction = 'sendText';
+diff --git a/supabase/migrations/20260321100000_add_from_me_to_messages.sql b/supabase/migrations/20260321100000_add_from_me_to_messages.sql
+new file mode 100644
+index 0000000..7e7a8af
+--- /dev/null
++++ b/supabase/migrations/20260321100000_add_from_me_to_messages.sql
+@@ -0,0 +1,9 @@
++-- Adiciona coluna from_me à tabela messages como coluna gerada
++-- derivada de direction. Necessário para o trigger trg_messages_automation
++-- que referencia NEW.from_me para disparar automações.
++-- direction='outbound' → from_me=true (mensagem enviada pela equipe)
++-- direction='inbound'  → from_me=false (mensagem recebida do contato)
++
++ALTER TABLE messages
++  ADD COLUMN IF NOT EXISTS from_me boolean
++    GENERATED ALWAYS AS (direction = 'outbound') STORED;
