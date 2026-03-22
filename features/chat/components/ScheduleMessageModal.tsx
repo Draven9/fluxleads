@@ -11,6 +11,7 @@ interface ScheduleMessageModalProps {
     onClose: () => void;
     sessionId?: string;
     contactId?: string;
+    isGroup?: boolean;
     contactName?: string;
     initialMessage?: string;
     scheduledMessages: ScheduledMessage[];
@@ -33,6 +34,7 @@ export const ScheduleMessageModal: React.FC<ScheduleMessageModalProps> = ({
     onClose,
     sessionId: _sessionId,
     contactId: _contactId,
+    isGroup = false,
     contactName,
     initialMessage = '',
     scheduledMessages,
@@ -177,6 +179,14 @@ export const ScheduleMessageModal: React.FC<ScheduleMessageModalProps> = ({
                                     <p className="text-[10px] text-slate-400 mt-1">
                                         As variáveis <code className="font-mono">{'{{nome}}'}</code>, <code className="font-mono">{'{{empresa}}'}</code>, <code className="font-mono">{'{{data}}'}</code> e <code className="font-mono">{'{{hora}}'}</code> serão substituídas automaticamente no envio.
                                     </p>
+                                    {isGroup && (message.includes('{{nome}}') || message.includes('{{empresa}}')) && (
+                                        <div className="flex items-start gap-2 mt-2 p-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/50 rounded-lg">
+                                            <AlertCircle size={13} className="text-amber-500 mt-0.5 shrink-0" />
+                                            <p className="text-[10px] text-amber-700 dark:text-amber-400">
+                                                Em conversas de grupo, <code className="font-mono">{'{{nome}}'}</code> e <code className="font-mono">{'{{empresa}}'}</code> não são preenchidos. Apenas <code className="font-mono">{'{{data}}'}</code> e <code className="font-mono">{'{{hora}}'}</code> funcionam em grupos.
+                                            </p>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Date/Time */}

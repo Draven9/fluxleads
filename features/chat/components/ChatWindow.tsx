@@ -238,6 +238,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ session, onBack }) => {
                         isOpen={showScheduleModal}
                         onClose={() => setShowScheduleModal(false)}
                         sessionId={session.id}
+                        isGroup={isGroup}
                         contactName={session.contact?.name}
                         scheduledMessages={scheduledMessages}
                         onSchedule={async (content, scheduledAt) => {
