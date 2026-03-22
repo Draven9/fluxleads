@@ -185,14 +185,21 @@ Deno.serve(async (req: Request) => {
 
     // --- NATIVE WHATSAPP INTEGRATION (EVOLUTION / UAZAPI) ---
     if (session.provider === 'whatsapp') {
-        const { data: sources } = await supabase
+        // Prefer the source linked to this specific session; fallback to first active
+        let sourceQuery = supabase
             .from('integration_inbound_sources')
             .select('*')
             .eq('organization_id', organization_id)
             .eq('active', true);
 
+        if (session.whatsapp_source_id) {
+            sourceQuery = sourceQuery.eq('id', session.whatsapp_source_id);
+        }
+
+        const { data: sources } = await sourceQuery.limit(1);
+
         if (sources && sources.length > 0) {
-            const source = sources[0]; // use the primary active source (usually only one per org right now)
+            const source = sources[0];
 
             // Determine action (sendText, sendMedia, sendAudio)
             let proxyAction = 'sendText';
