@@ -44,6 +44,14 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     const fileInputRef = useRef<HTMLInputElement>(null);
     const inputRef = useRef<HTMLTextAreaElement>(null);
 
+    // Auto-resize textarea height as user types
+    useEffect(() => {
+        const el = inputRef.current;
+        if (!el) return;
+        el.style.height = 'auto';
+        el.style.height = `${el.scrollHeight}px`;
+    }, [newMessage]);
+
     // Focus input when replying
     useEffect(() => {
         if (replyingTo) {
@@ -279,8 +287,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                                 }}
                                 placeholder="Digite uma mensagem..."
                                 rows={1}
-                                className="flex-1 p-3 bg-slate-100 dark:bg-white/5 border-none rounded-xl resize-none focus:ring-2 focus:ring-primary-500 focus:bg-white dark:focus:bg-slate-800 transition-all max-h-32 min-h-[44px] text-slate-900 dark:text-white placeholder-slate-500"
-                                style={{ minHeight: '44px' }}
+                                className="flex-1 p-3 bg-slate-100 dark:bg-white/5 border-none rounded-xl resize-none focus:ring-2 focus:ring-primary-500 focus:bg-white dark:focus:bg-slate-800 transition-all max-h-40 min-h-[44px] overflow-y-auto text-slate-900 dark:text-white placeholder-slate-500"
+                                style={{ minHeight: '44px', height: '44px' }}
                             />
 
                             {newMessage.trim() || attachment ? (
