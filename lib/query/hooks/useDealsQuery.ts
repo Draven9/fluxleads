@@ -232,7 +232,22 @@ export const useDealsByBoard = (boardId: string) => {
       }
 
       if (!boardId || boardId.startsWith('temp-')) return [];
-      return filtered.filter(d => d.boardId === boardId);
+      const boardDeals = filtered.filter(d => d.boardId === boardId);
+
+      // Um cartão por contato por board — deduplica por contactId mantendo
+      // o deal com updatedAt mais recente. Deals sem contactId não são deduplicados.
+      const seen = new Map<string, DealView>();
+      for (const deal of boardDeals) {
+        if (!deal.contactId) {
+          seen.set(deal.id, deal);
+          continue;
+        }
+        const existing = seen.get(deal.contactId);
+        if (!existing || new Date(deal.updatedAt) > new Date(existing.updatedAt)) {
+          seen.set(deal.contactId, deal);
+        }
+      }
+      return Array.from(seen.values());
     },
     staleTime: 2 * 60 * 1000, // 2 minutes (same as useDealsView)
     enabled: !authLoading && !!user && !rbacLoading && !!boardId && !boardId.startsWith('temp-'),
