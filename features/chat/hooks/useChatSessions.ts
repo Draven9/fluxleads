@@ -122,7 +122,22 @@ export function useChatSessions() {
     ): Promise<string | null> => {
         if (!organizationId) return null;
 
-        // Upsert idempotente: ON CONFLICT em (organization_id, contact_id)
+        // When called without a specific providerId (e.g. from ChatLayout), look up
+        // an existing session by contact_id first. This avoids creating a duplicate
+        // session with provider_id = null, since ON CONFLICT (organization_id, provider_id)
+        // does not match NULL values in Postgres (NULL != NULL).
+        if (!providerId) {
+            const { data: existing } = await supabase
+                .from('chat_sessions')
+                .select('id')
+                .eq('organization_id', organizationId)
+                .eq('contact_id', contactId)
+                .maybeSingle();
+
+            if (existing) return existing.id;
+        }
+
+        // Upsert idempotente: ON CONFLICT em (organization_id, provider_id)
         // Eliminando race conditions onde webhooks simultâneos criam sessões duplicadas
         const { data, error } = await supabase
             .from('chat_sessions')

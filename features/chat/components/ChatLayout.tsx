@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { ChatSessionList } from './ChatSessionList';
 import { ChatWindow } from './ChatWindow';
 import { ChatSession } from '../types';
@@ -13,30 +13,26 @@ export const ChatLayout = () => {
     const searchParams = useSearchParams();
     const contactId = searchParams.get('contactId');
     const { sessions, createOrGetSession } = useChatSessions();
+    // Tracks which contactId has already been auto-selected to avoid overriding
+    // user navigation every time the sessions list updates via polling (every 5s).
+    const autoSelectedRef = useRef<string | null>(null);
 
-    // Auto-select session if contactId is present
+    // Auto-select session if contactId is present — runs only once per contactId
     useEffect(() => {
-        if (contactId && sessions.length > 0) {
-            // Check if session exists in list
-            const existing = sessions.find(s => s.contact_id === contactId);
-            if (existing) {
-                setSelectedSession(existing);
-            } else {
-                // If not in list (might be new or not loaded), try to create/fetch
-                // We avoid infinite loop by checking if we already selected it
-                if (selectedSession?.contact_id !== contactId) {
-                    createOrGetSession(contactId).then(sessionId => {
-                        if (sessionId) {
-                            // The realtime subscription should add it to 'sessions' soon,
-                            // OR we can fetch it. For now, we rely on 'sessions' update or subsequent render.
-                            // But usually, we want instant feedback.
-                            // The hook 'useChatSessions' handles the list update via realtime? Yes.
-                        }
-                    });
-                }
-            }
+        if (!contactId || sessions.length === 0) return;
+        if (autoSelectedRef.current === contactId) return; // already handled
+
+        const existing = sessions.find(s => s.contact_id === contactId);
+        if (existing) {
+            setSelectedSession(existing);
+            autoSelectedRef.current = contactId;
+        } else {
+            // Session not in list yet — create/fetch it (realtime will add to list)
+            createOrGetSession(contactId).then(() => {
+                // Session will appear via realtime subscription; next effect run will select it
+            });
         }
-    }, [contactId, sessions, createOrGetSession, selectedSession]);
+    }, [contactId, sessions, createOrGetSession]);
 
 
     return (

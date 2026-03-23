@@ -82,6 +82,10 @@ export function useChatMessages(sessionId: string | null) {
                         lastMessageDateRef.current = newMsg.created_at;
                     }
                     setMessages((prev) => {
+                        // Always check for the real message ID first to avoid duplicates
+                        // when polling and realtime race with the same base state.
+                        if (prev.some(m => m.id === newMsg.id)) return prev;
+
                         // If we have a pending optimistic message, replace it
                         // with the confirmed real message from the DB.
                         if (pendingTempIds.current.size > 0) {
@@ -92,8 +96,6 @@ export function useChatMessages(sessionId: string | null) {
                             }
                         }
 
-                        // Avoid duplicates from other event sources
-                        if (prev.some(m => m.id === newMsg.id)) return prev;
                         return [...prev, newMsg];
                     });
                 }
@@ -112,11 +114,16 @@ export function useChatMessages(sessionId: string | null) {
             if (data && data.length > 0) {
                 lastMessageDateRef.current = data[data.length - 1].created_at;
                 setMessages((prev) => {
+                    // Filter out messages already in the list (by real ID) — must check first
+                    // before consuming tempIds, to avoid duplicate when realtime already handled it.
                     const newMessages = data.filter((nMsg: any) => !prev.some(pMsg => pMsg.id === nMsg.id));
                     if (newMessages.length === 0) return prev;
 
                     let updated = [...prev];
                     for (const nMsg of newMessages) {
+                        // Check again with accumulated state to avoid duplicates within the batch
+                        if (updated.some(m => m.id === (nMsg as Message).id)) continue;
+
                         if (pendingTempIds.current.size > 0) {
                              const tempId = pendingTempIds.current.values().next().value;
                              if (tempId) {
