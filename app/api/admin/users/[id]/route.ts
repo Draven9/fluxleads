@@ -40,7 +40,7 @@ export async function DELETE(req: Request, ctx: { params: Promise<{ id: string }
 
   if (id === user.id) return json({ error: 'Você não pode remover a si mesmo' }, 400);
 
-  const { data: target, error: targetError } = await supabase
+  const { data: target, error: targetError } = await admin
     .from('profiles')
     .select('id, email, organization_id')
     .eq('id', id)
@@ -48,7 +48,6 @@ export async function DELETE(req: Request, ctx: { params: Promise<{ id: string }
 
   if (targetError) return json({ error: targetError.message }, 500);
   if (!target) return json({ error: 'User not found' }, 404);
-  if (target.organization_id !== me.organization_id) return json({ error: 'Forbidden' }, 403);
 
   // Delete auth user first (cascades profile via FK, but we also try to remove profile explicitly)
   const { error: authDeleteError } = await admin.auth.admin.deleteUser(id);
@@ -87,15 +86,14 @@ export async function PUT(req: Request, ctx: { params: Promise<{ id: string }> }
 
   if (!me || me.role !== 'admin') return json({ error: 'Forbidden' }, 403);
 
-  // 2. Check Target User
-  const { data: target } = await supabase
+  // 2. Check Target User (use admin client to bypass RLS — this is a super-admin endpoint)
+  const { data: target } = await admin
     .from('profiles')
     .select('id, organization_id')
     .eq('id', id)
     .single();
 
   if (!target) return json({ error: 'User not found' }, 404);
-  if (target.organization_id !== me.organization_id) return json({ error: 'Forbidden' }, 403);
 
   const updates: any = {};
   if (body.role) updates.role = body.role;
