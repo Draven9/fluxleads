@@ -205,8 +205,9 @@ export const UsersPage: React.FC = () => {
                 role: newUserRole,
             };
 
+            payload.email = manualForm.email;
+
             if (!editingUser) {
-                payload.email = manualForm.email;
                 payload.password = manualForm.password;
             } else {
                 // If editing, only send password if provided
@@ -586,10 +587,9 @@ export const UsersPage: React.FC = () => {
                                             <input
                                                 type="email"
                                                 required
-                                                disabled={!!editingUser}
                                                 value={manualForm.email}
                                                 onChange={e => setManualForm(prev => ({ ...prev, email: e.target.value }))}
-                                                className={`w-full px-3 py-2 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500/50 ${editingUser ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                className="w-full px-3 py-2 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500/50"
                                                 placeholder="joao@empresa.com"
                                             />
                                         </div>

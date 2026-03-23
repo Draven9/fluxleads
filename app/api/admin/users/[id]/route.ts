@@ -97,7 +97,6 @@ export async function PUT(req: Request, ctx: { params: Promise<{ id: string }> }
   if (!target) return json({ error: 'User not found' }, 404);
   if (target.organization_id !== me.organization_id) return json({ error: 'Forbidden' }, 403);
 
-  // 3. Update Data
   const updates: any = {};
   if (body.role) updates.role = body.role;
   if (body.name) {
@@ -105,6 +104,7 @@ export async function PUT(req: Request, ctx: { params: Promise<{ id: string }> }
     updates.first_name = body.name.split(' ')[0];
     updates.last_name = body.name.split(' ').slice(1).join(' ') || '';
   }
+  if (body.email) updates.email = body.email;
 
   // Update Profile (only if there are changes to avoid empty-payload error)
   if (Object.keys(updates).length > 0) {
@@ -116,10 +116,11 @@ export async function PUT(req: Request, ctx: { params: Promise<{ id: string }> }
     if (updateError) return json({ error: updateError.message }, 500);
   }
 
-  // Update Auth (name metadata and/or password)
+  // Update Auth (name metadata and/or password and/or email)
   const authUpdates: any = {};
   if (body.name) authUpdates.user_metadata = { name: body.name };
   if (body.password && body.password.trim() !== '') authUpdates.password = body.password;
+  if (body.email) authUpdates.email = body.email;
 
   if (Object.keys(authUpdates).length > 0) {
     const { error: authError } = await admin.auth.admin.updateUserById(id, authUpdates);
