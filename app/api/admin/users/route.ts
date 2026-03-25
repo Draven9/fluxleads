@@ -144,8 +144,6 @@ export async function POST(req: Request) {
     .update({
       organization_id: me.organization_id,
       role: targetRole,
-      status: 'active',
-      confirmed_at: new Date().toISOString(),
       name: name,
       first_name: name.split(' ')[0],
       last_name: name.split(' ').slice(1).join(' ') || ''
