@@ -12,15 +12,17 @@ export const ChatLayout = () => {
     const [selectedSession, setSelectedSession] = useState<ChatSession | null>(null);
     const searchParams = useSearchParams();
     const contactId = searchParams.get('contactId');
-    const { sessions, createOrGetSession } = useChatSessions();
+    const { sessions, loading, createOrGetSession } = useChatSessions();
     // Tracks which contactId has already been auto-selected to avoid overriding
     // user navigation every time the sessions list updates via polling (every 5s).
     const autoSelectedRef = useRef<string | null>(null);
 
-    // Auto-select session if contactId is present — runs only once per contactId
+    // Auto-select session if contactId is present
     useEffect(() => {
-        if (!contactId || sessions.length === 0) return;
-        if (autoSelectedRef.current === contactId) return; // already handled
+        if (!contactId || loading) return;
+
+        // If we've already selected a session for this contact, don't keep resetting it
+        if (selectedSession?.contact_id === contactId) return;
 
         const existing = sessions.find(s => s.contact_id === contactId);
         if (existing) {
@@ -28,11 +30,13 @@ export const ChatLayout = () => {
             autoSelectedRef.current = contactId;
         } else {
             // Session not in list yet — create/fetch it (realtime will add to list)
-            createOrGetSession(contactId).then(() => {
-                // Session will appear via realtime subscription; next effect run will select it
-            });
+            // Prevent spamming the API while waiting for realtime/polling to update sessions
+            if (autoSelectedRef.current !== contactId) {
+                autoSelectedRef.current = contactId;
+                createOrGetSession(contactId).catch(console.error);
+            }
         }
-    }, [contactId, sessions, createOrGetSession]);
+    }, [contactId, sessions, loading, selectedSession?.contact_id, createOrGetSession]);
 
 
     return (
