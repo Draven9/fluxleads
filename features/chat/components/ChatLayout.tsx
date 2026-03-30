@@ -29,11 +29,14 @@ export const ChatLayout = () => {
             setSelectedSession(existing);
             autoSelectedRef.current = contactId;
         } else {
-            // Session not in list yet — create/fetch it (realtime will add to list)
-            // Prevent spamming the API while waiting for realtime/polling to update sessions
+            // Session not in list yet — create/fetch it
             if (autoSelectedRef.current !== contactId) {
                 autoSelectedRef.current = contactId;
-                createOrGetSession(contactId).catch(console.error);
+                createOrGetSession(contactId).then((newSession) => {
+                    if (newSession) {
+                        setSelectedSession(newSession);
+                    }
+                }).catch(console.error);
             }
         }
     }, [contactId, sessions, loading, selectedSession?.contact_id, createOrGetSession]);

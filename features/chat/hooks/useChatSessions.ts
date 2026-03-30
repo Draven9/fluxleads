@@ -119,7 +119,7 @@ export function useChatSessions() {
         contactId: string,
         provider: string = 'whatsapp',
         providerId?: string
-    ): Promise<string | null> => {
+    ): Promise<ChatSession | null> => {
         if (!organizationId) return null;
 
         // When called without a specific providerId (e.g. from ChatLayout), look up
@@ -137,11 +137,11 @@ export function useChatSessions() {
             if (existing) {
                 // Ensure it's in local state so the UI selects it immediately
                 setSessions(prev => prev.some(s => s.id === existing.id) ? prev : [existing as ChatSession, ...prev]);
-                return existing.id;
+                return existing as ChatSession;
             }
         }
 
-        // Upsert idempotente: ON CONFLICT em (organization_id, provider_id)
+        // Upsert idempotente: ON CONFLICT em (organization_id, contact_id)
         // Eliminando race conditions onde webhooks simultâneos criam sessões duplicadas
         const { data, error } = await supabase
             .from('chat_sessions')
@@ -154,7 +154,7 @@ export function useChatSessions() {
                     updated_at: new Date().toISOString(),
                 },
                 {
-                    onConflict: 'organization_id,provider_id',
+                    onConflict: 'organization_id,contact_id',
                     ignoreDuplicates: false,
                 }
             )
@@ -184,10 +184,11 @@ export function useChatSessions() {
                     }
                     return [fullSession as ChatSession, ...prev];
                 });
+                return fullSession as ChatSession;
             }
         }
 
-        return data.id;
+        return null;
     };
 
     const deleteSession = async (sessionId: string) => {
