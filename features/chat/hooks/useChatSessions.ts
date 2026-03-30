@@ -129,12 +129,16 @@ export function useChatSessions() {
         if (!providerId) {
             const { data: existing } = await supabase
                 .from('chat_sessions')
-                .select('id')
+                .select('*, contact:contacts(*)')
                 .eq('organization_id', organizationId)
                 .eq('contact_id', contactId)
                 .maybeSingle();
 
-            if (existing) return existing.id;
+            if (existing) {
+                // Ensure it's in local state so the UI selects it immediately
+                setSessions(prev => prev.some(s => s.id === existing.id) ? prev : [existing as ChatSession, ...prev]);
+                return existing.id;
+            }
         }
 
         // Upsert idempotente: ON CONFLICT em (organization_id, provider_id)
@@ -160,6 +164,27 @@ export function useChatSessions() {
         if (error) {
             console.error('[useChatSessions] createOrGetSession upsert failed:', error);
             return null;
+        }
+
+        if (data?.id) {
+            // Fetch full object to put in local state immediately without waiting for realtime
+            const { data: fullSession } = await supabase
+                .from('chat_sessions')
+                .select('*, contact:contacts(*)')
+                .eq('id', data.id)
+                .single();
+
+            if (fullSession) {
+                setSessions(prev => {
+                    const existingIdx = prev.findIndex(s => s.id === fullSession.id);
+                    if (existingIdx !== -1) {
+                        const copy = [...prev];
+                        copy[existingIdx] = fullSession as ChatSession;
+                        return copy;
+                    }
+                    return [fullSession as ChatSession, ...prev];
+                });
+            }
         }
 
         return data.id;
