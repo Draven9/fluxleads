@@ -65,6 +65,7 @@ export function useChatMessages(sessionId: string | null) {
                             const { whatsappService } = await import('@/lib/supabase/whatsapp');
                             await whatsappService.syncHistory(sessionId, session.provider_id);
                         }
+                    } catch (syncErr) {
                         console.error('[useChatMessages] Auto-sync failed:', syncErr);
                     } finally {
                         // RE-FETCH: After sync attempt (success or fail), we try to load again 
