@@ -19,18 +19,28 @@ export const ChatLayout = () => {
 
     // Auto-select session if contactId is present
     useEffect(() => {
-        if (!contactId || loading) return;
+        if (!contactId) return;
+        
+        if (loading) {
+            console.log('[AUTO-SELECT] Aguardando carregamento das sessões...');
+            return;
+        }
 
-        // Use a flag to avoid multiple simultaneous creation attempts for the same contactId
         let isCurrent = true;
 
         const handleAutoSelect = async () => {
-            // 1. Check if already selected
-            if (selectedSession?.contact_id === contactId) return;
+            console.log('[AUTO-SELECT] Iniciando para contactId:', contactId);
+
+            // 1. Check if already selected correctly
+            if (selectedSession?.contact_id === contactId) {
+                console.log('[AUTO-SELECT] Já selecionado corretamente.');
+                return;
+            }
 
             // 2. Check if exists in current list
             const existing = sessions.find(s => s.contact_id === contactId);
             if (existing) {
+                console.log('[AUTO-SELECT] Encontrado na lista local. Selecionando...');
                 setSelectedSession(existing);
                 autoSelectedRef.current = contactId;
                 return;
@@ -38,15 +48,21 @@ export const ChatLayout = () => {
 
             // 3. Not in list, try to create or fetch (only once per contactId change)
             if (autoSelectedRef.current !== contactId) {
+                console.log('[AUTO-SELECT] Não está na lista. Tentando criar/buscar no banco...');
                 autoSelectedRef.current = contactId;
                 try {
                     const newSession = await createOrGetSession(contactId);
-                    if (isCurrent && newSession) {
+                    if (!newSession) {
+                        console.error('[AUTO-SELECT] createOrGetSession retornou NULO.');
+                    } else if (isCurrent) {
+                        console.log('[AUTO-SELECT] Sessão obtida com sucesso. Selecionando ID:', newSession.id);
                         setSelectedSession(newSession);
                     }
                 } catch (err) {
-                    console.error('[ChatLayout] Auto-selection error:', err);
+                    console.error('[AUTO-SELECT] Erro na criação:', err);
                 }
+            } else {
+                console.log('[AUTO-SELECT] Tentativa já realizada para este ID. Aguardando...');
             }
         };
 

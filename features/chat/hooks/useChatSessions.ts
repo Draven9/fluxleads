@@ -9,23 +9,32 @@ export function useChatSessions() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        if (!organizationId) return;
+        if (!organizationId) {
+            console.log('[useChatSessions] Aguardando organizationId...');
+            setLoading(false); // Libera o loading mesmo sem org para não travar a UI
+            return;
+        }
 
         // Initial Fetch
         const fetchSessions = async () => {
+            console.log('[useChatSessions] Iniciando busca de sessões para org:', organizationId);
             setLoading(true);
-            const { data, error } = await supabase
-                .from('chat_sessions')
-                .select('*, contact:contacts(*)') // Join with contacts
-                .eq('organization_id', organizationId)
-                .order('last_message_at', { ascending: false });
+            try {
+                const { data, error } = await supabase
+                    .from('chat_sessions')
+                    .select('*, contact:contacts(*)') // Join with contacts
+                    .eq('organization_id', organizationId)
+                    .order('last_message_at', { ascending: false });
 
-            if (error) {
-                console.error('Error fetching sessions:', error);
-            } else {
-                setSessions(data as ChatSession[]);
+                if (error) {
+                    console.error('[useChatSessions] Erro ao buscar:', error);
+                } else {
+                    console.log('[useChatSessions] Sessões carregadas:', data?.length || 0);
+                    setSessions(data as ChatSession[]);
+                }
+            } finally {
+                setLoading(false);
             }
-            setLoading(false);
         };
 
         fetchSessions();
