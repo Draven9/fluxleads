@@ -231,14 +231,24 @@ Deno.serve(async (req) => {
     (payload as any).message?.key?.fromMe === true ||
     (payload as any).data?.key?.fromMe === true;
 
+  if (leadName) {
+    // Normalizar caracteres (NFKD) para pegar variações como espaços especiais ou acentos invisíveis
+    leadName = leadName.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").trim();
+  }
+
   // AGGRESSIVE Name Filter: Discard any name that looks like the system profile or instance name
   const forbiddenPatterns = [
     /flux/i,
-    /comunica/i,
-    /desconhecido/i,
+    /comunic/i,
+    /leads/i,
+    /evolution/i,
+    /atendimento/i,
+    /suporte/i,
+    /desk/i,
     /lead/i,
     /whatsapp/i,
-    /evolution/i,
+    /unknown/i,
+    /desconhecido/i,
     /instancia/i,
     /instance/i,
     /^[^a-zA-Z0-9]+$/ // only symbols/emojis
@@ -246,9 +256,9 @@ Deno.serve(async (req) => {
 
   const isForbiddenName = leadName && forbiddenPatterns.some(regex => regex.test(leadName!));
 
-  if (isFromMeEarly || isForbiddenName || !leadName || leadName.toLowerCase() === 'sem nome') {
-    if (leadName) {
-      console.log(`WEBHOOK-IN: Filtering out generic name: "${leadName}" (Reason: ${isFromMeEarly ? 'fromMe' : 'forbidden pattern'})`);
+  if (isFromMeEarly || isForbiddenName || !leadName || leadName.toLowerCase() === 'sem nome' || leadName.length < 2) {
+    if (leadName && (isFromMeEarly || isForbiddenName)) {
+      console.log(`WEBHOOK-IN: Filtering out generic/system name: "${leadName}" (Reason: ${isFromMeEarly ? 'fromMe' : 'forbidden pattern'})`);
     }
     leadName = null;
   }
@@ -769,6 +779,7 @@ Deno.serve(async (req) => {
         } else {
           // 4.2) Insere a mensagem na tabela de chat (New Message)
           console.log(`[Webhook-In] Inserting new message. Group: ${isGroup} FromMe: ${isFromMe}`);
+          
           const { error: insErr } = await supabase.from('messages').insert({
             organization_id: source.organization_id,
             session_id: sessionId,
