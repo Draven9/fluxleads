@@ -675,20 +675,42 @@ Deno.serve(async (req) => {
       let insertError = null;
       let updateError = null;
 
+      // Resolve the best provider_id (JID) for this session
+      let finalProviderId = remoteJid;
+      if (!finalProviderId && leadPhone) {
+        finalProviderId = leadPhone.includes('@') ? leadPhone : `${leadPhone}@s.whatsapp.net`;
+      }
+
       if (!sessionId) {
-        console.log(`[Webhook-In] Creating new session for contact ${chatContactId}`);
+        console.log(`[Webhook-In] Creating new session for contact ${chatContactId} with JID ${finalProviderId}`);
         const { data: newSession } = await supabase
           .from('chat_sessions')
           .insert({
             organization_id: source.organization_id,
             contact_id: chatContactId,
             provider: 'whatsapp',
+            provider_id: finalProviderId,
             unread_count: 0,
             last_message_at: new Date().toISOString()
           })
           .select('id')
           .single();
         sessionId = newSession?.id;
+      } else {
+        // Update existing session's provider_id if it's missing
+        const { data: currentSession } = await supabase
+          .from('chat_sessions')
+          .select('provider_id')
+          .eq('id', sessionId)
+          .single();
+        
+        if (currentSession && !currentSession.provider_id && finalProviderId) {
+          console.log(`[Webhook-In] Updating missing provider_id for session ${sessionId}`);
+          await supabase
+            .from('chat_sessions')
+            .update({ provider_id: finalProviderId })
+            .eq('id', sessionId);
+        }
       }
 
 

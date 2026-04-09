@@ -122,11 +122,11 @@ export function useChatSessions() {
     ): Promise<ChatSession | null> => {
         if (!organizationId) return null;
 
+        let finalProviderId = providerId;
+
         // When called without a specific providerId (e.g. from ChatLayout), look up
-        // an existing session by contact_id first. This avoids creating a duplicate
-        // session with provider_id = null, since ON CONFLICT (organization_id, provider_id)
-        // does not match NULL values in Postgres (NULL != NULL).
-        if (!providerId) {
+        // an existing session by contact_id first.
+        if (!finalProviderId) {
             const { data: existing } = await supabase
                 .from('chat_sessions')
                 .select('*, contact:contacts(*)')
@@ -135,14 +135,42 @@ export function useChatSessions() {
                 .maybeSingle();
 
             if (existing) {
+                // If it exists but lacks provider_id, we need to try and fix it
+                if (!existing.provider_id && existing.contact?.phone) {
+                    const phone = existing.contact.phone;
+                    const jid = phone.includes('@') ? phone : `${phone}@s.whatsapp.net`;
+                    
+                    const { data: updated } = await supabase
+                        .from('chat_sessions')
+                        .update({ provider_id: jid })
+                        .eq('id', existing.id)
+                        .select('*, contact:contacts(*)')
+                        .single();
+                    
+                    if (updated) {
+                        setSessions(prev => prev.some(s => s.id === updated.id) ? prev.map(s => s.id === updated.id ? (updated as ChatSession) : s) : [updated as ChatSession, ...prev]);
+                        return updated as ChatSession;
+                    }
+                }
+
                 // Ensure it's in local state so the UI selects it immediately
                 setSessions(prev => prev.some(s => s.id === existing.id) ? prev : [existing as ChatSession, ...prev]);
                 return existing as ChatSession;
             }
+
+            // If not found in sessions, we NEED the contact's phone to create a valid provider_id
+            const { data: contact } = await supabase
+                .from('contacts')
+                .select('phone')
+                .eq('id', contactId)
+                .single();
+            
+            if (contact?.phone) {
+                finalProviderId = contact.phone.includes('@') ? contact.phone : `${contact.phone}@s.whatsapp.net`;
+            }
         }
 
         // Upsert idempotente: ON CONFLICT em (organization_id, contact_id)
-        // Eliminando race conditions onde webhooks simultâneos criam sessões duplicadas
         const { data, error } = await supabase
             .from('chat_sessions')
             .upsert(
@@ -150,7 +178,7 @@ export function useChatSessions() {
                     organization_id: organizationId,
                     contact_id: contactId,
                     provider,
-                    ...(providerId ? { provider_id: providerId } : {}),
+                    provider_id: finalProviderId,
                     updated_at: new Date().toISOString(),
                 },
                 {
