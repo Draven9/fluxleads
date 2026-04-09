@@ -170,53 +170,60 @@ export function useChatSessions() {
             }
         }
 
-        // Upsert idempotente: ON CONFLICT em (organization_id, contact_id)
-        const { data, error } = await supabase
+        // 1. Tentar encontrar a sessão existente primeiro para evitar erro de RLS com upsert
+        const { data: existing } = await supabase
             .from('chat_sessions')
-            .upsert(
-                {
-                    organization_id: organizationId,
-                    contact_id: contactId,
-                    provider,
-                    provider_id: finalProviderId,
-                    updated_at: new Date().toISOString(),
-                },
-                {
-                    onConflict: 'organization_id,contact_id',
-                    ignoreDuplicates: false,
+            .select('*, contact:contacts(*)')
+            .eq('organization_id', organizationId)
+            .eq('contact_id', contactId)
+            .maybeSingle();
+
+        if (existing) {
+            // 2. Se já existe, apenas atualizamos provider_id se necessário e incrementamos data
+            const { data: updated, error: updateError } = await supabase
+                .from('chat_sessions')
+                .update({
+                    provider_id: finalProviderId || existing.provider_id,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', existing.id)
+                .select('*, contact:contacts(*)')
+                .single();
+            
+            const res = (updated || existing) as ChatSession;
+            setSessions(prev => {
+                const existingIdx = prev.findIndex(s => s.id === res.id);
+                if (existingIdx !== -1) {
+                    const copy = [...prev];
+                    copy[existingIdx] = res;
+                    return copy;
                 }
-            )
-            .select('id')
+                return [res, ...prev];
+            });
+            return res;
+        }
+
+        // 3. Se não existe, inserimos uma nova
+        const { data: inserted, error: insertError } = await supabase
+            .from('chat_sessions')
+            .insert({
+                organization_id: organizationId,
+                contact_id: contactId,
+                provider,
+                provider_id: finalProviderId,
+                updated_at: new Date().toISOString(),
+            })
+            .select('*, contact:contacts(*)')
             .single();
 
-        if (error) {
-            console.error('[useChatSessions] createOrGetSession upsert failed:', error);
+        if (insertError) {
+            console.error('[useChatSessions] Falha ao criar sessão:', insertError);
             return null;
         }
 
-        if (data?.id) {
-            // Fetch full object to put in local state immediately without waiting for realtime
-            const { data: fullSession } = await supabase
-                .from('chat_sessions')
-                .select('*, contact:contacts(*)')
-                .eq('id', data.id)
-                .single();
-
-            if (fullSession) {
-                setSessions(prev => {
-                    const existingIdx = prev.findIndex(s => s.id === fullSession.id);
-                    if (existingIdx !== -1) {
-                        const copy = [...prev];
-                        copy[existingIdx] = fullSession as ChatSession;
-                        return copy;
-                    }
-                    return [fullSession as ChatSession, ...prev];
-                });
-                return fullSession as ChatSession;
-            }
-        }
-
-        return null;
+        const res = inserted as ChatSession;
+        setSessions(prev => [res, ...prev]);
+        return res;
     };
 
     const deleteSession = async (sessionId: string) => {

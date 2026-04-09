@@ -43,14 +43,48 @@ export function useChatMessages(sessionId: string | null) {
             if (error) {
                 toast.error('Erro ao carregar mensagens.');
             } else {
-                const fetched = data as Message[];
+                const fetched = (data || []) as Message[];
                 if (fetched.length > 0) {
                     lastMessageDateRef.current = fetched[0].created_at;
+                    // Reverse to display chronologically (oldest at top)
+                    setMessages(fetched.reverse());
+                    setHasMore(data.length === MESSAGES_PER_PAGE);
+                    setPage(1);
+                } else {
+                    // AUTO-SYNC LOGIC: If no messages locally, try to pull from Evolution
+                    try {
+                        // 1. Get the session to find the provider_id (JID)
+                        const { data: session } = await supabase
+                            .from('chat_sessions')
+                            .select('provider_id')
+                            .eq('id', sessionId)
+                            .single();
+
+                        if (session?.provider_id) {
+                            // 2. Trigger background sync via proxy
+                            const { whatsappService } = await import('@/lib/supabase/whatsapp');
+                            const { data: syncRes } = await whatsappService.syncHistory(sessionId, session.provider_id);
+                            
+                            // 3. The proxy saves to DB, so we re-fetch to show them
+                            if (syncRes?.synced > 0) {
+                                const { data: reFetched } = await supabase
+                                    .from('messages')
+                                    .select('*, reply_to_message_id')
+                                    .eq('session_id', sessionId)
+                                    .order('created_at', { ascending: false })
+                                    .limit(MESSAGES_PER_PAGE);
+                                
+                                if (reFetched && reFetched.length > 0) {
+                                    const mapped = (reFetched as Message[]).reverse();
+                                    setMessages(mapped);
+                                    lastMessageDateRef.current = mapped[mapped.length - 1].created_at;
+                                }
+                            }
+                        }
+                    } catch (syncErr) {
+                        console.error('[useChatMessages] Auto-sync failed:', syncErr);
+                    }
                 }
-                // Reverse to display chronologically (oldest at top)
-                setMessages(fetched.reverse());
-                setHasMore(data.length === MESSAGES_PER_PAGE);
-                setPage(1);
             }
             setLoading(false);
         };

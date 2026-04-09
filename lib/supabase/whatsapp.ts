@@ -166,4 +166,15 @@ export const whatsappService = {
             return { data: null, error };
         }
     },
+
+    /** Fetch and sync historical messages for a specific session */
+    syncHistory: async (sessionId: string, remoteJid: string, sourceId?: string): Promise<{ data: any; error: any }> => {
+        try {
+            const data = await invokeProxy({ action: 'fetchMessages', sessionId, remoteJid, sourceId });
+            return { data, error: null };
+        } catch (err) {
+            console.error('[whatsappService] syncHistory:', err);
+            return { data: null, error: err };
+        }
+    },
 };

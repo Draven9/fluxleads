@@ -103,8 +103,10 @@ async function sendEvolution(config: any, action: string, payload: any) {
         const res = await fetch(`${baseUrl}/group/participants/${instanceName}?groupJid=${payload.groupJid}`, { headers });
         return res.json();
     }
-    if (action === 'instanceStatus') {
-        const res = await fetch(`${baseUrl}/instance/fetchInstances?instanceName=${instanceName}`, { headers });
+    if (action === 'fetchMessages') {
+        const remoteJid = payload.remoteJid;
+        if (!remoteJid) throw new Error('evolution: remoteJid is required for fetchMessages');
+        const res = await fetch(`${baseUrl}/chat/fetchMessages/${instanceName}?remoteJid=${remoteJid}&page=1`, { headers });
         return res.json();
     }
     throw new Error(`evolution: unknown action "${action}"`);
@@ -184,15 +186,82 @@ Deno.serve(async (req: Request) => {
         const providerType: string = source.provider_type || config?.providerType || 'evolution';
 
         // ── Dispatch to provider ──────────────────────────────────────────
-        const payload = { phone, content, mediaUrl, mediaType, caption, groupJid };
+        const remoteJid = groupJid || phone || body.remoteJid;
+        const payloadInput = { phone, content, mediaUrl, mediaType, caption, groupJid, remoteJid };
         let result: any;
 
         if (providerType === 'uazapi') {
-            result = await sendUazapi(config, action, payload);
+            result = await sendUazapi(config, action, payloadInput);
         } else if (providerType === 'evolution') {
-            result = await sendEvolution(config, action, payload);
+            result = await sendEvolution(config, action, payloadInput);
         } else {
             throw new Error(`Unsupported provider_type: "${providerType}"`);
+        }
+
+        // ── Post-process Action: History Sync ──────────────────────────────
+        if (action === 'fetchMessages' && Array.isArray(result)) {
+            const sessionId = body.sessionId;
+            const organizationId = source.organization_id;
+
+            if (sessionId && result.length > 0) {
+                // Map Evolution messages to internal format
+                const messagesToInsert = result.map((m: any) => {
+                    const direction = m.key?.fromMe ? 'outbound' : 'inbound';
+                    let messageContent = '';
+                    let mType = 'text';
+                    let mUrl = null;
+
+                    if (m.message?.conversation) {
+                        messageContent = m.message.conversation;
+                    } else if (m.message?.extendedTextMessage?.text) {
+                        messageContent = m.message.extendedTextMessage.text;
+                    } else if (m.message?.imageMessage) {
+                        messageContent = m.message.imageMessage.caption || '';
+                        mType = 'image';
+                    } else if (m.message?.videoMessage) {
+                        messageContent = m.message.videoMessage.caption || '';
+                        mType = 'video';
+                    } else if (m.message?.audioMessage) {
+                        mType = 'audio';
+                    } else if (m.message?.documentMessage) {
+                        messageContent = m.message.documentMessage.title || '';
+                        mType = 'document';
+                    }
+
+                    return {
+                        organization_id: organizationId,
+                        session_id: sessionId,
+                        direction,
+                        content: messageContent,
+                        message_type: mType,
+                        media_url: mUrl,
+                        status: 'sent',
+                        provider_message_id: m.key?.id,
+                        created_at: m.messageTimestamp ? new Date(m.messageTimestamp * 1000).toISOString() : new Date().toISOString()
+                    };
+                });
+
+                // Bulk upsert using service-role (direct insert)
+                const { data: saved, error: saveError } = await supabase
+                    .from('messages')
+                    .upsert(messagesToInsert, { 
+                        onConflict: 'provider_message_id',
+                        ignoreDuplicates: true 
+                    })
+                    .select('id');
+
+                if (saveError) {
+                    console.error('[whatsapp-proxy] History sync save error:', saveError);
+                } else {
+                    return new Response(JSON.stringify({ 
+                        success: true, 
+                        synced: saved?.length || 0,
+                        messages: result 
+                    }), {
+                        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+                    });
+                }
+            }
         }
 
         return new Response(JSON.stringify(result), {
