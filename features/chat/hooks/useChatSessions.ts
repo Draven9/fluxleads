@@ -132,59 +132,60 @@ export function useChatSessions() {
         if (!organizationId) return null;
 
         try {
-            // 1. Check for existing session
+            console.log(`[useChatSessions] Tentando abrir sessão para contato: ${contactId}`);
+
+            // 1. Check for existing session (Simplificamos a query para evitar erros de join no UUID)
             const { data: existing, error: findError } = await supabase
                 .from('chat_sessions')
-                .select('*, contact:contacts(*)')
+                .select('*')
                 .eq('organization_id', organizationId)
                 .eq('contact_id', contactId)
                 .maybeSingle();
 
-            if (findError) throw findError;
+            if (findError) {
+                console.error('[useChatSessions] Erro ao buscar sessão:', findError);
+                throw findError;
+            }
 
             let finalProviderId = providerId || existing?.provider_id;
 
-            // 2. If no providerId yet, we must fetch the contact's phone
-            if (!finalProviderId) {
-                const { data: contact } = await supabase
-                    .from('contacts')
-                    .select('phone')
-                    .eq('id', contactId)
-                    .single();
-                
-                if (contact?.phone) {
-                    finalProviderId = contact.phone.includes('@') ? contact.phone : `${contact.phone}@s.whatsapp.net`;
-                }
+            // 2. Fetch contact info if needed
+            const { data: contact, error: contactError } = await supabase
+                .from('contacts')
+                .select('*')
+                .eq('id', contactId)
+                .single();
+
+            if (contactError) {
+                console.error('[useChatSessions] Erro ao buscar contato:', contactError);
+            }
+
+            if (!finalProviderId && contact?.phone) {
+                const phone = contact.phone.trim();
+                finalProviderId = phone.includes('@') ? phone : `${phone}@s.whatsapp.net`;
             }
 
             if (existing) {
-                // 3. Update existing session if needed (e.g. provider_id was missing)
-                const updates: any = { updated_at: new Date().toISOString() };
-                if (finalProviderId && !existing.provider_id) {
-                    updates.provider_id = finalProviderId;
-                }
-
-                const { data: updated, error: updateError } = await supabase
-                    .from('chat_sessions')
-                    .update(updates)
-                    .eq('id', existing.id)
-                    .select('*, contact:contacts(*)')
-                    .single();
-
-                const res = (updated || existing) as ChatSession;
+                console.log('[useChatSessions] Sessão existente encontrada:', existing.id);
+                // Attach contact if missing
+                const sessionWithContact = { ...existing, contact } as ChatSession;
+                
+                // Add to list if not present
                 setSessions(prev => {
-                    const idx = prev.findIndex(s => s.id === res.id);
-                    if (idx !== -1) {
-                        const copy = [...prev];
-                        copy[idx] = res;
-                        return copy;
-                    }
-                    return [res, ...prev];
+                    if (prev.some(s => s.id === sessionWithContact.id)) return prev;
+                    return [sessionWithContact, ...prev];
                 });
-                return res;
+
+                return sessionWithContact;
             }
 
-            // 4. Create new session
+            if (!finalProviderId) {
+                console.warn('[useChatSessions] Não foi possível determinar o provider_id (telefone faltando)');
+                return null;
+            }
+
+            // 3. Create new session
+            console.log('[useChatSessions] Criando nova sessão no banco...');
             const { data: inserted, error: insertError } = await supabase
                 .from('chat_sessions')
                 .insert({
@@ -192,29 +193,27 @@ export function useChatSessions() {
                     contact_id: contactId,
                     provider,
                     provider_id: finalProviderId,
+                    name: contact?.name || finalProviderId,
                     updated_at: new Date().toISOString(),
                 })
-                .select('*, contact:contacts(*)')
+                .select('*')
                 .single();
 
             if (insertError) {
-                // Handle race condition: if it was created by someone else in the meantime
                 if (insertError.code === '23505') {
+                    console.log('[useChatSessions] Concorrência: sessão já existia.');
                     const { data: retry } = await supabase
                         .from('chat_sessions')
-                        .select('*, contact:contacts(*)')
+                        .select('*')
                         .eq('contact_id', contactId)
                         .single();
-                    if (retry) {
-                        const res = retry as ChatSession;
-                        setSessions(prev => [res, ...prev]);
-                        return res;
-                    }
+                    if (retry) return { ...retry, contact } as ChatSession;
                 }
                 throw insertError;
             }
 
-            const res = inserted as ChatSession;
+            const res = { ...inserted, contact } as ChatSession;
+            console.log('[useChatSessions] Sessão criada com sucesso:', res.id);
             setSessions(prev => [res, ...prev]);
             return res;
 
