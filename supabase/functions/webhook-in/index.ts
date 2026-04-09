@@ -223,10 +223,19 @@ Deno.serve(async (req) => {
   const dealValue = getDealValue(payload);
 
   // Check early if message is fromMe to avoid using business profile name as contact name
-  const isFromMeEarly = (payload as any).from_me === true || (payload as any).fromMe === true || (payload as any).from_me === 'true';
-  if (isFromMeEarly && leadName) {
-    // For fromMe messages, pushName is the BUSINESS profile name, not the contact's name.
-    // We should NOT use it as the contact name. Use phone number instead.
+  // Standard Evolution v2 Pattern: payload.message?.key?.fromMe
+  const isFromMeEarly = 
+    (payload as any).from_me === true || 
+    (payload as any).fromMe === true || 
+    (payload as any).from_me === 'true' ||
+    (payload as any).message?.key?.fromMe === true;
+
+  const businessNames = ["fluxk", "flux comunicação", "flux comunicacao", "desconhecido", "lead"];
+  const isBusinessName = leadName && businessNames.some(bn => leadName!.toLowerCase().includes(bn));
+
+  if ((isFromMeEarly || isBusinessName) && leadName) {
+    // For fromMe messages or generic instance names, pushName is the BUSINESS name.
+    // We should NOT use it as the contact name.
     leadName = null;
   }
 
@@ -335,7 +344,12 @@ Deno.serve(async (req) => {
       contactId = existing.id;
 
       const updates: Record<string, unknown> = {};
-      if (leadName && (!existing.name || existing.name === "Sem nome")) updates.name = leadName;
+      const businessNames = ["fluxk", "flux comunicação", "flux comunicacao", "desconhecido", "lead", "sem nome"];
+      const isExistingNameBad = !existing.name || businessNames.some(bn => existing.name.toLowerCase().includes(bn));
+      
+      if (leadName && isExistingNameBad) {
+        updates.name = leadName;
+      }
       if (leadEmail && !existing.email) updates.email = leadEmail;
       if (leadPhone && !existing.phone) updates.phone = leadPhone;
       if (companyName) updates.company_name = companyName;

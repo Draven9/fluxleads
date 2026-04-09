@@ -21,24 +21,40 @@ export const ChatLayout = () => {
     useEffect(() => {
         if (!contactId || loading) return;
 
-        // If we've already selected a session for this contact, don't keep resetting it
-        if (selectedSession?.contact_id === contactId) return;
+        // Use a flag to avoid multiple simultaneous creation attempts for the same contactId
+        let isCurrent = true;
 
-        const existing = sessions.find(s => s.contact_id === contactId);
-        if (existing) {
-            setSelectedSession(existing);
-            autoSelectedRef.current = contactId;
-        } else {
-            // Session not in list yet — create/fetch it
+        const handleAutoSelect = async () => {
+            // 1. Check if already selected
+            if (selectedSession?.contact_id === contactId) return;
+
+            // 2. Check if exists in current list
+            const existing = sessions.find(s => s.contact_id === contactId);
+            if (existing) {
+                setSelectedSession(existing);
+                autoSelectedRef.current = contactId;
+                return;
+            }
+
+            // 3. Not in list, try to create or fetch (only once per contactId change)
             if (autoSelectedRef.current !== contactId) {
                 autoSelectedRef.current = contactId;
-                createOrGetSession(contactId).then((newSession) => {
-                    if (newSession) {
+                try {
+                    const newSession = await createOrGetSession(contactId);
+                    if (isCurrent && newSession) {
                         setSelectedSession(newSession);
                     }
-                }).catch(console.error);
+                } catch (err) {
+                    console.error('[ChatLayout] Auto-selection error:', err);
+                }
             }
-        }
+        };
+
+        handleAutoSelect();
+
+        return () => {
+            isCurrent = false;
+        };
     }, [contactId, sessions, loading, selectedSession?.contact_id, createOrGetSession]);
 
 
