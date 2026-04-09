@@ -131,9 +131,24 @@ function normalizeEvolution(body: any, source: any): NormalizedMessage | null {
 
     const cfg = source?.configuration || {};
 
+    let leadName = isGroup ? (groupName || phone) : (data.pushName || phone);
+
+    if (leadName) {
+        // Normalizar caracteres (NFKD) para pegar variações como espaços especiais ou acentos invisíveis
+        leadName = leadName.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").trim();
+
+        // Filtro agressivo para nomes genéricos ou da própria empresa
+        const genericPatterns = /flux|comunic|leads|evolution|api|atendimento|suporte|desk|lead|unknown|desconhecido/i;
+        
+        if (genericPatterns.test(leadName) || leadName.length < 2) {
+            console.log(`[whatsapp-inbound] Nome descartado por ser genérico: "${leadName}".`);
+            leadName = null; // Força o uso do telefone nos fallbacks
+        }
+    }
+
     return {
         phone,
-        name: isGroup ? (groupName || phone) : (data.pushName || phone),
+        name: leadName || phone, // Fallback para o telefone se o nome for nulo ou genérico
         text,
         direction: fromMe ? 'outbound' : 'inbound',
         message_type: messageType,
