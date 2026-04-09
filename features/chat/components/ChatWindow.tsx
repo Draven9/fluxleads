@@ -183,6 +183,18 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ session, onBack }) => {
                             </div>
                         )}
 
+                        {messages.length === 0 && !loading && (
+                            <div className="flex-1 flex items-center justify-center p-8 text-center">
+                                <div className="max-w-xs space-y-2">
+                                    <div className="w-12 h-12 bg-slate-100 dark:bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <span className="text-2xl">💬</span>
+                                    </div>
+                                    <p className="text-slate-600 dark:text-slate-400 font-medium">Início da conversa</p>
+                                    <p className="text-slate-400 text-sm">As mensagens que você enviar ou receber aparecerão aqui.</p>
+                                </div>
+                            </div>
+                        )}
+
                         {messages.map((msg) => {
                             const isOutbound = msg.direction === 'outbound';
                             const quotedMsg = msg.reply_to_message_id

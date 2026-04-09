@@ -63,26 +63,26 @@ export function useChatMessages(sessionId: string | null) {
                         if (session?.provider_id) {
                             // 2. Trigger background sync via proxy
                             const { whatsappService } = await import('@/lib/supabase/whatsapp');
-                            const { data: syncRes } = await whatsappService.syncHistory(sessionId, session.provider_id);
-                            
-                            // 3. The proxy saves to DB, so we re-fetch to show them
-                            if (syncRes?.synced > 0) {
-                                const { data: reFetched } = await supabase
-                                    .from('messages')
-                                    .select('*, reply_to_message_id')
-                                    .eq('session_id', sessionId)
-                                    .order('created_at', { ascending: false })
-                                    .limit(MESSAGES_PER_PAGE);
-                                
-                                if (reFetched && reFetched.length > 0) {
-                                    const mapped = (reFetched as Message[]).reverse();
-                                    setMessages(mapped);
-                                    lastMessageDateRef.current = mapped[mapped.length - 1].created_at;
-                                }
-                            }
+                            await whatsappService.syncHistory(sessionId, session.provider_id);
                         }
-                    } catch (syncErr) {
                         console.error('[useChatMessages] Auto-sync failed:', syncErr);
+                    } finally {
+                        // RE-FETCH: After sync attempt (success or fail), we try to load again 
+                        // to show whatever the proxy managed to save.
+                        const { data: finalData } = await supabase
+                            .from('messages')
+                            .select('*, reply_to_message_id')
+                            .eq('session_id', sessionId)
+                            .order('created_at', { ascending: false })
+                            .limit(MESSAGES_PER_PAGE);
+
+                        if (finalData && finalData.length > 0) {
+                            const mapped = (finalData as Message[]).reverse();
+                            setMessages(mapped);
+                            lastMessageDateRef.current = mapped[mapped.length - 1].created_at;
+                            setHasMore(finalData.length === MESSAGES_PER_PAGE);
+                            setPage(1);
+                        }
                     }
                 }
             }

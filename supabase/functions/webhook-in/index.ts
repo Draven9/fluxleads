@@ -228,14 +228,28 @@ Deno.serve(async (req) => {
     (payload as any).from_me === true || 
     (payload as any).fromMe === true || 
     (payload as any).from_me === 'true' ||
-    (payload as any).message?.key?.fromMe === true;
+    (payload as any).message?.key?.fromMe === true ||
+    (payload as any).data?.key?.fromMe === true;
 
-  const businessNames = ["fluxk", "flux comunicação", "flux comunicacao", "desconhecido", "lead"];
-  const isBusinessName = leadName && businessNames.some(bn => leadName!.toLowerCase().includes(bn));
+  // AGGRESSIVE Name Filter: Discard any name that looks like the system profile or instance name
+  const forbiddenPatterns = [
+    /flux/i,
+    /comunica/i,
+    /desconhecido/i,
+    /lead/i,
+    /whatsapp/i,
+    /evolution/i,
+    /instancia/i,
+    /instance/i,
+    /^[^a-zA-Z0-9]+$/ // only symbols/emojis
+  ];
 
-  if ((isFromMeEarly || isBusinessName) && leadName) {
-    // For fromMe messages or generic instance names, pushName is the BUSINESS name.
-    // We should NOT use it as the contact name.
+  const isForbiddenName = leadName && forbiddenPatterns.some(regex => regex.test(leadName!));
+
+  if (isFromMeEarly || isForbiddenName || !leadName || leadName.toLowerCase() === 'sem nome') {
+    if (leadName) {
+      console.log(`WEBHOOK-IN: Filtering out generic name: "${leadName}" (Reason: ${isFromMeEarly ? 'fromMe' : 'forbidden pattern'})`);
+    }
     leadName = null;
   }
 
