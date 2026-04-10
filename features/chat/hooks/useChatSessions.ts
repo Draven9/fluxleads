@@ -184,45 +184,49 @@ export function useChatSessions() {
                 return null;
             }
 
-            // 3. Create new session
+            // 3. Criar/buscar sessão via função SECURITY DEFINER (bypassa RLS, é idempotente)
             console.log('[useChatSessions] Criando nova sessão no banco...', {
                 org: organizationId,
                 contact: contactId,
                 providerId: finalProviderId
             });
 
-            // Tenta o insert. Se falhar por RLS, o erro aparecerá aqui.
-            const { data: inserted, error: insertError } = await supabase
-                .from('chat_sessions')
-                .insert({
-                    organization_id: organizationId,
-                    contact_id: contactId,
-                    provider,
-                    provider_id: finalProviderId,
-                    name: contact?.name || finalProviderId,
-                    updated_at: new Date().toISOString(),
-                })
-                .select() // Deixamos o select vazio para ver se ele infere corretamente
-                .maybeSingle();
+            const { data: sessionId, error: rpcError } = await supabase.rpc('upsert_chat_session', {
+                p_org_id: organizationId,
+                p_contact_id: contactId,
+                p_provider: provider,
+                p_provider_id: finalProviderId,
+            });
 
-            if (insertError) {
-                console.error('[useChatSessions] Erro no INSERT:', insertError);
-                if (insertError.code === '23505') {
-                    console.log('[useChatSessions] Concorrência: sessão já existia.');
-                    const { data: retry } = await supabase
-                        .from('chat_sessions')
-                        .select('*')
-                        .eq('organization_id', organizationId) // CRITICAL: filtrar por org para RLS
-                        .eq('contact_id', contactId)
-                        .maybeSingle();
-                    return retry ? { ...retry, contact } as ChatSession : null;
-                }
-                throw insertError;
+            if (rpcError) {
+                console.error('[useChatSessions] Erro no upsert_chat_session RPC:', rpcError);
+                throw rpcError;
             }
 
-            const res = { ...inserted, contact } as ChatSession;
-            console.log('[useChatSessions] Sessão criada com sucesso:', res.id);
-            setSessions(prev => [res, ...prev]);
+            if (!sessionId) {
+                console.error('[useChatSessions] RPC retornou ID nulo');
+                return null;
+            }
+
+            // 4. Buscar a sessão completa pelo ID retornado
+            const { data: session, error: fetchError } = await supabase
+                .from('chat_sessions')
+                .select('*')
+                .eq('id', sessionId)
+                .maybeSingle();
+
+            if (fetchError || !session) {
+                console.error('[useChatSessions] Erro ao buscar sessão após upsert:', fetchError);
+                // Retornar sessão mínima para não bloquear o fluxo
+                return { id: sessionId, organization_id: organizationId, contact_id: contactId, provider, provider_id: finalProviderId, contact } as unknown as ChatSession;
+            }
+
+            const res = { ...session, contact } as ChatSession;
+            console.log('[useChatSessions] Sessão criada/obtida com sucesso:', res.id);
+            setSessions(prev => {
+                if (prev.some(s => s.id === res.id)) return prev;
+                return [res, ...prev];
+            });
             return res;
 
         } catch (err: any) {
