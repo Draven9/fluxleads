@@ -185,7 +185,13 @@ export function useChatSessions() {
             }
 
             // 3. Create new session
-            console.log('[useChatSessions] Criando nova sessão no banco...');
+            console.log('[useChatSessions] Criando nova sessão no banco...', {
+                org: organizationId,
+                contact: contactId,
+                providerId: finalProviderId
+            });
+
+            // Tenta o insert. Se falhar por RLS, o erro aparecerá aqui.
             const { data: inserted, error: insertError } = await supabase
                 .from('chat_sessions')
                 .insert({
@@ -196,18 +202,19 @@ export function useChatSessions() {
                     name: contact?.name || finalProviderId,
                     updated_at: new Date().toISOString(),
                 })
-                .select('*')
-                .single();
+                .select() // Deixamos o select vazio para ver se ele infere corretamente
+                .maybeSingle();
 
             if (insertError) {
+                console.error('[useChatSessions] Erro no INSERT:', insertError);
                 if (insertError.code === '23505') {
                     console.log('[useChatSessions] Concorrência: sessão já existia.');
                     const { data: retry } = await supabase
                         .from('chat_sessions')
                         .select('*')
                         .eq('contact_id', contactId)
-                        .single();
-                    if (retry) return { ...retry, contact } as ChatSession;
+                        .maybeSingle();
+                    return retry ? { ...retry, contact } as ChatSession : null;
                 }
                 throw insertError;
             }
