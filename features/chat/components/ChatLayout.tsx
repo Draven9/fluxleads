@@ -53,7 +53,8 @@ export const ChatLayout = () => {
                 try {
                     const newSession = await createOrGetSession(contactId);
                     if (!newSession) {
-                        console.error('[AUTO-SELECT] createOrGetSession retornou NULO.');
+                        console.error('[AUTO-SELECT] createOrGetSession retornou NULO. Resetando ref para retry.');
+                        autoSelectedRef.current = null; // Permite nova tentativa
                     } else if (isCurrent) {
                         console.log('[AUTO-SELECT] Sessão obtida com sucesso. Selecionando ID:', newSession.id);
                         setSelectedSession(newSession);

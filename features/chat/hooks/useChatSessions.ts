@@ -212,6 +212,7 @@ export function useChatSessions() {
                     const { data: retry } = await supabase
                         .from('chat_sessions')
                         .select('*')
+                        .eq('organization_id', organizationId) // CRITICAL: filtrar por org para RLS
                         .eq('contact_id', contactId)
                         .maybeSingle();
                     return retry ? { ...retry, contact } as ChatSession : null;
