@@ -54,7 +54,11 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({ session, onBack, onToggl
 
                 <div>
                     <h3 className="font-semibold text-slate-800 dark:text-white">{session.name || session.contact?.name || (session.provider_id ? session.provider_id.split('@')[0] : 'Desconhecido')}</h3>
-                    <span className="text-xs text-slate-500 dark:text-slate-400 capitalize">{session.provider} • {session.contact?.phone || session.provider_id}</span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400 capitalize">
+                        {session.provider} • {(session.provider_id?.endsWith('@g.us') || session.contact?.source === 'whatsapp_group')
+                            ? 'Grupo WhatsApp'
+                            : (session.contact?.phone || session.provider_id)}
+                    </span>
                 </div>
             </div>
 

@@ -153,7 +153,9 @@ export const ChatSessionList: React.FC<ChatSessionListProps> = ({ selectedSessio
                                             )}
                                             <div className="flex justify-between items-center">
                                                 <p className={`text-sm truncate pr-2 ${isUnread ? 'font-medium text-slate-800 dark:text-slate-200' : 'text-slate-500 dark:text-slate-400'}`}>
-                                                    {session.contact?.phone || session.provider_id}
+                                                    {(session.provider_id?.endsWith('@g.us') || session.contact?.source === 'whatsapp_group')
+                                                        ? 'Grupo WhatsApp'
+                                                        : (session.contact?.phone || session.provider_id)}
                                                 </p>
                                                 {isUnread && (
                                                     <span className="bg-green-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[1.25rem] text-center">
