@@ -137,7 +137,7 @@ export const ChatSessionList: React.FC<ChatSessionListProps> = ({ selectedSessio
                                         <div className="flex-1 min-w-0">
                                             <div className="flex justify-between items-center mb-1">
                                                 <h4 className={`text-sm truncate ${isUnread ? 'font-bold text-slate-900 dark:text-white' : 'font-semibold text-slate-800 dark:text-slate-100'}`}>
-                                                    {session.contact?.name || session.name || session.provider_id || 'Desconhecido'}
+                                                    {session.contact?.name || session.name || (session.provider_id ? session.provider_id.split('@')[0] : 'Desconhecido')}
                                                 </h4>
                                                 <span className={`text-xs whitespace-nowrap ml-2 ${isUnread ? 'text-green-600 font-bold' : 'text-slate-500 dark:text-slate-400'}`}>
                                                     {formatTime(session.last_message_at)}
