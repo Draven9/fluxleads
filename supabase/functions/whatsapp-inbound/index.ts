@@ -306,6 +306,82 @@ Deno.serve(async (req: Request) => {
 
         const body = await req.json();
         const providerType: string = source.provider_type || 'uazapi';
+        const orgId = source.organization_id;
+
+        // ── GROUPS_UPSERT: create/update group sessions automatically ─────────
+        // Evolution fires this event when the instance connects and whenever
+        // a group is created or updated. Handle it here so groups appear in
+        // the session list without any manual import button.
+        if (body.event === 'groups.upsert' && Array.isArray(body.data)) {
+            const groups: any[] = body.data;
+            let created = 0;
+
+            for (const group of groups) {
+                const groupJid: string = group.id || '';
+                if (!groupJid.includes('@g.us')) continue;
+
+                const groupName: string = group.subject || groupJid.split('@')[0];
+
+                // Upsert contact (group treated as a contact)
+                const { data: contact } = await supabase
+                    .from('contacts')
+                    .upsert({
+                        organization_id: orgId,
+                        phone: groupJid,
+                        name: groupName,
+                        source: 'whatsapp_group',
+                    }, { onConflict: 'organization_id,phone' })
+                    .select('id')
+                    .maybeSingle();
+
+                if (contact?.id) {
+                    // Upsert session for this group
+                    await supabase
+                        .from('chat_sessions')
+                        .upsert({
+                            organization_id: orgId,
+                            contact_id: contact.id,
+                            provider: 'whatsapp',
+                            provider_id: groupJid,
+                            name: groupName,
+                            whatsapp_source_id: sourceId,
+                            updated_at: new Date().toISOString(),
+                        }, { onConflict: 'organization_id,provider_id', ignoreDuplicates: false });
+                    created++;
+                }
+            }
+
+            console.log(`[whatsapp-inbound] groups.upsert: processed ${groups.length} groups, created/updated ${created} sessions`);
+            return new Response(JSON.stringify({ ok: true, groups: created }), {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            });
+        }
+
+        // ── CONTACTS_UPSERT: update contact names when they change ────────────
+        // Evolution fires this with pushName updates. Only update if the
+        // contact exists and doesn't already have a real name set.
+        if (body.event === 'contacts.upsert' && Array.isArray(body.data)) {
+            for (const c of body.data) {
+                const jid: string = c.id || '';
+                const pushName: string = c.pushName || c.name || '';
+                if (!jid || !pushName) continue;
+
+                // Normalize JID to phone (strip suffix)
+                const phone = jid.replace('@s.whatsapp.net', '').replace('@g.us', '');
+
+                // Only update if name is empty/null — never overwrite a set name
+                await supabase
+                    .from('contacts')
+                    .update({ name: pushName })
+                    .eq('organization_id', orgId)
+                    .eq('phone', phone)
+                    .or('name.is.null,name.eq.' + phone); // only if name is null or equals the phone number fallback
+            }
+
+            return new Response(JSON.stringify({ ok: true }), {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            });
+        }
 
         let normalized: NormalizedMessage | null = null;
         if (providerType === 'uazapi') {
@@ -328,8 +404,6 @@ Deno.serve(async (req: Request) => {
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' }
             });
         }
-
-        const orgId = source.organization_id;
 
         // ── Upload media to Supabase Storage ──────────────────────────────────
         if (normalized.media_url || (normalized.evolution_message_key && normalized.message_type !== 'text')) {

@@ -83,13 +83,13 @@ async function sendEvolution(config: any, action: string, payload: any) {
         return res.json();
     }
     if (action === 'fetchGroups') {
-        // Try rich info first, fallback to basic list
+        // Try fetchAllGroups (Evolution v2+) — return raw JSON, caller normalizes to array
         try {
             const res = await fetch(`${baseUrl}/group/fetchAllGroups/${instanceName}?getParticipants=false`, { headers });
             if (res.ok) return res.json();
         } catch (_) { /* fallthrough */ }
-        const res = await fetch(`${baseUrl}/group/list/${instanceName}`, { headers });
-        return res.json();
+        // Endpoint unavailable — return empty list gracefully instead of propagating error
+        return [];
     }
     if (action === 'fetchParticipants') {
         try {
