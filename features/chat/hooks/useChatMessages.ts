@@ -312,7 +312,7 @@ export function useChatMessages(sessionId: string | null) {
         setMessages((prev) => [...prev, optimisticMessage]);
 
         // Send via Edge Function (saves to DB + triggers webhook)
-        const { error } = await supabase.functions.invoke('chat-out', {
+        const { data: chatOutResponse, error } = await supabase.functions.invoke('chat-out', {
             body: {
                 organization_id: organizationId,
                 session_id: sessionId,
@@ -326,13 +326,14 @@ export function useChatMessages(sessionId: string | null) {
             }
         });
 
-        if (error) {
-            console.error('Error sending message:', error);
-            toast.error('Erro ao enviar mensagem.');
+        if (error || chatOutResponse?.ok === false) {
+            console.error('Error sending message:', error || chatOutResponse);
+            toast.error('Erro ao enviar mensagem. Verifique a conexão do WhatsApp.');
             // Remove the optimistic message on error
             pendingTempIds.current.delete(tempId);
             setMessages(prev => prev.filter(m => m.id !== tempId));
-            throw error;
+            if (error) throw error;
+            return;
         }
     }, [sessionId, organizationId, profile]);
 
