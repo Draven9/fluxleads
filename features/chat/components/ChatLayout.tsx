@@ -17,53 +17,37 @@ export const ChatLayout = () => {
     // user navigation every time the sessions list updates via polling (every 5s).
     const autoSelectedRef = useRef<string | null>(null);
 
-    // Auto-select session if contactId is present
+    // Auto-select session if contactId is present (runs once per contactId)
     useEffect(() => {
         if (!contactId) return;
-        
-        if (loading) {
-            console.log('[AUTO-SELECT] Aguardando carregamento das sessões...');
-            return;
-        }
+        if (loading) return;
+
+        // Once auto-selected for this contactId, do not interfere with user navigation
+        if (autoSelectedRef.current === contactId) return;
 
         let isCurrent = true;
 
         const handleAutoSelect = async () => {
-            console.log('[AUTO-SELECT] Iniciando para contactId:', contactId);
-
-            // 1. Check if already selected correctly
-            if (selectedSession?.contact_id === contactId) {
-                console.log('[AUTO-SELECT] Já selecionado corretamente.');
-                return;
-            }
-
-            // 2. Check if exists in current list
+            // Check if exists in current list
             const existing = sessions.find(s => s.contact_id === contactId);
             if (existing) {
-                console.log('[AUTO-SELECT] Encontrado na lista local. Selecionando...');
-                setSelectedSession(existing);
                 autoSelectedRef.current = contactId;
+                setSelectedSession(existing);
                 return;
             }
 
-            // 3. Not in list, try to create or fetch (only once per contactId change)
-            if (autoSelectedRef.current !== contactId) {
-                console.log('[AUTO-SELECT] Não está na lista. Tentando criar/buscar no banco...');
-                autoSelectedRef.current = contactId;
-                try {
-                    const newSession = await createOrGetSession(contactId);
-                    if (!newSession) {
-                        console.error('[AUTO-SELECT] createOrGetSession retornou NULO. Resetando ref para retry.');
-                        autoSelectedRef.current = null; // Permite nova tentativa
-                    } else if (isCurrent) {
-                        console.log('[AUTO-SELECT] Sessão obtida com sucesso. Selecionando ID:', newSession.id);
-                        setSelectedSession(newSession);
-                    }
-                } catch (err) {
-                    console.error('[AUTO-SELECT] Erro na criação:', err);
+            // Not in list yet — create or fetch (only once per contactId)
+            autoSelectedRef.current = contactId;
+            try {
+                const newSession = await createOrGetSession(contactId);
+                if (!newSession) {
+                    autoSelectedRef.current = null; // allow retry on next sessions update
+                } else if (isCurrent) {
+                    setSelectedSession(newSession);
                 }
-            } else {
-                console.log('[AUTO-SELECT] Tentativa já realizada para este ID. Aguardando...');
+            } catch (err) {
+                console.error('[AUTO-SELECT] Erro na criação:', err);
+                autoSelectedRef.current = null;
             }
         };
 
@@ -72,7 +56,7 @@ export const ChatLayout = () => {
         return () => {
             isCurrent = false;
         };
-    }, [contactId, sessions, loading, selectedSession?.contact_id, createOrGetSession]);
+    }, [contactId, sessions, loading, createOrGetSession]);
 
 
     return (
