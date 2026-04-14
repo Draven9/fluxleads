@@ -58,6 +58,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ session, onBack }) => {
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const prevScrollHeightRef = useRef<number>(0);
     const lastMessageIdRef = useRef<string | null>(null);
+    // Ref-based lock to prevent multiple loadMore calls before React re-renders loading=true
+    const loadingMoreRef = useRef(false);
 
     const isAdmin = profile?.role === 'admin' || profile?.role === 'owner';
 
@@ -96,12 +98,14 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ session, onBack }) => {
     const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
         const scrollTop = e.currentTarget.scrollTop;
 
-        if (scrollTop === 0 && hasMore && !loading) {
-            // User hit top, load more
+        if (scrollTop === 0 && hasMore && !loadingMoreRef.current) {
+            // User hit top, load more. Use ref lock to prevent double-calls
+            // before React re-renders with loading=true.
+            loadingMoreRef.current = true;
             if (scrollContainerRef.current) {
                 prevScrollHeightRef.current = scrollContainerRef.current.scrollHeight;
             }
-            loadMore?.();
+            loadMore?.().finally(() => { loadingMoreRef.current = false; });
         }
     };
 

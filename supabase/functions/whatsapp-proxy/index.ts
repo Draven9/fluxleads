@@ -104,9 +104,15 @@ async function sendEvolution(config: any, action: string, payload: any) {
         return res.json();
     }
     if (action === 'fetchMessages') {
-        const remoteJid = payload.remoteJid;
-        if (!remoteJid) throw new Error('evolution: remoteJid is required for fetchMessages');
-        const res = await fetch(`${baseUrl}/chat/fetchMessages/${instanceName}?remoteJid=${remoteJid}&page=1`, { headers });
+        const rawJid = payload.remoteJid;
+        if (!rawJid) throw new Error('evolution: remoteJid is required for fetchMessages');
+        // Normalize: individual contacts are stored without suffix; groups keep @g.us
+        const remoteJid = rawJid.includes('@') ? rawJid : `${rawJid}@s.whatsapp.net`;
+        const res = await fetch(`${baseUrl}/chat/fetchMessages/${instanceName}?remoteJid=${encodeURIComponent(remoteJid)}&limit=100`, { headers });
+        if (!res.ok) {
+            const text = await res.text().catch(() => res.statusText);
+            throw new Error(`Evolution fetchMessages error ${res.status}: ${text}`);
+        }
         return res.json();
     }
     throw new Error(`evolution: unknown action "${action}"`);
@@ -198,66 +204,76 @@ Deno.serve(async (req: Request) => {
             throw new Error(`Unsupported provider_type: "${providerType}"`);
         }
 
-        // ── Post-process Action: History Sync ──────────────────────────────
+        // ── Post-process Action: History Sync ──────────────────────────────────
         if (action === 'fetchMessages' && Array.isArray(result)) {
             const sessionId = body.sessionId;
             const organizationId = source.organization_id;
 
             if (sessionId && result.length > 0) {
-                // Map Evolution messages to internal format
-                const messagesToInsert = result.map((m: any) => {
-                    const direction = m.key?.fromMe ? 'outbound' : 'inbound';
-                    let messageContent = '';
-                    let mType = 'text';
-                    let mUrl = null;
-
-                    if (m.message?.conversation) {
-                        messageContent = m.message.conversation;
-                    } else if (m.message?.extendedTextMessage?.text) {
-                        messageContent = m.message.extendedTextMessage.text;
-                    } else if (m.message?.imageMessage) {
-                        messageContent = m.message.imageMessage.caption || '';
-                        mType = 'image';
-                    } else if (m.message?.videoMessage) {
-                        messageContent = m.message.videoMessage.caption || '';
-                        mType = 'video';
-                    } else if (m.message?.audioMessage) {
-                        mType = 'audio';
-                    } else if (m.message?.documentMessage) {
-                        messageContent = m.message.documentMessage.title || '';
-                        mType = 'document';
-                    }
-
-                    return {
-                        organization_id: organizationId,
-                        session_id: sessionId,
-                        direction,
-                        content: messageContent,
-                        message_type: mType,
-                        media_url: mUrl,
-                        status: 'sent',
-                        provider_message_id: m.key?.id,
-                        created_at: m.messageTimestamp ? new Date(m.messageTimestamp * 1000).toISOString() : new Date().toISOString()
-                    };
-                });
-
-                // Bulk upsert using service-role (direct insert)
-                const { data: saved, error: saveError } = await supabase
+                // Fetch existing external_ids to avoid duplicates
+                const { data: existingMsgs } = await supabase
                     .from('messages')
-                    .upsert(messagesToInsert, { 
-                        onConflict: 'provider_message_id',
-                        ignoreDuplicates: true 
-                    })
-                    .select('id');
+                    .select('external_id')
+                    .eq('session_id', sessionId)
+                    .not('external_id', 'is', null);
 
-                if (saveError) {
-                    console.error('[whatsapp-proxy] History sync save error:', saveError);
+                const existingIds = new Set((existingMsgs || []).map((m: any) => m.external_id));
+
+                const messagesToInsert = result
+                    .filter((m: any) => m.key?.id && !existingIds.has(m.key.id))
+                    .map((m: any) => {
+                        const direction = m.key?.fromMe ? 'outbound' : 'inbound';
+                        let messageContent = '';
+                        let mType = 'text';
+
+                        if (m.message?.conversation) {
+                            messageContent = m.message.conversation;
+                        } else if (m.message?.extendedTextMessage?.text) {
+                            messageContent = m.message.extendedTextMessage.text;
+                        } else if (m.message?.imageMessage) {
+                            messageContent = m.message.imageMessage.caption || '';
+                            mType = 'image';
+                        } else if (m.message?.videoMessage) {
+                            messageContent = m.message.videoMessage.caption || '';
+                            mType = 'video';
+                        } else if (m.message?.audioMessage) {
+                            mType = 'audio';
+                        } else if (m.message?.documentMessage) {
+                            messageContent = m.message.documentMessage.title || '';
+                            mType = 'document';
+                        }
+
+                        return {
+                            organization_id: organizationId,
+                            session_id: sessionId,
+                            direction,
+                            content: messageContent,
+                            message_type: mType,
+                            media_url: null,
+                            status: 'sent',
+                            external_id: m.key?.id,
+                            created_at: m.messageTimestamp
+                                ? new Date(m.messageTimestamp * 1000).toISOString()
+                                : new Date().toISOString(),
+                        };
+                    });
+
+                if (messagesToInsert.length > 0) {
+                    const { data: saved, error: saveError } = await supabase
+                        .from('messages')
+                        .insert(messagesToInsert)
+                        .select('id');
+
+                    if (saveError) {
+                        console.error('[whatsapp-proxy] History sync save error:', saveError);
+                    } else {
+                        return new Response(JSON.stringify({
+                            success: true,
+                            synced: saved?.length || 0,
+                        }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+                    }
                 } else {
-                    return new Response(JSON.stringify({ 
-                        success: true, 
-                        synced: saved?.length || 0,
-                        messages: result 
-                    }), {
+                    return new Response(JSON.stringify({ success: true, synced: 0, already_synced: true }), {
                         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
                     });
                 }

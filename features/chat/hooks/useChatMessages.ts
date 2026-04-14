@@ -46,8 +46,15 @@ export function useChatMessages(sessionId: string | null) {
                 const fetched = (data || []) as Message[];
                 if (fetched.length > 0) {
                     lastMessageDateRef.current = fetched[0].created_at;
-                    // Reverse to display chronologically (oldest at top)
-                    setMessages(fetched.reverse());
+                    // Reverse to display chronologically (oldest at top).
+                    // Merge with any Realtime messages that arrived during the async fetch
+                    // to avoid wiping them when we setMessages.
+                    const base = fetched.reverse();
+                    const fetchedIds = new Set(base.map(m => m.id));
+                    setMessages(prev => {
+                        const extras = prev.filter(m => !fetchedIds.has(m.id));
+                        return [...base, ...extras];
+                    });
                     setHasMore(data.length === MESSAGES_PER_PAGE);
                     setPage(1);
                 } else {
@@ -79,7 +86,13 @@ export function useChatMessages(sessionId: string | null) {
 
                         if (finalData && finalData.length > 0) {
                             const mapped = (finalData as Message[]).reverse();
-                            setMessages(mapped);
+                            // Same merge strategy: preserve any Realtime messages that
+                            // arrived during the slow auto-sync before replacing state.
+                            const syncedIds = new Set(mapped.map(m => m.id));
+                            setMessages(prev => {
+                                const extras = prev.filter(m => !syncedIds.has(m.id));
+                                return [...mapped, ...extras];
+                            });
                             lastMessageDateRef.current = mapped[mapped.length - 1].created_at;
                             setHasMore(finalData.length === MESSAGES_PER_PAGE);
                             setPage(1);
@@ -324,9 +337,13 @@ export function useChatMessages(sessionId: string | null) {
     }, [sessionId, organizationId, profile]);
 
     const deleteMessage = useCallback(async (messageId: string) => {
-        // Optimistic Update
-        const previousMessages = [...messages];
-        setMessages((prev) => prev.filter((msg) => msg.id !== messageId));
+        // Capture current state functionally to avoid stale closure.
+        // previousMessages is set synchronously inside setMessages before any await.
+        let previousMessages: Message[] = [];
+        setMessages((prev) => {
+            previousMessages = prev;
+            return prev.filter((msg) => msg.id !== messageId);
+        });
 
         const { error } = await supabase
             .from('messages')
@@ -340,7 +357,7 @@ export function useChatMessages(sessionId: string | null) {
         } else {
             toast.success('Mensagem apagada.');
         }
-    }, [messages]);
+    }, [sessionId]);
 
     return { messages, loading, sendMessage, deleteMessage, loadMore, hasMore };
 }
